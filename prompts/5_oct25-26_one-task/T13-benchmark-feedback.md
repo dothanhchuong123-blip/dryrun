@@ -20,9 +20,9 @@ You are producing the data-driven Nebius and NVIDIA feedback report. It's a requ
 - `docs/SUBMISSION.md` §III (the Devpost feedback questions, Q9–Q17)
 
 **`bench/run_bench.py`:**
-- Use the real task prompts with a realistic state.
+- Use the real task prompts with a realistic state: `profile_parser_messages`, the news parser (Super), `analyst_messages` (Ultra, with a real results table from `coffee_hcmc`), `plan_crowd_messages` (Lightning) and `memo_messages`.
 - **Models:** Ultra (thinking on and off), Super, Lightning, Nano.
-- **Plus one non-NVIDIA reference model** from Token Factory's `GET /v1/models`, close to Super in size. Run it on the **CEO prompt only**, n=5, at concurrency 1. Devpost Q12 asks how Nemotron compares with other models.
+- **Plus one non-NVIDIA reference model** from Token Factory's `GET /v1/models`, close to Super in size. Run it on the **analyst prompt only**, n=5, at concurrency 1. Devpost Q12 asks how Nemotron compares with other models.
 - **Concurrency:** 1, 4, 16.
 - **Sample size:** n per cell defaults to 10; Ultra with thinking on uses n=5.
 - **Record:**
@@ -50,6 +50,7 @@ You are producing the data-driven Nebius and NVIDIA feedback report. It's a requ
   - the JSON docs page's code example is missing commas
   - the two base URLs list 25 vs 18 models
   - Serverless presets and cold starts, from `bench/results/serverless.json`
+  - native `tools=` calling on Ultra (P1's check)
 - Pull every friction item from `docs/FEEDBACK_LOG.md`. Each one needs evidence: a number, a request, or a docs link.
 - **Concrete recommendations.**
 - Include the tables and charts.

@@ -13,18 +13,21 @@ You are preparing the hackathon submission for the Market Digital Twin.
 
 **Read only these:**
 - `docs/SUBMISSION.md`: **the real Devpost form, field by field. Follow it exactly.**
-- `SPEC.md` §1, §2, §3
+- `SPEC.md` §1, §3 and **§15 (the product as built)**
+- `docs/PIVOT-PLAN.html` (the story)
 - `docs/FEEDBACK.md`
 - `docs/DEPLOY.md`
 - `bench/results/` (summaries only)
 
 **`README.md`:** judge-facing. Replace the stub with:
 - a hook line, plus a GIF or screenshot
-- **"For judges: try it in 60 seconds"** near the top: the live URL, REPLAY by default, how to start LIVE, and the "Check live news" button. The form has no testing field, so this is where testing instructions go.
-- the problem, and what the project does
+- **"For judges: try it in 60 seconds"** near the top: the live URL; pick the coffee-roaster example (REPLAY, free); click any grid cell to replay it; add your own plan row; press "Check live news" (a real Tavily call); or type your own business for a LIVE analysis. The form has no testing field, so this is where testing instructions go.
+- the problem (a small business hit by news has no analyst to test its options), and what the project does
 - a **Mermaid architecture diagram** showing:
-  - Tavily → Super shock parser → engine
-  - the Ultra CEOs and the Lightning crowd
+  - profile text → Super → engine calibration
+  - Tavily → Super news parser → shock cases
+  - the Ultra analyst loop (strict-JSON actions → planner → results) and the Lightning shopper groups
+  - the memo
   - Token Factory
   - the Serverless Endpoint and Serverless Job
 - a model routing table with the measured numbers
@@ -35,19 +38,20 @@ You are preparing the hackathon submission for the Market Digital Twin.
   - no GPUs to provision;
   - rate-limit headers drove our limiter.
 - how Tavily is used
-- an econometric validity section: common random numbers, paired t-test, effect size
+- a "why you can trust the numbers" section: LLMs choose, the engine computes; common random numbers; paired comparison against "Do nothing"; the 1-in-20 bad case; 10,000 runs per cell on Nebius
 - how to run it locally, and how to deploy
 - limitations
 - license
 
-**`docs/VIDEO_SCRIPT.md`:** a 2:45 script with timestamps and on-screen actions, in four acts:
+**`docs/VIDEO_SCRIPT.md`:** a 2:45 script with timestamps and on-screen actions, in five acts:
 
 | Time | Act |
 |---|---|
-| 0:00–0:25 | Problem |
-| 0:25–1:30 | Live Tavily shock and agents reasoning |
-| 1:30–2:15 | Econometric proof (AI alpha, Nash, bullwhip) |
-| 2:15–2:45 | Nebius/NVIDIA architecture and telemetry |
+| 0:00–0:20 | Problem: a coffee roaster in Ho Chi Minh City reads that robusta jumped 31%. What should she do? |
+| 0:20–0:45 | She types her business; Nemotron Super fills the fields; Tavily finds the news and its cost to her |
+| 0:45–1:45 | The Nemotron Ultra analyst tests plans, the shoppers react, the grid fills in; "Best today" and "Safest" appear |
+| 1:45–2:15 | Replay the winning plan in the pixel arena; the rival sells out in week 7; the memo |
+| 2:15–2:45 | How it works: Token Factory tiers and measured savings, Serverless Job "verified", Tavily quotes |
 
 **`docs/DEVPOST.md`:** fill in every field from `docs/SUBMISSION.md`, in the same order, ready to paste:
 - **Name and elevator pitch** (≤ 200 characters).
@@ -67,8 +71,10 @@ You are preparing the hackathon submission for the Market Digital Twin.
 
 **QA checklist** (`docs/QA.md`). Run it in a logged-out browser and tick each item:
 - [ ] the live URL loads
-- [ ] REPLAY works for all 3 scenarios
-- [ ] one LIVE run completes
+- [ ] REPLAY works for all 3 example businesses
+- [ ] one LIVE analysis of a typed-in business completes
+- [ ] adding your own plan works in REPLAY
+- [ ] "Verify with 10,000 runs" completes on Nebius
 - [ ] the mobile layout works
 - [ ] LICENSE is visible at the repo root
 - [ ] no secrets in git history: `git log -p | grep -iE "api_key|sk-|tvly-"` is clean

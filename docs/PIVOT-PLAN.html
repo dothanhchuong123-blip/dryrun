@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Twin Pivot Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; each screen is a wireframe beside its notes; stacks at phone width. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #17202e;
+  --muted: #5b6676;
+  --line: #d9dee6;
+  --accent: #4f46e5;      /* your company (Firm A), indigo per DESIGN.md */
+  --accent-soft: #eceafd;
+  --rival: #c2700a;       /* rival, amber */
+  --gain: #16794a;
+  --gain-soft: #e3f3ea;
+  --loss: #b42318;
+  --loss-soft: #fbe7e4;
+  --nv: #5f9400;          /* NVIDIA green, only for model chips */
+  --nv-soft: #eef6df;
+  --wf-bg: #fbfcfd;
+  --wf-block: #e9edf2;
+  --f-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-num: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10141b; --surface: #171d26; --ink: #e6eaf0; --muted: #9aa5b4; --line: #2a3340;
+    --accent: #8f88ff; --accent-soft: #24234a; --rival: #f0a43c;
+    --gain: #4cc38a; --gain-soft: #13301f; --loss: #ff7a6b; --loss-soft: #3a1b18;
+    --nv: #9ccf3a; --nv-soft: #1f2a10; --wf-bg: #131922; --wf-block: #232c38;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10141b; --surface: #171d26; --ink: #e6eaf0; --muted: #9aa5b4; --line: #2a3340;
+  --accent: #8f88ff; --accent-soft: #24234a; --rival: #f0a43c;
+  --gain: #4cc38a; --gain-soft: #13301f; --loss: #ff7a6b; --loss-soft: #3a1b18;
+  --nv: #9ccf3a; --nv-soft: #1f2a10; --wf-bg: #131922; --wf-block: #232c38;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 26px; font-weight: 700; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.muted { color: var(--muted); }
+.stack { display: grid; gap: 14px; }
+section { display: grid; gap: 20px; }
+
+/* hero */
+.hero { display: grid; gap: 18px; }
+.swap { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: stretch; }
+.swap > div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 6px; }
+.swap .arrow { background: none; border: 0; display: grid; place-items: center; font-size: 24px; color: var(--muted); padding: 0; }
+.swap .new { border-color: var(--accent); }
+.q { font-family: var(--f-display); font-size: 21px; font-weight: 500; line-height: 1.3; }
+
+/* journey */
+.journey { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; counter-reset: step; }
+.jstep { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 6px; align-content: start; position: relative; }
+.jstep b { font-family: var(--f-display); font-size: 16px; }
+.jstep .n { font-family: var(--f-num); font-size: 12px; color: var(--muted); }
+.jstep small { color: var(--muted); font-size: 13px; line-height: 1.45; }
+.jstep .who { margin-top: 4px; }
+.side-note { font-size: 13.5px; color: var(--muted); border-left: 2px dashed var(--line); padding-left: 12px; }
+
+/* chips */
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.chip.nv { background: var(--nv-soft); color: var(--nv); }
+.chip.nv::before { content: ""; width: 7px; height: 7px; border-radius: 2px; background: var(--nv); }
+.chip.eng { background: var(--wf-block); color: var(--muted); }
+.chip.tv { background: var(--accent-soft); color: var(--accent); }
+
+/* screen cards */
+.screen { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.screen + .screen { border-top: 1px solid var(--line); padding-top: 32px; }
+.notes { display: grid; gap: 12px; font-size: 14.5px; min-width: 0; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.refs { font-size: 13.5px; display: grid; gap: 4px; }
+.refs a { font-weight: 600; }
+
+/* wireframes */
+.wf { background: var(--wf-bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; font-size: 13px; display: grid; gap: 10px; min-width: 0; overflow: hidden; }
+.wf-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.wf-bar strong { color: var(--ink); font-family: var(--f-display); font-size: 14px; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; gap: 6px; min-width: 0; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cols-31 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 10px; }
+.field { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: baseline; font-size: 12.5px; border-bottom: 1px dotted var(--line); padding-bottom: 4px; }
+.field span:first-child { color: var(--muted); }
+.field span:last-child { text-align: right; font-family: var(--f-num); }
+.ta { background: var(--wf-bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; font-size: 12.5px; line-height: 1.5; min-height: 92px; }
+.btn { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 6px; padding: 5px 10px; background: var(--accent); color: var(--surface); justify-self: start; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.presets { display: flex; gap: 6px; flex-wrap: wrap; }
+.presets span { font-size: 11.5px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: var(--surface); }
+.news { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: start; }
+.news .src { grid-column: 1 / -1; font-size: 11.5px; color: var(--muted); }
+.news .hl { font-weight: 600; font-size: 13px; line-height: 1.35; }
+.impact { font-family: var(--f-num); font-size: 12.5px; font-weight: 600; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+.impact.bad { background: var(--loss-soft); color: var(--loss); }
+.impact.ok { background: var(--wf-block); color: var(--muted); }
+.quote { font-size: 12px; color: var(--muted); border-left: 2px solid var(--line); padding-left: 8px; font-style: italic; }
+
+/* grid table */
+.scroll { overflow-x: auto; }
+table.grid { border-collapse: separate; border-spacing: 3px; width: 100%; min-width: 480px; font-size: 12px; }
+table.grid th { font-weight: 600; text-align: left; color: var(--muted); padding: 4px 6px; font-size: 11.5px; vertical-align: bottom; }
+table.grid th.today { color: var(--ink); }
+table.grid td { padding: 6px; border-radius: 4px; vertical-align: top; }
+table.grid td.plan { font-weight: 600; color: var(--ink); background: none; min-width: 120px; }
+td.c { font-family: var(--f-num); font-variant-numeric: tabular-nums; line-height: 1.3; }
+td.c small { display: block; font-size: 10.5px; opacity: 0.85; }
+td.g3 { background: var(--gain); color: var(--surface); }
+td.g2 { background: color-mix(in srgb, var(--gain) 55%, var(--surface)); color: var(--ink); }
+td.g1 { background: var(--gain-soft); color: var(--ink); }
+td.z  { background: var(--wf-block); color: var(--muted); }
+td.r1 { background: var(--loss-soft); color: var(--ink); }
+td.r2 { background: color-mix(in srgb, var(--loss) 55%, var(--surface)); color: var(--ink); }
+tr.best td.plan { color: var(--accent); }
+tr.best td.plan::after { content: " ★ AI pick"; font-size: 10.5px; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+
+/* agent log */
+.log { display: grid; gap: 6px; }
+.log .row { display: grid; grid-template-columns: 54px 1fr; gap: 8px; font-size: 12.5px; align-items: start; }
+.tag { font-size: 10.5px; font-weight: 700; text-align: center; border-radius: 4px; padding: 1px 0; }
+.tag.think { background: var(--accent-soft); color: var(--accent); }
+.tag.tool { background: var(--wf-block); color: var(--muted); }
+.tag.res { background: var(--gain-soft); color: var(--gain); }
+.tag.crowd { background: var(--nv-soft); color: var(--nv); }
+.mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+.mini span { height: 18px; border-radius: 3px; }
+
+/* replay sketch */
+.chart { height: 120px; position: relative; }
+.chart svg { width: 100%; height: 100%; display: block; }
+.arena { height: 86px; border-radius: 6px; background: repeating-linear-gradient(90deg, var(--wf-block) 0 18px, transparent 18px 22px); display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+
+/* memo */
+.memo h4 { margin: 0; font-family: var(--f-display); font-size: 16px; }
+.kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.kpis div { display: grid; gap: 2px; }
+.kpis b { font-family: var(--f-num); font-size: 16px; }
+.kpis span { font-size: 11px; color: var(--muted); }
+
+/* tables */
+.t { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
+.t th, .t td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.t th { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.t td:first-child { font-weight: 600; white-space: nowrap; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 4px 6px; }
+
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.three > div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.three h3 { font-size: 16px; }
+.three ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+
+.decide { display: grid; gap: 12px; counter-reset: q; }
+.decide > div { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.decide b { font-family: var(--f-display); font-size: 16px; }
+.rec { font-size: 13.5px; color: var(--gain); font-weight: 600; }
+
+.flag { font-size: 12px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .journey { grid-template-columns: 1fr 1fr; }
+  .screen { grid-template-columns: 1fr; }
+  .three { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .swap { grid-template-columns: 1fr; }
+  .swap .arrow { transform: rotate(90deg); }
+  .journey { grid-template-columns: 1fr; }
+  .cols, .cols-31 { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">Market Twin · pivot plan · Nebius × NVIDIA hackathon · 14 Oct 2026</span>
+    <h1>Bring your business. See which plan survives today's news.</h1>
+    <p class="muted">Same engine, same Nemotron models, same deadline. What changes is who the app is for: a person with a real decision to make instead of a judge watching a recording.</p>
+    <div class="swap">
+      <div>
+        <span class="eyebrow">Today</span>
+        <span class="q">"Can an AI CEO beat a textbook pricing rule?"</span>
+        <small class="muted">A recorded race in a made-up GPU market. When it ends, the visitor has nothing to do.</small>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="new">
+        <span class="eyebrow" style="color:var(--accent)">After the pivot</span>
+        <span class="q">"A tariff just hit my business. Which plan should I pick, and how bad could it get?"</span>
+        <small class="muted">The visitor types in their own business, and Nemotron tests plans against real news, the way an analyst would.</small>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="stack">
+      <span class="eyebrow">The user's journey</span>
+      <h2>Five steps, about two minutes</h2>
+    </div>
+    <div class="journey">
+      <div class="jstep"><span class="n">1</span><b>Describe your business</b><small>Two sentences, or pick one of the 3 example businesses.</small><span class="who"><span class="chip nv">Super</span></span></div>
+      <div class="jstep"><span class="n">2</span><b>See the news that hits you</b><small>Headlines about your product and shipping route, each with what it would cost you.</small><span class="who"><span class="chip tv">Tavily</span> <span class="chip nv">Super</span></span></div>
+      <div class="jstep"><span class="n">3</span><b>Watch the AI analyst work</b><small>It proposes plans, tests each one in the simulator, and improves on them.</small><span class="who"><span class="chip nv">Ultra</span> <span class="chip nv">Lightning</span></span></div>
+      <div class="jstep"><span class="n">4</span><b>Compare plans × shocks</b><small>One grid: which plan wins, and which one is still OK if things get worse.</small><span class="who"><span class="chip eng">Engine · no LLM</span></span></div>
+      <div class="jstep"><span class="n">5</span><b>Take the decision memo</b><small>One page: the plan, the profit range, the risks, and the news quotes behind it.</small><span class="who"><span class="chip nv">Ultra</span></span></div>
+    </div>
+    <p class="side-note">Click any cell in the grid and the existing pixel arena and charts replay that plan week by week. Waves 1–2 stay in the app as the "watch it play out" view.</p>
+  </section>
+
+  <section>
+    <div class="stack">
+      <span class="eyebrow">Screens</span>
+      <h2>What each screen looks like</h2>
+      <p class="muted">These are low-detail wireframes with example numbers, not engine output. Each one names the Mobbin screens it borrows from and what exactly it borrows.</p>
+    </div>
+
+    <!-- 1 setup -->
+    <div class="screen">
+      <div class="wf" aria-label="Wireframe: business setup">
+        <div class="wf-bar"><strong>Your business</strong><span>Step 1 of 5</span></div>
+        <div class="cols">
+          <div class="box">
+            <span class="eyebrow">Describe it like you would to a friend</span>
+            <div class="ta">We roast and sell Vietnamese robusta to 60 cafés in Ho Chi Minh City, about 1,200 bags a month at $38. Green beans cost us $21 a bag. Our big rival is Highland Supply.</div>
+            <span class="btn">Read my business →</span>
+            <div class="presets"><span>PC-parts shop · GPU tariff</span><span>Furniture maker · Red Sea</span><span>Coffee roaster · bean spike</span></div>
+          </div>
+          <div class="box">
+            <span class="eyebrow">What Nemotron understood · edit anything</span>
+            <div class="field"><span>Product</span><span>Roasted coffee, 1 bag</span></div>
+            <div class="field"><span>Your price</span><span>$38.00</span></div>
+            <div class="field"><span>Raw cost per unit</span><span>$21.00</span></div>
+            <div class="field"><span>Sales per week</span><span>≈ 280 bags</span></div>
+            <div class="field"><span>Supplier lead time</span><span>3 weeks <em class="flag">guessed</em></span></div>
+            <div class="field"><span>Stock on hand</span><span>2 weeks <em class="flag">guessed</em></span></div>
+            <div class="field"><span>Main rival</span><span>Highland Supply</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <h3>1 · Describe your business</h3>
+        <ul>
+          <li>Free text on the left. Nemotron fills editable fields on the right.</li>
+          <li>Anything Nemotron had to guess is marked <em>guessed</em>, so the user knows what to check.</li>
+          <li>Three example businesses map onto the three scenarios you already have, so they're free REPLAY runs for judges.</li>
+        </ul>
+        <div><span class="chip nv">Nemotron Super</span> <span class="muted">turns the text into settings (strict JSON schema, thinking off). 1 call ≈ $0.001.</span></div>
+        <div class="refs">
+          <span class="eyebrow">Borrowed from</span>
+          <span><a href="https://mobbin.com/screens/6c1f56f8-c756-4fa4-8d83-a2d8096304ed">Apollo</a>: the input on the left, the AI-filled editable fields on the right</span>
+          <span><a href="https://mobbin.com/screens/22242eb4-8fb0-4551-8711-69478b775d0b">HubSpot</a>: "use the same words you would use to describe your business to a friend"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 news -->
+    <div class="screen">
+      <div class="wf" aria-label="Wireframe: news that hits you">
+        <div class="wf-bar"><strong>News that affects you</strong><span>Live from Tavily · 3 min ago</span></div>
+        <div class="box news">
+          <span class="src">Reuters · 2 days ago</span>
+          <span class="hl">Robusta futures hit record as drought cuts Central Highlands harvest</span>
+          <span class="impact bad">−$6.4k</span>
+          <span class="quote" style="grid-column:1/-1">"…prices rose 31% in four weeks…" → raw cost +31%, lead time +1 week</span>
+        </div>
+        <div class="box news">
+          <span class="src">VnExpress · 4 days ago</span>
+          <span class="hl">Port congestion at Cat Lai adds delays to inbound shipments</span>
+          <span class="impact bad">−$1.1k</span>
+        </div>
+        <div class="box news">
+          <span class="src">Bloomberg · 6 days ago</span>
+          <span class="hl">Café chains in Vietnam report steady demand into Q4</span>
+          <span class="impact ok">≈ $0</span>
+        </div>
+        <span class="btn">Find the best plan for this →</span>
+      </div>
+      <div class="notes">
+        <h3>2 · The news that hits you</h3>
+        <ul>
+          <li>Tavily searches news about <em>this user's</em> product and route. It no longer uses a fixed list of scenarios.</li>
+          <li>Each headline shows its cost over 6 months if the user does nothing (engine, 1,000 paths).</li>
+          <li>The verbatim quote → number → decision chain is your main pitch to the Tavily judges.</li>
+        </ul>
+        <div><span class="chip tv">Tavily</span> <span class="chip nv">Nemotron Super</span> <span class="muted">reads the top articles and outputs the shock numbers with quotes. That's already built in T06.</span></div>
+        <div class="refs">
+          <span class="eyebrow">Borrowed from</span>
+          <span><a href="https://mobbin.com/screens/8487cb92-3969-4f21-a847-26177466cf9a">Fey</a>: a short news stream where each item shows a coloured impact number</span>
+          <span><a href="https://mobbin.com/screens/ac605032-527c-4193-a824-44620a60c79c">Quicken</a>: related news shown next to the user's own numbers</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 agent -->
+    <div class="screen">
+      <div class="wf" aria-label="Wireframe: AI analyst at work">
+        <div class="wf-bar"><strong>Nemotron is testing plans</strong><span>Round 2 of 3 · 0:38</span></div>
+        <div class="cols-31">
+          <div class="box log">
+            <div class="row"><span class="tag think">Think</span><span>Bean cost rises ~$6 a bag within 3 weeks. Highland's stock looks thin.</span></div>
+            <div class="row"><span class="tag tool">Test</span><span>Raise price 5% now</span></div>
+            <div class="row"><span class="tag res">Result</span><span class="num">+$2.1k · bad case −$1.8k</span></div>
+            <div class="row"><span class="tag tool">Test</span><span>Buy 4 weeks of beans now</span></div>
+            <div class="row"><span class="tag res">Result</span><span class="num">+$5.0k · bad case +$1.2k</span></div>
+            <div class="row"><span class="tag crowd">Shoppers</span><span>"Small cafés: we switch if it goes up more than 5%"</span></div>
+            <div class="row"><span class="tag think">Think</span><span>Stocking up wins. Raise later and by less, after Highland runs short.</span></div>
+            <div class="row"><span class="tag tool">Test</span><span>Buy 4 weeks now + raise 3% in week 3 …</span></div>
+          </div>
+          <div class="box">
+            <span class="eyebrow">Plans tested so far</span>
+            <div class="mini" aria-hidden="true">
+              <span style="background:var(--gain-soft)"></span><span style="background:var(--g2,var(--gain-soft))"></span><span style="background:var(--gain-soft)"></span><span style="background:var(--wf-block)"></span>
+              <span style="background:var(--gain)"></span><span style="background:var(--gain)"></span><span style="background:var(--gain-soft)"></span><span style="background:var(--gain)"></span>
+              <span style="background:var(--wf-block)"></span><span style="background:var(--wf-block)"></span><span style="background:var(--wf-block)"></span><span style="background:var(--wf-block)"></span>
+            </div>
+            <small class="muted">The grid fills in as each test finishes.</small>
+            <span class="btn ghost">Show full Nemotron thinking ▾</span>
+          </div>
+        </div>
+      </div>
+      <div class="notes">
+        <h3>3 · The AI analyst at work</h3>
+        <ul>
+          <li>Nemotron Ultra decides <em>which</em> plans to test. The engine computes every number it reads. LLMs still never make up outcomes.</li>
+          <li>3 rounds, about 2–3 plans each, then a final check across all shocks.</li>
+          <li>The shopper groups react to each plan's price. This is where Lightning's 12 groups earn their place.</li>
+          <li>This is the "agent" in Best Apps and Agents: it plans, uses a tool, reads the result and revises.</li>
+        </ul>
+        <div><span class="chip nv">Nemotron Ultra</span> <span class="muted">thinking ON, reasoning streamed. 4–5 calls ≈ $0.05.</span><br><span class="chip nv">Lightning</span> <span class="muted">2 calls per plan, in parallel.</span></div>
+        <div class="refs">
+          <span class="eyebrow">Borrowed from</span>
+          <span><a href="https://mobbin.com/screens/a70eca33-be2c-4a76-81e9-87c449d81d81">Browserbase</a>: one step per row, with tags for the step types (Reason / Tool)</span>
+          <span><a href="https://mobbin.com/screens/b47e8e34-0f94-4b9d-85b6-ffd42e1fa30c">Elicit</a>: a status checklist beside a result that fills in live</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 grid -->
+    <div class="screen">
+      <div class="wf" aria-label="Wireframe: plans by shocks grid">
+        <div class="wf-bar"><strong>Which plan holds up?</strong><span>Profit over 6 months vs doing nothing · 1,000 runs per cell</span></div>
+        <div class="scroll">
+          <table class="grid">
+            <thead><tr><th>Plan</th><th>Beans +15%</th><th class="today">Beans +31%<br>(today's news)</th><th>Beans +50%</th><th>Port shut 3 wk</th></tr></thead>
+            <tbody>
+              <tr><td class="plan">Do nothing</td><td class="c z">$0<small>baseline</small></td><td class="c z">$0<small>baseline</small></td><td class="c z">$0<small>baseline</small></td><td class="c z">$0<small>baseline</small></td></tr>
+              <tr><td class="plan">Raise 5% now</td><td class="c g1">+$1.4k<small>bad −$1.0k</small></td><td class="c g1">+$2.1k<small>bad −$1.8k</small></td><td class="c g1">+$3.0k<small>bad +$0.2k</small></td><td class="c r1">−$0.6k<small>bad −$3.1k</small></td></tr>
+              <tr><td class="plan">Buy 4 wk of beans now</td><td class="c r1">−$0.8k<small>bad −$2.2k</small></td><td class="c g2">+$5.0k<small>bad +$1.2k</small></td><td class="c g3">+$8.1k<small>bad +$3.9k</small></td><td class="c g2">+$5.6k<small>bad +$2.4k</small></td></tr>
+              <tr class="best"><td class="plan">Buy 4 wk + raise 3% in wk 3</td><td class="c g1">+$0.9k<small>bad −$0.7k</small></td><td class="c g3">+$7.4k<small>bad +$3.0k</small></td><td class="c g3">+$10.2k<small>bad +$5.1k</small></td><td class="c g2">+$5.9k<small>bad +$2.6k</small></td></tr>
+              <tr><td class="plan">Switch to a Lâm Đồng supplier</td><td class="c r1">−$2.0k<small>bad −$3.4k</small></td><td class="c g1">+$1.6k<small>bad −$0.9k</small></td><td class="c g2">+$6.3k<small>bad +$2.8k</small></td><td class="c g3">+$7.0k<small>bad +$4.4k</small></td></tr>
+              <tr><td class="plan">Cut price 5% to win cafés</td><td class="c r1">−$2.6k<small>bad −$4.9k</small></td><td class="c r2">−$5.8k<small>bad −$9.0k</small></td><td class="c r2">−$8.4k<small>bad −$12k</small></td><td class="c r1">−$1.9k<small>bad −$4.6k</small></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="legend"><span><i style="background:var(--gain)"></i>much better</span><span><i style="background:var(--gain-soft)"></i>a bit better</span><span><i style="background:var(--wf-block)"></i>same</span><span><i style="background:var(--loss-soft)"></i>worse</span><span>"bad" = the 1-in-20 bad case</span></div>
+      </div>
+      <div class="notes">
+        <h3>4 · Plans × shocks</h3>
+        <ul>
+          <li>This is your "run multiple scenarios" idea. Rows are plans (the AI's plus the user's own), columns are how bad the shock gets.</li>
+          <li>Each cell shows the average result plus the bad case, because a small business cares most about not going broke.</li>
+          <li>The comparison is against <strong>"do nothing"</strong>, not the cost-plus rule. That's a fairer baseline and easier to understand.</li>
+          <li>The user can add their own plan row with 4 sliders: price change, extra stock, when, and supplier.</li>
+          <li>Click a cell to replay it (next screen).</li>
+        </ul>
+        <div><span class="chip eng">Engine · NumPy</span> <span class="muted">24 cells × 1,000 runs takes about a second locally. The <strong>Nebius Serverless Job</strong> runs 10,000 per cell for the "verified" badge. The job finally has a real job to do.</span></div>
+        <div class="refs">
+          <span class="eyebrow">Borrowed from</span>
+          <span><a href="https://mobbin.com/screens/58b40c44-7fe9-4085-9340-aa12d196c8a1">Profound</a>: a matrix view with colour intensity, one row highlighted as "yours"</span>
+          <span><a href="https://mobbin.com/screens/ea4bc778-0ba3-40c1-b552-ae18df885f79">Kiwi.com</a>: a dense number grid, good/bad shown by colour, one selected cell</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 replay -->
+    <div class="screen">
+      <div class="wf" aria-label="Wireframe: replay one plan">
+        <div class="wf-bar"><strong>Buy 4 wk + raise 3% in wk 3 · beans +31%</strong><span>Week 9 of 24 ▶</span></div>
+        <div class="arena">Existing pixel arena (T12): your shop, Highland, shoppers moving</div>
+        <div class="box chart">
+          <svg viewBox="0 0 400 110" preserveAspectRatio="none" role="img" aria-label="Profit chart: your plan pulls ahead of do-nothing from week 7">
+            <path d="M0 95 L60 88 L120 80 L160 70 L220 52 L280 38 L340 28 L400 20 L400 40 L340 46 L280 54 L220 64 L160 78 L120 84 L60 90 L0 97 Z" fill="var(--accent-soft)"/>
+            <path d="M0 96 L60 89 L120 82 L160 74 L220 58 L280 46 L340 37 L400 30" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+            <path d="M0 96 L60 90 L120 85 L160 82 L220 76 L280 72 L340 69 L400 66" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 4"/>
+            <line x1="150" y1="0" x2="150" y2="110" stroke="var(--line)" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <small class="muted">Profit: your plan (band = 95% range) vs do nothing (dashed). Marker: week 7, Highland sells out.</small>
+      </div>
+      <div class="notes">
+        <h3>5 · Watch one plan play out</h3>
+        <ul>
+          <li>The D6 screen, simplified: the arena plus <em>one</em> chart. Price and stock charts move to the analyst tab.</li>
+          <li>The rival here is played by the engine's best-response rule (free). An Ultra rival can stay as an option for LIVE mode.</li>
+        </ul>
+        <div><span class="chip eng">Reuses T11 + T12</span></div>
+        <div class="refs">
+          <span class="eyebrow">Borrowed from</span>
+          <span><a href="https://mobbin.com/screens/823d3b8a-d4b8-481c-99f4-6e8191f162f6">Quicken</a>: high / expected / low band with one marker line, and settings beside the chart</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 memo -->
+    <div class="screen">
+      <div class="wf memo" aria-label="Wireframe: decision memo">
+        <div class="wf-bar"><strong>Decision memo</strong><span>Copy · Download PDF</span></div>
+        <div class="box">
+          <span class="eyebrow">Recommendation</span>
+          <h4>Buy 4 weeks of beans this week. Raise price 3% in week 3.</h4>
+          <div class="kpis">
+            <div><b class="num" style="color:var(--gain)">+$7.4k</b><span>vs doing nothing, 6 months</span></div>
+            <div><b class="num">+$3.0k</b><span>1-in-20 bad case</span></div>
+            <div><b class="num">10,000</b><span>runs · Nebius-verified</span></div>
+          </div>
+        </div>
+        <div class="box"><span class="eyebrow">Why</span><span>Beans are rising faster than cafés will accept on the price. Stock bought now locks in the old cost, and Highland is likely to run short around week 7.</span></div>
+        <div class="box"><span class="eyebrow">Watch out for</span><span>If prices fall back under +15%, this plan only just breaks even. Re-check in 2 weeks.</span></div>
+        <div class="box"><span class="eyebrow">Sources</span><span class="quote">Reuters, 12 Oct: "…prices rose 31% in four weeks…"</span></div>
+      </div>
+      <div class="notes">
+        <h3>6 · The decision memo</h3>
+        <ul>
+          <li>Something the user can take away and act on. That's what makes the "potential impact" story concrete.</li>
+          <li>Every number in it comes from the engine. Ultra only writes the words around them.</li>
+          <li>Also the natural last shot of the video.</li>
+        </ul>
+        <div><span class="chip nv">Nemotron Ultra</span> <span class="muted">1 call ≈ $0.01.</span></div>
+        <div class="refs">
+          <span class="eyebrow">Borrowed from</span>
+          <span><a href="https://mobbin.com/screens/80c2ce7c-50a3-4d5a-b3c8-14ac3e709c7d">Gemini Notebook</a>: the report with its sources listed alongside</span>
+          <span><a href="https://mobbin.com/screens/3658eb91-9a82-4bbe-9583-2c9dccca81dc">Semrush</a>: the summary at the top, the evidence below it</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="stack">
+      <span class="eyebrow">Nemotron</span>
+      <h2>Every model has a real job</h2>
+      <p class="muted">Checked today: Token Factory has exactly 4 Nemotron chat models, and no Nemotron embedding or vision models. So we don't pretend: three models do real work, and Nano is the fallback and the benchmark.</p>
+    </div>
+    <div class="scroll card">
+      <table class="t">
+        <thead><tr><th>Model</th><th>Its job</th><th>Calls per analysis</th><th>Cost</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip nv">Ultra 550B</span></td><td>The analyst: proposes plans, calls the simulator, reads results, revises, writes the memo. Thinking ON, reasoning shown live.</td><td class="num">4–5</td><td class="num">≈ $0.05</td></tr>
+          <tr><td><span class="chip nv">Super 120B</span></td><td>Reads the business description into settings. Reads news articles into shock numbers with verbatim quotes.</td><td class="num">2–3</td><td class="num">≈ $0.004</td></tr>
+          <tr><td><span class="chip nv">Lightning 30B</span></td><td>The 12 shopper groups react to each plan's price and stock ("small cafés will switch above +5%").</td><td class="num">≈ 12, in parallel</td><td class="num">≈ $0.003</td></tr>
+          <tr><td><span class="chip nv">Nano 30B</span></td><td>Fallback when Lightning fails. The comparison in the speed benchmark (FEEDBACK.md).</td><td class="num">0 normally</td><td class="num">—</td></tr>
+          <tr><td><span class="chip eng">Engine</span></td><td>Every number: demand, sales, stock-outs, profit, the 1,000- and 10,000-run checks.</td><td class="num">—</td><td class="num">$0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">One LIVE analysis costs about <strong class="num">$0.06</strong> plus ~3 Tavily credits. The $10 judging reserve covers about 160 live analyses, and the 3 example businesses are free REPLAYs.</p>
+  </section>
+
+  <section>
+    <div class="stack">
+      <span class="eyebrow">Scope</span>
+      <h2>What stays, what's new, what's cut</h2>
+    </div>
+    <div class="three">
+      <div>
+        <h3>Stays (waves 1–2)</h3>
+        <ul>
+          <li>The whole engine: market, stock, price game, stats, Monte Carlo</li>
+          <li>Router, rate limiter, telemetry, spend cap</li>
+          <li>Tavily scout and Super's shock reader</li>
+          <li>Arena and charts, now the "replay one plan" view</li>
+          <li>REPLAY mode, Nebius Endpoint + Job</li>
+        </ul>
+      </div>
+      <div>
+        <h3>New</h3>
+        <ul>
+          <li>Business profile schema + Super reader + 3 example businesses</li>
+          <li>"Plan" = 4 knobs turned into the engine's existing per-week decision schedule</li>
+          <li>Grid runner: plans × shocks, paired runs vs "do nothing"</li>
+          <li>Ultra analyst loop with a <code>test_plan</code> tool</li>
+          <li>News impact per headline</li>
+          <li>Decision memo</li>
+          <li>New screens 1–4 and 6</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Cut or demoted</h3>
+        <ul>
+          <li>"AI vs cost-plus" as the headline (it becomes one row option)</li>
+          <li>500 sprites (stay at 200)</li>
+          <li>χ² switching test</li>
+          <li>Cournot, Cobb-Douglas, Switchyard (already P2)</li>
+          <li>Deep-Scout auto trigger (replaced by the news screen)</li>
+        </ul>
+      </div>
+    </div>
+    <p class="side-note">Needs your OK: changes to <code>docs/EVENTS.md</code> (new events: agent steps, grid cells, memo) and the agent schemas. The engine contract in <code>types.py</code> should not need changes, because a plan becomes the Monte Carlo's existing <code>Schedule</code>.</p>
+  </section>
+
+  <section>
+    <div class="stack">
+      <span class="eyebrow">Schedule</span>
+      <h2>Fits the existing milestones</h2>
+    </div>
+    <div class="scroll card">
+      <table class="t">
+        <thead><tr><th>Date</th><th>Work</th><th>Who</th></tr></thead>
+        <tbody>
+          <tr><td>Oct 15</td><td>Check that Ultra tool calling works on Token Factory (≈ $0.01). Update EVENTS.md and the schemas. Rewrite T07's prompt for the new flow.</td><td>Claude</td></tr>
+          <tr><td>Oct 15–16</td><td>P1 business profile + Super reader + 3 example businesses · P2 plan → schedule + grid runner (pure NumPy, test-checked)</td><td>Claude (P1) · Argon (P2)</td></tr>
+          <tr><td>Oct 15–17</td><td>D7 new mockup of screens 1–6, built from this page</td><td>Argon</td></tr>
+          <tr><td>Oct 17–18</td><td>T07 becomes "one analysis run": business → news → analyst loop → grid → memo, headless CLI. <strong>Milestone A, same date.</strong></td><td>Claude Opus</td></tr>
+          <tr><td>Oct 19–20</td><td>T08 API/SSE/replay · T09 Nebius Endpoint + Job (10k per cell). <strong>Milestone B, same date.</strong></td><td>Claude + you</td></tr>
+          <tr><td>Oct 21–24</td><td>Build the new screens into the frontend and connect it to the backend. This uses the slack days.</td><td>Argon → Claude check</td></tr>
+          <tr><td>Oct 25–26</td><td>T13 benchmark + FEEDBACK.md · record REPLAYs of the 3 example businesses</td><td>Claude</td></tr>
+          <tr><td>Oct 27</td><td>Feature freeze</td><td></td></tr>
+          <tr><td>Oct 28–30</td><td>README, video (the coffee roaster story), Devpost text, submit by Oct 30 12:00</td><td>Claude + you</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="side-note">Fallback if Ultra tool calling misbehaves: Ultra returns "the next plans to test" as strict JSON (already proven on Day 1), and our code runs them. The user sees the same thing.</p>
+  </section>
+
+  <section>
+    <div class="stack">
+      <span class="eyebrow">Your call</span>
+      <h2>Four decisions before I write the task prompts</h2>
+    </div>
+    <div class="decide">
+      <div><b>1. The three example businesses</b><span>PC-parts shop (GPU tariff) · Vietnamese furniture maker shipping to Europe (Red Sea) · Coffee roaster in HCMC (bean price spike, replacing "commodity war").</span><span class="rec">Recommended: these three. Each reuses a scenario you already have, and the coffee one is the video story.</span></div>
+      <div><b>2. Who plays the rival in the grid</b><span>The engine's best-response rule (free, instant), or Nemotron Ultra (more realistic, roughly double the cost).</span><span class="rec">Recommended: the engine rule in the grid; an Ultra rival only in LIVE replays.</span></div>
+      <div><b>3. Keep the pixel arena?</b><span>It's built and charming, but it's no longer the hero.</span><span class="rec">Recommended: keep it as the "replay one plan" view, at 200 shoppers.</span></div>
+      <div><b>4. OK to change EVENTS.md and the agent schemas</b><span>These are shared contracts. The engine types should stay as they are.</span><span class="rec">Needed for the pivot.</span></div>
+    </div>
+  </section>
+
+  <footer class="muted" style="font-size:13px">Wireframe numbers are examples to show the layout; they are not engine output. Mobbin links open the reference screens.</footer>
+</div>
+
+</html>

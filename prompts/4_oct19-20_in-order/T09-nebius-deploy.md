@@ -6,7 +6,7 @@
 | Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/4_oct19-20_in-order/T09-nebius-deploy.md` |
 | Parallel with | nothing. Starts after T08 (part 1 may start earlier). |
 | Time | ~3 h |
-| Depends on | Part 1 can run as early as Oct 19 with just `/health`. Part 2 needs T03 + T08. |
+| Depends on | Part 1 can run as early as Oct 19 with just `/health`. Part 2 needs P2 (planner CLI) + T08. |
 
 ---
 You are deploying the Market Digital Twin on Nebius AI Cloud.
@@ -32,14 +32,14 @@ You are deploying the Market Digital Twin on Nebius AI Cloud.
    - pass the keys as env/secrets.
 4. Check from outside: `curl /health`, and confirm that `curl -N` on an SSE route streams without buffering.
 
-**Part 2: Monte Carlo job**
-- `jobs/mc_worker/Dockerfile` runs `python -m backend.engine.montecarlo --schedule /in/schedule.json --n 10000 --out /out/result.json`.
+**Part 2: the 10,000-runs-per-cell job (SPEC §15.5)**
+- `jobs/mc_worker/Dockerfile` runs `python -m backend.engine.planner --job /in/job.json --n 10000 --out /out/result.json`. The input comes from `Analysis.job_payload()`.
 - Move the input and output through an Object Storage bucket, using whichever method the docs make simplest.
-- `backend/services/nebius_jobs.py` handles the job lifecycle:
+- `backend/services/nebius_jobs.py` handles the job lifecycle and is used by `POST /api/analyses/{id}/verify`:
   - submit the job (CLI subprocess or API);
-  - poll its status;
+  - poll its status, mirroring it into `telemetry.job`;
   - fetch the result;
-  - emit `stats` with source `cloud`, and set the job status in `telemetry`.
+  - emit every cell as `grid_cell` with `source: "cloud"`, then `grid_summary` with `verified: true`.
 - Measure cold-start time and runtime, and write them to `bench/results/serverless.json`. This feeds the feedback report.
 
 **Part 3: `docs/DEPLOY.md`**

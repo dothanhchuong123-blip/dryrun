@@ -2,6 +2,7 @@
 
 **Event:** Nebius x NVIDIA Global AI Hackathon, Best Apps and Agents track
 **Version:** v2, 2026-10-14. Replaces the v1 research prompt. **This file is the source of truth.**
+**2026-10-14 pivot: read §15 first.** The app now tests a user's own business plans against live news. §15 overrides §2, §3.2, §4.7's counterfactuals, §9 and §11 where they conflict.
 **Legend:** ✅ verified on 2026-10-14 (source in §14) · ⚠️ not verified, check on Day 1 (§13)
 
 ---
@@ -442,3 +443,200 @@ tests/           engine unit tests (seeded, deterministic)
 - Nemotron 3.5 Lightning + NeMo Switchyard: [NVIDIA blog](https://blogs.nvidia.com/blog/nemotron-lightning-switchyard-rtx-dgx/) · [Artificial Analysis launch](https://artificialanalysis.ai/articles/nemotron-3-5-lightning-launch) · [Switchyard repo](https://github.com/NVIDIA-NeMo/Switchyard)
 - Nemotron thinking toggle / sampling: [build.nvidia.com model card](https://build.nvidia.com/nvidia/nemotron-3-super-120b-a12b/modelcard) · [SGLang cookbook](https://docs.sglang.io/cookbook/autoregressive/NVIDIA/Nemotron3-Super)
 - Tavily: <https://docs.tavily.com/documentation/api-reference/endpoint/search.md>
+
+## 15. Pivot v3: "Test your plans" (decided 2026-10-14, overrides §2, §3.2, §4.7 counterfactuals, §9 and §11 where they conflict)
+
+The visual plan with wireframes is `docs/PIVOT-PLAN.html`. The screens are specified in `docs/DESIGN.md` §12, and the backend ↔ frontend contract in `docs/EVENTS.md` (v2).
+
+### 15.1 The new question
+
+> **"News just hit my business. Which plan should I pick, and how bad could it get?"**
+
+1. The user describes their business in plain words, or picks one of 3 example businesses.
+2. Tavily finds news about *their* product and supply route, and Super turns each headline into shock numbers with verbatim quotes.
+3. **Nemotron Ultra works as an analyst.** It proposes plans, the engine tests each plan against several shock levels, Ultra reads the results and revises. 3 rounds at most.
+4. A grid shows plans × shocks, each cell scored against **"Do nothing"**.
+5. A decision memo: Ultra writes the words, and the engine supplies every number.
+6. Click any cell to replay that plan week by week in the existing pixel arena and charts.
+
+**What stays from §1–§14:** the engine math (§4.1–4.5), common random numbers, the router, limiter, telemetry and spend cap, Tavily caching and the "Check live news" button (§6), REPLAY as the public default (§7), the budget rules (§7.1), the feedback work (§8) and the locked infrastructure decisions in `CLAUDE.md`. **LLMs still output decisions only**, never outcomes.
+
+**What goes:** the per-tick two-speed CEO loop (§3.2) and "AI CEO vs cost-plus" as the headline. Cost-plus survives as an optional plan row. Deep-Scout's automatic trigger is replaced by the news screen. The χ² switching test and 500 sprites are cut.
+
+### 15.2 Time, money and units
+
+- **1 tick = 1 week.** The analysis horizon is **24 weeks**.
+- Money is shown in USD. A profile may describe other currencies, but Super converts to USD and records the original in the description.
+- **Profit = gross profit:** revenue − raw-material cost − marketing − holding cost. There are no fixed costs (`fc = 0`), because the user doesn't tell us rent or salaries. The UI says "gross profit".
+
+### 15.3 Business profile → engine (`backend/engine/planner.py`, `calibrate`)
+
+`BusinessProfile` fields (the Pydantic model is in `backend/agents/schemas.py`; the engine takes the same keys as a plain dict):
+
+| Field | Type, bounds | Meaning |
+|---|---|---|
+| `business_name` | str ≤ 60 | |
+| `product_unit` | str ≤ 40 | "bag of roasted coffee" |
+| `price` | float > 0 | your price per unit, USD |
+| `unit_cost` | float > 0, < price | raw/variable cost per unit, USD |
+| `weekly_sales` | float > 0 | units per week |
+| `lead_time_weeks` | int 1–16 | supplier lead time |
+| `stock_weeks` | float 0–16 | stock on hand, in weeks of sales |
+| `rival_name` | str ≤ 60 | |
+| `rival_price` | float > 0 | equal to `price` if unknown |
+| `supplier_region` | str ≤ 60 | used in news queries |
+| `customers` | str ≤ 80 | flavours the shopper groups ("independent cafés") |
+| `search_terms` | list[str], 1–3, each ≤ 80 | Tavily queries |
+| `guessed_fields` | list[str] | names of fields Super had to guess; the UI marks them |
+
+**Calibration** works in fixed engine units and converts back to dollars, so the MNL constants tuned in §4.1 still hold:
+
+- Price scale `k_p = price / 100`.
+  - Engine prices: your price = 100, the rival = `rival_price / k_p`, `p_ref = 105`, `c_raw0 = unit_cost / k_p`.
+- `fc = 0`, `eta = 0`, `holding_cost = 0.004 × c_raw0` per unit per week (≈ 20% a year), `lead_time0 = lead_time_weeks`.
+- **Quantity scale:**
+  - Compute the expected engine demand for A at the starting prices, with neutral sentiment and no shock. Call it `d0`.
+  - Then `k_q = weekly_sales / d0`.
+  - Capacity for both firms = `1.6 × d0`. Starting raw stock for A = `stock_weeks × d0`; for B = `2 × d0`. Finished goods = `1 × d0` each.
+- **Dollars out = engine money × k_p × k_q.**
+- **Rival markup:** `m_B = rival_price / unit_cost − 1`, with B's raw cost the same as A's.
+- **Test:** with "Do nothing" and no shock, mean weekly sales of A must be within ±10% of `weekly_sales`, and mean weekly gross profit within ±15% of `(price − unit_cost) × weekly_sales`.
+
+### 15.4 Plans (`PlanSpec`)
+
+A plan is a few knobs, turned by code into per-week decisions. The fields are flat so the strict JSON schema stays simple:
+
+| Field | Bounds | Meaning |
+|---|---|---|
+| `name` | str ≤ 40 | shown as the row label |
+| `price_change_pct` | −20 … +20 | one price change… |
+| `price_change_week` | 0 … 23 | …from this week on |
+| `extra_stock_weeks` | 0 … 8 | one extra raw-material order, in weeks of normal sales… |
+| `stock_week` | 0 … 23 | …placed in this week (it arrives after the lead time of that week) |
+| `marketing_change_pct` | −50 … +100 | vs the starting marketing level |
+| `switch_supplier` | bool | from week 0, new orders go to an alternative supplier |
+| `alt_cost_change_pct` | −30 … +50 | the alternative's unit cost vs the current supplier |
+| `alt_lead_time_weeks` | 1 … 16 | the alternative's lead time |
+| `alt_shock_exposure` | 0 … 1 | how much of the news shock also hits the alternative (default 0.3) |
+
+- **"Do nothing"** = all zeros, `switch_supplier = false`. It's always simulated as the reference, and it's never sent to the LLM as a choice.
+- **Seed plans**, tested before Ultra's first round: "Do nothing", "Raise price 5% now", "Stock up 4 weeks now".
+- **Cost-plus** (§4.7's old U2 rule) is available as an optional plan row named "Textbook price rule". It needs a small exception in the planner: the price follows `ATC × (1 + m)` every week.
+
+**How the planner runs a plan** (it is closed-loop per path, inside the vectorised simulation):
+
+- **Your price** = starting price × (1 + `price_change_pct`/100) from `price_change_week`.
+- **Production plan**, for both firms = the 4-week moving average of their own demand, plus 10%.
+- **Reordering:** the (s,S) rule of §4.5 with ω = 0, plus the one-off extra order.
+- **Purchase-cost accounting (new, planner only):**
+  - Every raw-material order is priced at the raw cost of the week it was *ordered*.
+  - Production uses the weighted-average cost of the raw stock on hand.
+  - So **stock bought before a price rise keeps its old cost**. This is the core of most real plans. `market.py` and `montecarlo.py` keep their spot-cost accounting, so their tests stay valid.
+- **The rival (engine rule, the same in every universe):**
+  - Keeps its usual markup over its current unit cost.
+  - Never sits more than 5% above your price for longer than 2 weeks: it then matches you at +2%.
+  - UI copy: "The rival keeps its usual margin over cost, and follows your price cuts after 2 weeks."
+- **Shoppers:** each plan has its own crowd sentiment (Lightning, §15.6). It applies from the plan's first change onward; before that, sentiment is neutral.
+
+### 15.5 Shock cases and the grid
+
+A `ShockCase` = `{id, label, delta_c_raw, delta_lead_time, demand_shock, onset_week = 2, ramp_weeks = 3}`. The cost rises linearly from `onset_week` over `ramp_weeks`; the lead-time and demand changes start at `onset_week`.
+
+`default_shock_cases(news_shock, profile)` builds 4 columns:
+
+| id | Built from the news shock | Example label |
+|---|---|---|
+| `mild` | × 0.5 | "Beans +15%" |
+| `news` | × 1.0 (today's headline) | "Beans +31% (today's news)" |
+| `severe` | × 1.6, clamped to the §5 bounds | "Beans +50%" |
+| `shipping` | lead time +3 weeks, raw cost +5%, no demand change | "Shipping +3 weeks" |
+
+**Each cell (plan × shock case):**
+- **Paired with "Do nothing"** under the same shock, using **common random numbers**: path `r` uses the same streams for every plan in that column.
+- **Per-path randomness:** the same as §4.7. Demand noise σ = 0.1, lead-time jitter ±1 week, shock size × U(0.8, 1.2).
+- **Reports** (all in USD over 24 weeks):
+  - `mean_delta_usd`: mean of (plan profit − do-nothing profit)
+  - `p5_delta_usd`: 5th percentile of that difference, shown as "the 1-in-20 bad case"
+  - `p_better`: share of paths where the plan beats do-nothing
+  - `mean_profit_usd`
+  - `n`
+- **Sizes:** n = 1,000 paths per cell locally. **The Nebius Serverless Job runs n = 10,000 per cell** for the "verified" badge (`python -m backend.engine.planner --job in.json --n 10000 --out out.json`).
+- **Engine labels:**
+  - `best_today`: the highest `mean_delta_usd` in the `news` column.
+  - `safest`: the highest, over plans, of the worst `p5_delta_usd` across all 4 columns.
+  - Ties go to the earlier plan.
+- **Performance:**
+  - 8 plans × 4 cases × 1,000 paths × 24 weeks in < 3 s locally.
+  - A single cell in < 0.3 s, so a plan the user adds appears at once.
+  - 10,000 per cell for 8 × 4 cells in < 90 s on the Job (chunked).
+
+### 15.6 The analyst loop (`backend/agents/analyst.py`)
+
+| Step | Who | What |
+|---|---|---|
+| 0 | Engine | Calibrate, then test the 3 seed plans against all 4 shock cases. |
+| 1–3 | **Ultra** (thinking ON, reasoning streamed) | Reads the profile, the news (with quotes), the results table so far and the shopper notes. Outputs an `AnalystStep`: a short `thought` (≤ 300 characters, shown to the user), `action` = `"test"` or `"finish"`, 0–3 new `plans`, its current `pick` and `why`. |
+| per new plan | **Lightning** (2 calls of 6 groups each, in parallel) | The 12 shopper groups react to the plan's price, its marketing and the rival's price, giving μ/σ and a ≤ 60-character bubble. The plan is then simulated with that sentiment. |
+| per new plan | Engine | Simulates the plan in all 4 columns and adds the cells to the results table. |
+| end | **Ultra** (thinking OFF) | Writes a `MemoDraft` (`headline`, `why`, `watch_out`, `recheck_when`). The numbers and sources are inserted by code, never written by the LLM. |
+
+- **Limits:** at most 3 rounds and 8 plans in total, including the seed plans. If Ultra says `finish` early, stop.
+- **Ultra's results table:** shows `mean_delta_usd`, `p5_delta_usd` and `p_better` per column, rounded to $0.1k.
+- **Tool use:** we drive the loop with **strict-JSON actions**. The `AnalystStep` *is* the tool call. This works reliably on Token Factory (Day 1, §13). Native `tools=` calling is checked once in task P1 for the feedback log, but the build doesn't depend on it.
+- **Fallbacks:**
+  - Ultra fails twice → a deterministic search over price {−3, 0, +3, +5}% × stock {0, 2, 4} weeks, which takes the best 2 by `safest` then `best_today`, and writes the memo from a template.
+  - Lightning fails → neutral sentiment (μ = 0, σ = 0.1).
+  - Every fallback is logged and shown as a small "fallback" chip.
+- **Cost of one LIVE analysis:**
+  - Ultra ≈ 4–5 calls ≈ $0.05, Super ≈ 3 calls ≈ $0.004, Lightning ≈ 12 calls ≈ $0.003. **Total ≈ $0.06**, plus ≈ 3 Tavily credits.
+  - The $10 judging reserve ≈ 160 analyses.
+  - `PUBLIC_LIVE_DAILY_CAP_USD` still applies.
+- **Nano:** the fallback for Lightning, and the speed comparison in the benchmark. No invented role.
+
+### 15.7 News for this business (`backend/services/news_watch.py`)
+
+- **Search:** `TavilyScout.search` with each of the profile's `search_terms` (topic news, week, `basic`, cached), merged and deduplicated by URL. Keep the top 5 articles by score, and drop pages that aren't articles (sitemaps, tickers; see FEEDBACK_LOG).
+- **Parse:** Super turns each of the top 3 into a `ShockVector` with verbatim evidence. This is the existing T06 pipeline, one call per headline.
+- **Impact per headline:** do-nothing under that shock minus do-nothing with no shock, 500 paths, in USD over 24 weeks. Report the mean and p5.
+- **The `news` column** of the grid uses the headline with the largest absolute impact.
+- **Example businesses** use cached responses (REPLAY). If nothing usable comes back, fall back to the scenario's `fallback_shock`.
+- **"Check live news"** (§6) stays. It runs a fresh `basic` search for the current profile, works in REPLAY too, and shows the cards with `applied: false`.
+
+### 15.8 Example businesses (`fixtures/examples/*.json`)
+
+| id | Business | Shock source |
+|---|---|---|
+| `pc_parts` | Online PC-parts shop importing graphics cards | `gpu_tariff` scenario |
+| `furniture_eu` | Vietnamese furniture maker shipping to Europe | `red_sea` scenario |
+| `coffee_hcmc` | Coffee roaster in Ho Chi Minh City selling to cafés (**the video story**) | new robusta-price queries; the fallback shock is `commodity_war`'s (+35% cost, +1 week, −10% demand) |
+
+Each file holds `{id, title, subtitle, text, scenario_id, seed_queries, fallback_shock, profile}`. `profile` is the human-checked parse of `text`. Each example gets a recorded analysis replay, `fixtures/replays/analysis_<id>.jsonl`, which is free for judges.
+
+### 15.9 Replay of one cell
+
+`planner.simulate_detail(cal, plan, shock, crowd, horizon, seed)` runs a single path for the plan universe and the do-nothing universe, with the same streams. It returns, per week, everything the `tick` event needs:
+
+- Per-consumer choices are synthesised from the archetype counts. Within each archetype, consumers are assigned in a fixed order, so the arena stays stable.
+- It also returns event markers: shock onset, sold out, price change, extra stock arriving.
+
+In the replay, **U1 = the plan** and **U2 = do nothing**, in dollars. The LIVE-only Ultra rival in replays is a **P1 stretch goal** (§15.10).
+
+### 15.10 Priorities after the pivot (replace §11)
+
+**P0, must ship:**
+- profile parser and the 3 examples
+- planner (calibration, plans, grid, purchase-cost accounting, detail replay)
+- news watch
+- analyst loop and memo
+- the analysis orchestrator, CLI and REPLAY recordings
+- API v2 and the Nebius deploy
+- new screens 1–6
+- README, video, FEEDBACK.md
+
+**P1, should ship:**
+- the 10k-per-cell Serverless Job and its "verified" badge
+- user-added plan rows
+- the price game (Nash) in the analyst tab for a replayed cell
+- an Ultra-played rival in LIVE replays
+
+**P2, only if time:** native tool calling, Cournot, Switchyard, Vietnamese UI copy.

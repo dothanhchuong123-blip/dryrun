@@ -3,7 +3,7 @@
 **Read this first, then follow `SPEC.md`. SPEC.md is the source of truth and replaces the original v1 research prompt.** Every Claude session working on this project should read both files.
 
 ## Snapshot
-- **What:** a multi-agent market and supply-chain simulator. Nemotron agents make the *decisions*; a deterministic NumPy/SciPy engine computes every *outcome*. Tavily grounds shocks in live news.
+- **What (pivot v3, 2026-10-14):** "Test your plans." A user describes their business, Tavily finds the news that hits it, and a **Nemotron Ultra analyst** proposes plans that a deterministic NumPy engine tests against 4 shock levels (plans × shocks grid, scored against "Do nothing"). The result is a decision memo. Nemotron makes the *decisions* (plans, shopper reactions, shock numbers); the engine computes every *outcome*. **SPEC §15 is the spec for this; read it first.** Screens: `docs/DESIGN.md` §12. Wireframes: `docs/PIVOT-PLAN.html`.
 - **Track:** Best Apps and Agents. **Also aiming for:** Best Use of Tavily ($3k) and Most Valuable Feedback.
 - **Hard deadline:** Fri **Oct 30 2026, 10:00 PDT** = **Sat Oct 31, 00:00 GMT+7**. **We submit by Fri Oct 30, 12:00 GMT+7.**
 - **Judging:** Dec 1–15, 2026. **The live demo must stay up, free and working until Dec 15.**
@@ -16,20 +16,22 @@
    - Super (`MODEL_SUPER`) is the shock parser and inventory ω, with thinking OFF.
    - The fast tier (`MODEL_FAST`) is the crowd: **Nemotron 3.5 Lightning**, which is confirmed on Token Factory. Nano 3 is the fallback and the benchmark comparison. Thinking OFF.
    - **Model IDs and the base URL come from env vars. Never hardcode them.** The verified IDs are case-sensitive; see SPEC §3.3.
-3. **Two-speed loop:**
-   - Market tick: 1.5 s, NumPy only.
-   - Ultra decisions: once per decision epoch (every K ticks), async. The sim never blocks on an LLM.
+3. **Analysis loop (SPEC §15.6), replacing the old two-speed loop:**
+   - Ultra runs up to 3 rounds of strict-JSON `AnalystStep` actions. Each round, the engine tests the plans Ultra proposes.
+   - The engine is pure NumPy: 1,000 paths per cell locally, 10,000 on the Serverless Job.
+   - The UI never waits on an LLM to show engine results.
 4. **Target ≈ 45 RPM in total.** Per-model limits are 300–600 RPM, and Ultra's binding limit is 200k TPM. A per-model limiter reads the `x-ratelimit-*` headers and honours 429 `Retry-After`. Crowd calls are dropped first.
-5. **No LLM calls inside the Monte Carlo.** The MC replays frozen LLM policies, and the AI and baseline universes use common random numbers.
+5. **No LLM calls inside the Monte Carlo.** The planner replays fixed plans and fixed crowd sentiment. Every plan and "Do nothing" share common random numbers.
 6. **Every telemetry number is computed from real call logs.** Never show a hardcoded routing split or savings figure.
 7. **REPLAY mode is the public default.** LIVE mode is rate-limited and has a daily spend cap.
 8. **Stack:** Python 3.11+, FastAPI + SSE, Pydantic v2, NumPy/SciPy/nashpy · Next.js + Tailwind + Zustand + HTML5 Canvas · MIT license.
 
 ## Where things are
-- **Work is split into task prompts** in `prompts/`, one folder per wave (T01–T14). **`prompts/README.md` is the board**: what to run, when, who builds it, and what runs in parallel. If you were given a task, do only that task.
+- **Work is split into task prompts** in `prompts/`, one folder per wave (T01–T14; pivot tasks P1–P4, D7, F0–F3). **`prompts/README.md` is the board**: what to run, when, who builds it, and what runs in parallel. If you were given a task, do only that task.
 - **Shared contracts. Change them only with the user's OK:**
   - `backend/engine/types.py` (engine types)
-  - `docs/EVENTS.md` (backend ↔ frontend SSE/REST)
+  - `docs/EVENTS.md` (backend ↔ frontend SSE/REST, **v2** since the pivot)
+  - SPEC §15.3–15.5 (profile, plan and shock-case fields)
   - SPEC §4.7 (tick order)
 - **Submission:** `docs/SUBMISSION.md` maps every Devpost form field to its source and owner.
 - **Feedback log:** hit a Nemotron, Token Factory, Nebius or Tavily quirk (or something that worked really well)? **Add one row to `docs/FEEDBACK_LOG.md` right away**, with evidence. It feeds the required feedback answers and the feedback prize (10 × $100).
