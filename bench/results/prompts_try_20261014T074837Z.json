@@ -1,0 +1,57 @@
+{
+  "est_total_usd": 0.00047,
+  "results": [
+    {
+      "tier": "fast",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "thinking": false,
+      "latency_ms": 2315,
+      "prompt_tokens": 478,
+      "completion_tokens": 378,
+      "reasoning_tokens": 0,
+      "est_cost_usd": 0.000119,
+      "content": "{\"archetypes\": [{\"id\": 1, \"mu_a\": 0.5, \"mu_b\": -0.8, \"sigma_a\": 0.2, \"sigma_b\": 0.3, \"bubble\": \"A at $100? No way, B is $92!\"}, {\"id\": 2, \"mu_a\": -0.9, \"mu_b\": 0.6, \"sigma_a\": 0.4, \"sigma_b\": 0.2, \"bubble\": \"B is $92, perfect, I'm set.\"}, {\"id\": 3, \"mu_a\": 0.3, \"mu_b\": -0.5, \"sigma_a\": 0.2, \"sigma_b\": 0.3, \"bubble\": \"A is familiar, but $100 is a stretch on pension.\"}, {\"id\": 4, \"mu_a\": -0.2, \"mu_b\": 0.4, \"sigma_a\": 0.3, \"sigma_b\": 0.2, \"bubble\": \"B feels reliable, $92 is okayish.\"}, {\"id\": 5, \"mu_a\": 0.1, \"mu_b\": -0.7, \"sigma_a\": 0.3, \"sigma_b\": 0.4, \"bubble\": \"A is $100, B is $92... gotta hunt.\"}, {\"id\": 6, \"mu_a\": -0.6, \"mu_b\": 0.5, \"sigma_a\": 0.3, \"sigma_b\": 0.2, \"bubble\": \"B default when close, $92 is a win.\"}]}",
+      "valid": true,
+      "schema": "CrowdBatch"
+    },
+    {
+      "tier": "super",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "latency_ms": 2996,
+      "prompt_tokens": 291,
+      "completion_tokens": 101,
+      "reasoning_tokens": 0,
+      "est_cost_usd": 0.000178,
+      "content": "{\"delta_c_raw\": 0.25, \"delta_lead_time\": 7, \"demand_shock\": 0.0, \"severity\": 0.6, \"evidence\": [{\"quote\": \"a 25% tariff on semiconductors\", \"url\": \"https://example.com/tariff\"}, {\"quote\": \"delays of up to two weeks at major ports\", \"url\": \"https://example.com/tariff\"}]}",
+      "valid": true,
+      "schema": "ShockVector"
+    },
+    {
+      "tier": "super",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "latency_ms": 1115,
+      "prompt_tokens": 242,
+      "completion_tokens": 64,
+      "reasoning_tokens": 0,
+      "est_cost_usd": 0.00013,
+      "content": "{\"omega\": -0.4, \"rationale\": \"Lead time increased by 3 days to total 8, raising ROP need; however current IP=200 is well below ROP=350, indicating existing shortage \u2014 reducing omega avoids compounding over-ordering while prioritiz\"}",
+      "valid": true,
+      "schema": "InventoryDecision"
+    },
+    {
+      "tier": "super",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "latency_ms": 909,
+      "prompt_tokens": 89,
+      "completion_tokens": 20,
+      "reasoning_tokens": 0,
+      "est_cost_usd": 4.5e-05,
+      "content": "{\"query\": \"margin decline semiconductor equipment Asia export controls Q3 2024\"}",
+      "valid": true,
+      "schema": "ScoutQuery"
+    }
+  ]
+}

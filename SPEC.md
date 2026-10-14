@@ -253,7 +253,7 @@ class ShockVector(BaseModel):  delta_c_raw: float [-0.5, 1.0]; delta_lead_time: 
 class InventoryDecision:       omega: float [-0.5, 2.0]; rationale: str ≤200
 class CEODecision:             price: float; production_qty: float ≥0; marketing_budget: float ≥0;
                                expected_rival_action: Literal["cut","hold","raise"]; rationale: str ≤400
-class ArchetypeSentiment:      id: int 1..12; mu: float [-1,1]; sigma: float [0, 0.5]; bubble: str ≤60
+class ArchetypeSentiment:      id: int 1..12; mu_a, mu_b: float [-1,1]; sigma_a, sigma_b: float [0, 0.5]; bubble: str ≤60
 class CrowdBatch:              archetypes: list[ArchetypeSentiment]
 ```
 

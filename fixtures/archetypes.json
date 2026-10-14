@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "label": "Low-income · price-hunter · A-loyal",
+    "income": "low",
+    "sensitivity": "hunter",
+    "loyalty": "A",
+    "persona": "Student on a tight budget who still likes Firm A's brand, but jumps on any discount."
+  },
+  {
+    "id": 2,
+    "label": "Low-income · price-hunter · B-loyal",
+    "income": "low",
+    "sensitivity": "hunter",
+    "loyalty": "B",
+    "persona": "Gig worker who has always bought from Firm B and checks prices daily before every purchase."
+  },
+  {
+    "id": 3,
+    "label": "Low-income · moderate · A-loyal",
+    "income": "low",
+    "sensitivity": "moderate",
+    "loyalty": "A",
+    "persona": "Retired shopper on a fixed pension; Firm A feels familiar, and she dislikes surprises more than small price rises."
+  },
+  {
+    "id": 4,
+    "label": "Low-income · moderate · B-loyal",
+    "income": "low",
+    "sensitivity": "moderate",
+    "loyalty": "B",
+    "persona": "Young parent of three who trusts Firm B, but pays for reliability over the cheapest option."
+  },
+  {
+    "id": 5,
+    "label": "Mid-income · price-hunter · A-loyal",
+    "income": "mid",
+    "sensitivity": "hunter",
+    "loyalty": "A",
+    "persona": "Office worker who loves comparing deals, with a soft spot for Firm A that a 10% gap will break."
+  },
+  {
+    "id": 6,
+    "label": "Mid-income · price-hunter · B-loyal",
+    "income": "mid",
+    "sensitivity": "hunter",
+    "loyalty": "B",
+    "persona": "Online deal-hunter who tracks price histories and defaults to Firm B when prices are close."
+  },
+  {
+    "id": 7,
+    "label": "Mid-income · moderate · A-loyal",
+    "income": "mid",
+    "sensitivity": "moderate",
+    "loyalty": "A",
+    "persona": "Suburban family buyer, loyal to Firm A, and bothered mainly by stockouts and bad press."
+  },
+  {
+    "id": 8,
+    "label": "Mid-income · moderate · B-loyal",
+    "income": "mid",
+    "sensitivity": "moderate",
+    "loyalty": "B",
+    "persona": "Teacher who buys from Firm B out of habit; reacts to news and sentiment more than to small price moves."
+  },
+  {
+    "id": 9,
+    "label": "High-income · price-hunter · A-loyal",
+    "income": "high",
+    "sensitivity": "hunter",
+    "loyalty": "A",
+    "persona": "Finance professional who optimises everything, prefers Firm A, and still loves a clever bargain."
+  },
+  {
+    "id": 10,
+    "label": "High-income · price-hunter · B-loyal",
+    "income": "high",
+    "sensitivity": "hunter",
+    "loyalty": "B",
+    "persona": "Tech worker who loyally buys Firm B but enjoys finding when the price dips."
+  },
+  {
+    "id": 11,
+    "label": "High-income · moderate · A-loyal",
+    "income": "high",
+    "sensitivity": "moderate",
+    "loyalty": "A",
+    "persona": "Executive who values Firm A's quality and availability, and barely notices price changes under 15%."
+  },
+  {
+    "id": 12,
+    "label": "High-income · moderate · B-loyal",
+    "income": "high",
+    "sensitivity": "moderate",
+    "loyalty": "B",
+    "persona": "Brand-conscious professional devoted to Firm B, who cares about reputation, supply reliability and service."
+  }
+]

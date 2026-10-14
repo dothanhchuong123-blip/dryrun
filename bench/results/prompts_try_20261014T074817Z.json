@@ -1,0 +1,70 @@
+{
+  "est_total_usd": 0.00315,
+  "results": [
+    {
+      "tier": "fast",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "thinking": false,
+      "latency_ms": 2516,
+      "prompt_tokens": 478,
+      "completion_tokens": 389,
+      "reasoning_tokens": 0,
+      "est_cost_usd": 0.000122,
+      "content": "{\"archetypes\": [{\"id\": 1, \"mu_a\": 0.3, \"mu_b\": -0.5, \"sigma_a\": 0.3, \"sigma_b\": 0.3, \"bubble\": \"A at $100? Ouch, need to check B first.\"}, {\"id\": 2, \"mu_a\": -0.6, \"mu_b\": 0.8, \"sigma_a\": 0.2, \"sigma_b\": 0.2, \"bubble\": \"B is $92, perfect, no need to look further.\"}, {\"id\": 3, \"mu_a\": 0.1, \"mu_b\": -0.2, \"sigma_a\": 0.2, \"sigma_b\": 0.2, \"bubble\": \"Fixed income means every penny counts, but A is familiar.\"}, {\"id\": 4, \"mu_a\": -0.1, \"mu_b\": 0.5, \"sigma_a\": 0.2, \"sigma_b\": 0.2, \"bubble\": \"B feels reliable for the kids, even if slightly pricier.\"}, {\"id\": 5, \"mu_a\": 0.6, \"mu_b\": -0.4, \"sigma_a\": 0.3, \"sigma_b\": 0.3, \"bubble\": \"A is $100, B is $92... that 10% gap is the breaking point.\"}, {\"id\": 6, \"mu_a\": -0.3, \"mu_b\": 0.7, \"sigma_a\": 0.3, \"sigma_b\": 0.3, \"bubble\": \"B default when close, and $92 is a good deal.\"}]}",
+      "valid": true,
+      "schema": "CrowdBatch"
+    },
+    {
+      "tier": "super",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "latency_ms": 1711,
+      "prompt_tokens": 291,
+      "completion_tokens": 101,
+      "reasoning_tokens": 0,
+      "est_cost_usd": 0.000178,
+      "content": "{\"delta_c_raw\": 0.25, \"delta_lead_time\": 7, \"demand_shock\": 0.0, \"severity\": 0.6, \"evidence\": [{\"quote\": \"a 25% tariff on semiconductors\", \"url\": \"https://example.com/tariff\"}, {\"quote\": \"delays of up to two weeks at major ports\", \"url\": \"https://example.com/tariff\"}]}",
+      "valid": true,
+      "schema": "ShockVector"
+    },
+    {
+      "tier": "super",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "latency_ms": 848,
+      "prompt_tokens": 218,
+      "completion_tokens": 60,
+      "reasoning_tokens": 0,
+      "est_cost_usd": 0.000119,
+      "content": "{\"omega\": -0.4, \"rationale\": \"Lead time increased by 3 days; current IP (200) < ROP (350), signaling understocking. Lean policy reduces excess buffer to avoid compounding over-ordering risk amid longer LT.\"}",
+      "valid": true,
+      "schema": "InventoryDecision"
+    },
+    {
+      "tier": "super",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "latency_ms": 842,
+      "prompt_tokens": 89,
+      "completion_tokens": 21,
+      "reasoning_tokens": 0,
+      "est_cost_usd": 4.6e-05,
+      "content": "{\"query\": \"unexpected tariff increase semiconductor raw materials Q3 2024\"}",
+      "valid": true,
+      "schema": "ScoutQuery"
+    },
+    {
+      "tier": "ultra",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "thinking": true,
+      "latency_ms": 3666,
+      "prompt_tokens": 945,
+      "completion_tokens": 581,
+      "reasoning_tokens": 515,
+      "est_cost_usd": 0.002688,
+      "content": "{\"price\":92.0,\"production_qty\":120,\"marketing_budget\":0,\"expected_rival_action\":\"hold\",\"rationale\":\"Match rival's 92 to stop share erosion; tariff raises costs so deeper cuts would crush margins. Hold inventory steady with production matching sales.\"}",
+      "valid": true,
+      "schema": "CEODecision"
+    }
+  ]
+}
