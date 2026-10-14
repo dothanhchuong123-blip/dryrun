@@ -26,3 +26,7 @@ fixtures/tavily_cache/*
 
 # review bundles for chat models (docs/ARGON.md)
 dist/
+
+# frontend build output
+frontend/out/
+frontend/public/replays/

@@ -18,11 +18,11 @@ Each numbered folder is one **wave**. **Everything inside a folder can run at th
 ### Wave 1 · Oct 15 · `prompts/1_oct15_all-parallel/`. Start all 5 now.
 | Done | Task | Builder | File |
 |---|---|---|---|
-| [ ] | T01 market engine + baseline | Argon #1 → Claude check | `prompts/1_oct15_all-parallel/T01-engine-market.md` |
-| [ ] | T02 inventory, bullwhip, game theory | Argon #2 → Claude check | `prompts/1_oct15_all-parallel/T02-engine-inventory-game.md` |
-| [ ] | T10 frontend shell + mock stream | Argon #3 → Claude check | `prompts/1_oct15_all-parallel/T10-frontend-shell.md` |
-| [ ] | T04 Nemotron router, limiter, telemetry | Claude Sonnet 5.5 | `prompts/1_oct15_all-parallel/T04-llm-router.md` |
-| [ ] | T05 agent schemas + prompts | Claude Sonnet 5.5 (effort high) | `prompts/1_oct15_all-parallel/T05-agents-schemas-prompts.md` |
+| [x] | T01 market engine + baseline | Argon #1 → Claude check | `prompts/1_oct15_all-parallel/T01-engine-market.md` |
+| [x] | T02 inventory, bullwhip, game theory | Argon #2 → Claude check | `prompts/1_oct15_all-parallel/T02-engine-inventory-game.md` |
+| [x] | T10 frontend shell + mock stream | Argon #3 → Claude check | `prompts/1_oct15_all-parallel/T10-frontend-shell.md` |
+| [x] | T04 Nemotron router, limiter, telemetry | Claude Sonnet 5.5 | `prompts/1_oct15_all-parallel/T04-llm-router.md` |
+| [x] | T05 agent schemas + prompts | Claude Sonnet 5.5 (effort high) | `prompts/1_oct15_all-parallel/T05-agents-schemas-prompts.md` |
 
 **Also today:** Argon review **A1** (spec math), on any account: `prompts/argon/reviews/A1-spec-math.md`
 
