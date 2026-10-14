@@ -189,8 +189,9 @@ def collect(src: Path | None, d: Path) -> tuple[dict[str, str], list[str]]:
         return files, []
     if src is None:
         text = subprocess.run(["pbpaste"], capture_output=True, text=True, check=True).stdout
-        if not text.strip():
-            sys.exit("The clipboard is empty. Click the copy icon under Gemini's answer first, or pass a file path.")
+        if len(text.strip()) < 300:
+            sys.exit(f"The clipboard holds {len(text.strip())} characters ({text.strip()[:60]!r}), "
+                     "which isn't Gemini's answer. Click the copy icon under Gemini's reply, then run this again.")
     else:
         text = src.read_text()
     n = 1
