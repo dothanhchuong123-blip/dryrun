@@ -153,3 +153,151 @@ def scout_query_messages(symptom: str) -> list[dict]:
         },
         {"role": "user", "content": f"Symptom: {symptom}"},
     ]
+
+
+# --- Pivot v3 prompts (SPEC §15) ------------------------------------------------------------
+
+_PROFILE_SYSTEM = """You turn a small-business owner's plain-words description into a structured profile for a market simulator.
+Return JSON with exactly these fields:
+business_name (<=60 chars), product_unit (<=40 chars, e.g. "bag of roasted coffee"), price (your price per unit, USD), unit_cost (raw or variable cost per unit, USD, always BELOW price),
+weekly_sales (units per week), lead_time_weeks (integer 1-16, supplier lead time), stock_weeks (0-16, stock on hand in weeks of sales),
+rival_name (<=60 chars), rival_price (USD; copy price if the text gives no rival price), supplier_region (<=60 chars), customers (<=80 chars, who buys, e.g. "independent cafés"),
+search_terms (1-3 news queries, each <=80 chars), guessed_fields.
+
+Rules:
+- Convert every currency to USD with these fixed rough rates: 25,000 VND = $1, 1 EUR = $1.08, $1 = $1. Use plain numbers in fields. NEVER put notes, units or currency symbols inside fields.
+- Convert other time units to weeks (1 month = 4 weeks) and other sales periods to units per week.
+- If a value is not in the text, infer a sensible one and add its field name to guessed_fields. Allowed names: price, unit_cost, weekly_sales, lead_time_weeks, stock_weeks, rival_price. List EVERY numeric value you had to infer, and leave out the ones the text states.
+- If no rival is named, invent a short generic name such as "Main competitor". If no supplier region is given, name the most likely one.
+- search_terms are NEWS queries about the product's INPUT COSTS and its SUPPLY ROUTE (raw material prices, tariffs, shipping routes, the supplier region), not about the business itself. Example for a coffee roaster: "robusta coffee price Vietnam".
+Reply with JSON only."""
+
+
+def profile_parser_messages(text: str) -> list[dict]:
+    return [
+        {"role": "system", "content": _PROFILE_SYSTEM},
+        {"role": "user", "content": "Business description:\n" + text.strip()[:2000]},
+    ]
+
+
+_ANALYST_SYSTEM = """You are a careful analyst advising a small business. A simulator is your tool: it tests business plans against several news-shock cases and reports the results in a table. You decide which plans to test and which one to recommend. You never compute outcomes yourself.
+
+Each plan is a few knobs: price_change_pct (-20..20) from price_change_week (0..23); extra_stock_weeks (0..8), one extra raw-material order placed in stock_week (0..23); marketing_change_pct (-50..100); switch_supplier (bool) with alt_cost_change_pct (-30..50), alt_lead_time_weeks (1..16) and alt_shock_exposure (0..1, how much of the news shock also hits the alternative supplier, default 0.3). Give each plan a short, descriptive name (<=40 chars). "Do nothing" is always the reference and is not a choice.
+
+How to work:
+- Propose AT MOST 3 NEW, DIFFERENT plans per round. Never re-test a name that is already in the tested list. Try a different idea each time (price, stock timing, supplier, marketing, or a mix).
+- Prefer plans that are still OK in the bad case. A small business cannot afford to gamble: look at the "bad case" column (the 1-in-20 outcome), not only the average.
+- Output decisions only. Never invent numbers. Every number you mention must come from the results table below.
+- Set action to "finish" when you are happy with your pick or no new idea is worth testing; otherwise "test" with 1-3 new plans. With "finish", plans may be empty.
+- thought: <=300 chars, plain words for the business owner. pick: the name of the plan you prefer so far (<=40 chars; use "Do nothing" if nothing beats it). why: <=300 chars.
+
+Keep your reasoning SHORT: at most about 8 steps, then answer.
+Reply with JSON only, matching the schema: thought, action ("test"|"finish"), plans (0-3 plan objects with every field), pick, why."""
+
+
+def _news_block(news_items: list[dict], limit: int = 3) -> str:
+    if not news_items:
+        return "(no news found)"
+    lines = []
+    for n in news_items[:limit]:
+        quote = str(n.get("quote", ""))[:200]
+        lines.append(f'- {n.get("title", "")} ({n.get("source", "")}): "{quote}"')
+    return "\n".join(lines)
+
+
+def _profile_block(profile: dict) -> str:
+    keys = (
+        "business_name", "product_unit", "price", "unit_cost", "weekly_sales", "lead_time_weeks",
+        "stock_weeks", "rival_name", "rival_price", "supplier_region", "customers",
+    )
+    return "\n".join(f"{k}: {profile.get(k, '?')}" for k in keys)
+
+
+def analyst_messages(
+    profile: dict,
+    news_items: list[dict],
+    results_table: str,
+    crowd_notes: str,
+    round: int,
+    max_rounds: int,
+    tested_names: list[str],
+) -> list[dict]:
+    parts = [
+        f"Round {round} of {max_rounds}.",
+        "Business (money in USD, profit = gross profit over 24 weeks):\n" + _profile_block(profile),
+        "News that hit this business:\n" + _news_block(news_items),
+        "Results so far, in $k vs Do nothing (mean / bad case = 1-in-20 / % of runs better):\n" + results_table,
+        "How shoppers reacted:\n" + (crowd_notes.strip() or "(no notes yet)"),
+        "Already tested (do not repeat these names): " + (", ".join(tested_names) or "none"),
+        "Decide now.",
+    ]
+    return [{"role": "system", "content": _ANALYST_SYSTEM}, {"role": "user", "content": "\n\n".join(parts)}]
+
+
+_MEMO_SYSTEM = """You write a short decision memo for a busy small-business owner, in plain words, no jargon.
+Return JSON: headline (<=90 chars, the recommendation), why (<=400 chars, why this plan beats the others), watch_out (<=300 chars, the main risk and what the bad case looks like), recheck_when (<=150 chars, what news or date should make them look again).
+Rules:
+- Do NOT write any number, percentage or dollar amount that is not in the numbers provided. If you want to point at a result, say "the figures above". The program adds the real numbers next to your words.
+- Ground your reasons in the news provided. Do not invent facts.
+Reply with JSON only."""
+
+
+def memo_messages(
+    profile: dict,
+    pick_name: str,
+    pick_spec: dict,
+    numbers: dict,
+    news_items: list[dict],
+) -> list[dict]:
+    user = "\n\n".join(
+        [
+            "Business:\n" + _profile_block(profile),
+            f"Recommended plan: {pick_name}\nPlan settings: " + json.dumps(pick_spec, separators=(",", ":")),
+            "Numbers you may use (everything else is off limits): " + json.dumps(numbers, separators=(",", ":")),
+            "News:\n" + _news_block(news_items),
+            "Write the memo.",
+        ]
+    )
+    return [{"role": "system", "content": _MEMO_SYSTEM}, {"role": "user", "content": user}]
+
+
+_PLAN_CROWD_SYSTEM = """You simulate groups of shoppers reacting to a business plan. The business is Firm A; its rival is Firm B.
+For EACH archetype given, output its mood toward each brand once the plan is in effect:
+mu_a, mu_b in [-1, 1] (mean sentiment: -1 hostile, 0 neutral, 1 enthusiastic), sigma_a, sigma_b in [0, 0.5] (how divided the group is),
+and bubble: a first-person thought (<=60 chars) about THIS plan, in that persona's voice, as a customer of the business.
+React to the price change versus the rival's price, any marketing push, and any stock or supplier change (reliability, delays). Each persona is one kind of the business's customers (see "Customers"). Moods should move moderately, not swing wildly.
+Reply with JSON only: {"archetypes":[{id, mu_a, mu_b, sigma_a, sigma_b, bubble}, ...]} with one entry per archetype, using the given ids."""
+
+
+def plan_crowd_messages(
+    archetypes: list[dict],
+    profile: dict,
+    plan_spec: dict,
+    rival_price: float,
+    batch: int = 0,
+) -> list[dict]:
+    price = float(profile.get("price", 0) or 0)
+    new_price = price * (1 + float(plan_spec.get("price_change_pct", 0)) / 100)
+    view = {
+        "business": f'{profile.get("business_name", "")} sells {profile.get("product_unit", "")}',
+        "customers": profile.get("customers", ""),
+        "rival": profile.get("rival_name", ""),
+        "your_price_now": round(price, 2),
+        "your_price_under_plan": round(new_price, 2),
+        "price_change_pct": plan_spec.get("price_change_pct", 0),
+        "from_week": plan_spec.get("price_change_week", 0),
+        "rival_price": round(float(rival_price), 2),
+        "marketing_change_pct": plan_spec.get("marketing_change_pct", 0),
+        "extra_stock_weeks": plan_spec.get("extra_stock_weeks", 0),
+        "switch_supplier": bool(plan_spec.get("switch_supplier", False)),
+    }
+    lines = [
+        f'id={a["id"]} {a["label"]}: {a["persona"]} (sensitivity={a.get("sensitivity")}, loyalty={a.get("loyalty")})'
+        for a in archetypes
+    ]
+    user = (
+        f'Plan "{plan_spec.get("name", "")}" (batch {batch}).\n'
+        "Market view: " + json.dumps(view, separators=(",", ":"), ensure_ascii=False)
+        + "\n\nArchetypes:\n" + "\n".join(lines)
+    )
+    return [{"role": "system", "content": _PLAN_CROWD_SYSTEM}, {"role": "user", "content": user}]

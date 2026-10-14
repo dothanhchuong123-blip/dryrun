@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Literal
 
 import numpy as np
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from backend.engine.types import N_ARCHETYPES, CrowdSentiment, FirmDecision, Shock
 
@@ -119,3 +119,66 @@ def shock_to_engine(s: ShockVector) -> Shock:
         delta_lead_time=int(min(max(s.delta_lead_time, -2), 10)),
         demand_shock=_clip(s.demand_shock, -0.5, 0.5),
     )
+
+
+# --- Pivot v3 contracts (SPEC §15.3-15.6) ---------------------------------------------------
+
+ProfileNumericField = Literal[
+    "price", "unit_cost", "weekly_sales", "lead_time_weeks", "stock_weeks", "rival_price"
+]
+
+
+class BusinessProfile(BaseModel):
+    business_name: str = Field(max_length=60)
+    product_unit: str = Field(max_length=40, description='e.g. "bag of roasted coffee"')
+    price: float = Field(gt=0, description="Your price per unit, USD")
+    unit_cost: float = Field(gt=0, description="Raw/variable cost per unit, USD; below the price")
+    weekly_sales: float = Field(gt=0, description="Units sold per week")
+    lead_time_weeks: int = Field(ge=1, le=16, description="Supplier lead time in weeks")
+    stock_weeks: float = Field(ge=0, le=16, description="Stock on hand, in weeks of sales")
+    rival_name: str = Field(max_length=60)
+    rival_price: float = Field(gt=0, description="Rival's price, USD; equal to price if unknown")
+    supplier_region: str = Field(max_length=60)
+    customers: str = Field(max_length=80, description='Who buys, e.g. "independent cafés"')
+    search_terms: list[str] = Field(min_length=1, max_length=3, description="News queries, each <= 80 chars")
+    guessed_fields: list[ProfileNumericField] = Field(max_length=6, description="Numeric fields that were guessed")
+
+    @model_validator(mode="after")
+    def _clamp(self) -> BusinessProfile:
+        # unit_cost must stay below the price (SPEC §15.3); clamp rather than reject.
+        cap = round(0.95 * self.price, 6)
+        self.unit_cost = min(cap, self.unit_cost)
+        self.search_terms = [t[:80] for t in self.search_terms]
+        return self
+
+
+class PlanSpecModel(BaseModel):
+    name: str = Field(max_length=40)
+    price_change_pct: float = Field(ge=-20, le=20)
+    price_change_week: int = Field(ge=0, le=23)
+    extra_stock_weeks: float = Field(ge=0, le=8)
+    stock_week: int = Field(ge=0, le=23)
+    marketing_change_pct: float = Field(ge=-50, le=100)
+    switch_supplier: bool
+    alt_cost_change_pct: float = Field(ge=-30, le=50)
+    alt_lead_time_weeks: int = Field(ge=1, le=16)
+    alt_shock_exposure: float = Field(ge=0, le=1)
+
+    def to_engine(self) -> dict:
+        """Plain dict for the engine's `PlanSpec(**d)` (P2)."""
+        return self.model_dump()
+
+
+class AnalystStep(BaseModel):
+    thought: str = Field(max_length=300, description="Short plain-words note shown to the user")
+    action: Literal["test", "finish"]
+    plans: list[PlanSpecModel] = Field(max_length=3, description="0-3 new plans to test")
+    pick: str = Field(max_length=40, description="Name of the plan you currently prefer")
+    why: str = Field(max_length=300)
+
+
+class MemoDraft(BaseModel):
+    headline: str = Field(max_length=90)
+    why: str = Field(max_length=400)
+    watch_out: str = Field(max_length=300)
+    recheck_when: str = Field(max_length=150)

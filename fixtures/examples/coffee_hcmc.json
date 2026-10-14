@@ -1,0 +1,42 @@
+{
+  "id": "coffee_hcmc",
+  "title": "Coffee roaster in Ho Chi Minh City",
+  "subtitle": "Sells robusta to cafés; bean prices are jumping",
+  "text": "I roast robusta in Ho Chi Minh City and sell 1 kg bags to about 60 independent cafés, around 280 bags a week. A bag sells for $11 and the green beans plus packaging cost me about $6.50. Beans from the Central Highlands take about 3 weeks to arrive and I keep about 2 weeks of stock. My main rival is Highland Supply, who charge $10.50 a bag.",
+  "scenario_id": "commodity_war",
+  "seed_queries": [
+    "robusta coffee price surge Vietnam",
+    "coffee futures robusta record high exporters",
+    "Vietnam coffee export prices Central Highlands harvest"
+  ],
+  "fallback_shock": {
+    "delta_c_raw": 0.35,
+    "delta_lead_time": 1,
+    "demand_shock": -0.1,
+    "severity": 0.7,
+    "evidence": [
+      {
+        "quote": "raw-material prices jumped by more than a third in a month",
+        "url": "https://example.com/fallback/commodity-war"
+      }
+    ]
+  },
+  "profile": {
+    "business_name": "Saigon Roasters",
+    "product_unit": "1 kg bag of roasted robusta",
+    "price": 11.0,
+    "unit_cost": 6.5,
+    "weekly_sales": 280.0,
+    "lead_time_weeks": 3,
+    "stock_weeks": 2.0,
+    "rival_name": "Highland Supply",
+    "rival_price": 10.5,
+    "supplier_region": "Central Highlands, Vietnam",
+    "customers": "independent cafés",
+    "search_terms": [
+      "robusta coffee price Vietnam",
+      "coffee futures robusta record high"
+    ],
+    "guessed_fields": []
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "furniture_eu",
+  "title": "Furniture maker shipping to Europe",
+  "subtitle": "Ships from Bình Dương; Red Sea delays are in the news",
+  "text": "We make solid-wood dining sets in Bình Dương and ship them by sea to furniture retailers in Germany and the Netherlands. A set sells for about €900 and costs us about €560 in wood, hardware and finishing, and we sell around 40 a week. Shipping takes about 5 weeks door to door and we keep about 2 weeks of timber on hand. Our main rival, Baltic Woodworks, sells a similar set for €880.",
+  "scenario_id": "red_sea",
+  "seed_queries": [
+    "Red Sea shipping disruption container rates transit times",
+    "Suez Canal rerouting Cape of Good Hope freight delays"
+  ],
+  "fallback_shock": {
+    "delta_c_raw": 0.12,
+    "delta_lead_time": 4,
+    "demand_shock": 0.0,
+    "severity": 0.5,
+    "evidence": [
+      {
+        "quote": "vessels rerouted around the Cape of Good Hope add roughly 10 days to transit",
+        "url": "https://example.com/fallback/red-sea"
+      }
+    ]
+  },
+  "profile": {
+    "business_name": "Bình Dương Furniture",
+    "product_unit": "solid-wood dining set",
+    "price": 972.0,
+    "unit_cost": 604.8,
+    "weekly_sales": 40.0,
+    "lead_time_weeks": 5,
+    "stock_weeks": 2.0,
+    "rival_name": "Baltic Woodworks",
+    "rival_price": 950.4,
+    "supplier_region": "Bình Dương, Vietnam",
+    "customers": "furniture retailers in Germany and the Netherlands",
+    "search_terms": [
+      "Red Sea shipping disruption container rates transit times",
+      "Asia to Europe freight rates furniture"
+    ],
+    "guessed_fields": []
+  }
+}
