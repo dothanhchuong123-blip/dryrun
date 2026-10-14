@@ -1,0 +1,25 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# node
+node_modules/
+.next/
+
+# local run artifacts
+telemetry/*.jsonl
+.DS_Store
+
+# tooling
+.ruff_cache/
+.pytest_cache/
+telemetry/*
+!telemetry/.gitkeep
+fixtures/tavily_cache/*
+!fixtures/tavily_cache/.gitkeep

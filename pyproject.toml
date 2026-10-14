@@ -1,0 +1,35 @@
+[project]
+name = "market-digital-twin"
+version = "0.1.0"
+description = "Multi-agent market & supply-chain digital twin on Nebius Token Factory + NVIDIA Nemotron, grounded by Tavily."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "sse-starlette>=2.1",
+  "pydantic>=2.8",
+  "pydantic-settings>=2.4",
+  "numpy>=2.0",
+  "scipy>=1.13",
+  "nashpy>=0.0.41",
+  "openai>=1.40",
+  "tavily-python>=0.5",
+  "httpx>=0.27",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.6"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
