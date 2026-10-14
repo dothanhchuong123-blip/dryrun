@@ -1,6 +1,6 @@
 # Project memory: Market Digital Twin (Nebius x NVIDIA Global AI Hackathon)
 
-**Read this first, then follow `SPEC.md`. SPEC.md is the source of truth and replaces the original v1 research prompt.** Every agent working on this project (Claude, Antigravity/Gemini, others) should read both files.
+**Read this first, then follow `SPEC.md`. SPEC.md is the source of truth and replaces the original v1 research prompt.** Every Claude session working on this project should read both files.
 
 ## Snapshot
 - **What:** a multi-agent market and supply-chain simulator. Nemotron agents make the *decisions*; a deterministic NumPy/SciPy engine computes every *outcome*. Tavily grounds shocks in live news.
@@ -26,11 +26,14 @@
 8. **Stack:** Python 3.11+, FastAPI + SSE, Pydantic v2, NumPy/SciPy/nashpy · Next.js + Tailwind + Zustand + HTML5 Canvas · MIT license.
 
 ## Where things are
-- **Work is split into task prompts** in `docs/tasks/` (T01–T14). Read `docs/tasks/README.md` for the order and which model to use. If you were given a task, do only that task.
+- **Work is split into task prompts** in `prompts/`, one folder per wave (T01–T14). **`prompts/README.md` is the board**: what to run, when, who builds it, and what runs in parallel. If you were given a task, do only that task.
 - **Shared contracts. Change them only with the user's OK:**
   - `backend/engine/types.py` (engine types)
   - `docs/EVENTS.md` (backend ↔ frontend SSE/REST)
   - SPEC §4.7 (tick order)
+- **Submission:** `docs/SUBMISSION.md` maps every Devpost form field to its source and owner.
+- **Feedback log:** hit a Nemotron, Token Factory, Nebius or Tavily quirk (or something that worked really well)? **Add one row to `docs/FEEDBACK_LOG.md` right away**, with evidence. It feeds the required feedback answers and the feedback prize (10 × $100).
+- **Gemini 4 Argon** (Gemini app, 3 Pro accounts, no repo access) builds T01, T02, T03, T10, T11 and T12, and runs reviews A1–A9. Step-by-step guide: `prompts/argon/HOW-TO.md`. Argon code goes through `uv run scripts/argon.py pack|import <ID>`, and a Claude session must check it (`prompts/argon/check-build.md`) before it's committed.
 - **Config:** read keys, model IDs and the base URL only via `backend.config.get_settings()`. Keys are `SecretStr`.
 - **Dev commands:** `uv sync` · `uv run pytest -q` · `uv run ruff check backend tests` · `uv run uvicorn backend.main:app --reload`
 
@@ -52,7 +55,7 @@
   - One 3-minute LIVE run costs about $0.33. Keep $10 in reserve for judges' LIVE use (Oct 30–Dec 15).
   - **Ask the user before any single action estimated at more than $1.**
   - Day-1 script hard cap: $0.25.
-- **Tavily: free plan, 1,000 credits/month.** Claude's Tavily MCP research uses the same pool, so stick to `basic` depth and only search when it's needed. The app caches every response.
+- **Tavily: free plan, 1,000 credits/month.** The public "Check live news" button is capped by `TAVILY_DAILY_CREDIT_CAP` (30/day). Claude's Tavily MCP research uses the same pool, so stick to `basic` depth and only search when it's needed. The app caches every response.
 - **Keys:**
   - Keys live only in `.env` (chmod 600, gitignored).
   - Read keys from the environment in code. **Never print, echo, `cat` or `grep` `.env`**, and never write a key into any other file, log or commit.
@@ -63,7 +66,7 @@
 - [x] Ultra ignores `reasoning_budget` and `reasoning_effort`. Control reasoning length through the prompt and `max_tokens` (SPEC §13).
 - [ ] Serverless Endpoint: CPU preset? cost to keep it up to Dec 15? does SSE work through it? cold starts?
 - [x] Token Factory prices verified · Tavily connected (free plan, 1,000 credits/month)
-- [ ] Confirm unverified (⚠️) rules on the Devpost page as a human, since the page blocks bots
+- [x] Devpost rules and form confirmed by the user on 2026-10-14: 10 × $100 feedback prizes; Serverless Endpoints and Jobs are encouraged but **not required**. See `docs/SUBMISSION.md`.
 
 ## Housekeeping
 - The project folder is `/Users/dochuong/Nebia x Nvidia`. It was renamed on 2026-10-14 to drop a trailing space, but the name still contains spaces, so always quote paths.

@@ -14,6 +14,7 @@ All arrays indexed by firm are `[A, B]`. Shares are `[outside, A, B]`. Money is 
 | GET | `/api/runs/{run_id}/events` | none | SSE stream (below) |
 | POST | `/api/runs/{run_id}/shock` | `{text}` | `{accepted: bool}`. Custom shock goes to the Super parser. LIVE only. |
 | POST | `/api/runs/{run_id}/stop` | none | `{stopped: true}` |
+| POST | `/api/runs/{run_id}/news-check` | none | `{accepted: bool, reason?}`. "Check live news" (SPEC §6). Works in LIVE **and** REPLAY. The result arrives as a `grounding` event. Rejected when the per-IP limit or `TAVILY_DAILY_CREDIT_CAP` trips. |
 | GET | `/api/benchmark/export` | `?format=json\|md` | File download |
 
 ## SSE events
@@ -28,7 +29,7 @@ Each event is sent as `event: <name>` followed by `data: <json>`.
 | `reasoning` | `{role, delta}`: a streamed chunk of Ultra reasoning text |
 | `reasoning_done` | `{role}` |
 | `crowd` | `{tick, archetypes: [{id, label, mu:[a,b], sigma:[a,b], bubble}]}` |
-| `grounding` | `{id, query, url, title, quote, param: "delta_c_raw"\|"delta_lead_time"\|"demand_shock", value, ts}` |
+| `grounding` | `{id, query, url, title, quote, param: "delta_c_raw"\|"delta_lead_time"\|"demand_shock", value, ts, live: bool, applied: bool}`. `live` = fetched just now; it's `false` for recorded cards being replayed. `applied` = the shock was applied to the engine; it's `false` for a news-check made during REPLAY. |
 | `nash` | `{tick, actions: ["cut","hold","raise"], payoff_A: 3x3, payoff_B: 3x3, pure_ne: [[i,j],...], mixed_ne: {p_A:[3], p_B:[3]}\|null, chosen: [i,j], label: "nash"\|"price_war"\|"collusion"\|"other"}` |
 | `stats` | `{tick, source: "live"\|"cloud", n, delta_mean, ci95: [lo,hi], cohens_d, p_value, chi2\|null, chi2_p\|null}` |
 | `telemetry` | `{tiers: {ultra\|super\|fast: {calls, tokens_in, tokens_out, p50_ttft_ms, tok_per_s, errors}}, call_share: {tier: pct}, token_share: {tier: pct}, cost_usd, cost_all_ultra_usd, savings_pct, job: {id, status: "idle"\|"queued"\|"running"\|"verified"\|"failed"}}` |

@@ -32,21 +32,23 @@
   **Our internal submit time: Fri Oct 30, 12:00 GMT+7** (12 h buffer).
 - Submission period opened Aug 26. Judging runs **Dec 1–15**, and winners are announced around Jan 11, 2027 ✅.
 - **Eligibility** ✅: the app must *run on Nebius*, meaning **a runtime call to the Token Factory inference API** OR **deployment on Nebius AI Cloud compute (Serverless Jobs, Serverless Endpoints or DevPods)**. It must use ≥1 **NVIDIA open model** and fit one track.
+  Nebius **encourages** deploying on Serverless Endpoints and using Serverless Jobs for background work, but **neither is required** ✅ (confirmed by the user, 2026-10-14). We still use both: they strengthen Stage 1 (meaningful use) and give the feedback report real numbers.
 - **Tracks** ✅: Coding & Agentic Engineering · **Best Apps and Agents (ours)** · Personal AI · Physical AI.
-- **Prizes:** Grand $20k / $10k / $6k ✅ · each track winner gets an NVIDIA Jetson Orin Nano ✅ · Best Use of Tavily $3k ✅ · Most Valuable Feedback $100 ⚠️ (number of winners not confirmed).
+- **Prizes:** Grand $20k / $10k / $6k ✅ · each track winner gets an NVIDIA Jetson Orin Nano ✅ · Best Use of Tavily $3k ✅ · Most Valuable Feedback: **10 winners × $100** ✅ (confirmed by the user, 2026-10-14).
 - **Judging** ✅:
   - **Stage 1, pass/fail:** genuine track fit and *meaningful* use of the required APIs. A superficial rebrand fails.
   - **Stage 2, equal weights:** Technological Implementation · Design · Potential Impact · Quality of Idea.
   - Judges are engineers from NVIDIA and Nebius, plus Tavily staff.
-- **Submission must include** ✅:
+- **Submission must include** ✅ (the field-by-field map is in `docs/SUBMISSION.md`, from the real form on 2026-10-14):
   - a hosted demo URL that stays up through judging;
-  - a public repo with a visible OSS license (**MIT**);
-  - a README covering NVIDIA model use, Nebius use and setup;
-  - a public YouTube video **under 3 min**;
-  - a feature description, the track, and testing instructions (English);
-  - **feedback on the Nebius and NVIDIA tech**;
+  - a public GitHub/GitLab/Bitbucket repo with an OSI license (**MIT**);
+  - a README covering setup, **how we use Nemotron**, **where Token Factory sped up our workflow**, and any other Nebius services;
+  - a YouTube or Vimeo video, **public or unlisted** with no password. **Only the first 3:00 is reviewed.**
+  - an "About the project" story (Markdown + LaTeX), built-with tags, and a 3:2 image gallery;
+  - **required feedback questions** about Nemotron and Nebius, including 1–10 ratings;
+  - for the Tavily prize, **a functional runtime call to the Tavily API** (see §6, "Check live news");
   - **no secrets in the repo**. If judges need access, use synthetic data.
-- Devpost blocks automated fetching (Cloudflare), so these facts come from participant mirrors of the rules. **A human should open the [rules page](https://nebiusglobalaihackathon.devpost.com/rules) once and confirm the ⚠️ items.**
+- Devpost blocks automated fetching (Cloudflare). The rules above come from participant mirrors, and the user confirmed the submission form and the remaining facts by hand on 2026-10-14.
 
 ## 2. Concept
 
@@ -279,6 +281,11 @@ class CrowdBatch:              archetypes: list[ArchetypeSentiment]
   - lead time spikes.
 
   Super writes the query itself. At most one scout per epoch.
+- **"Check live news" button (judges; Tavily qualifier):**
+  - Lives in the grounding pane and **works in REPLAY too**, so every judge can trigger a real Tavily call.
+  - Runs one `basic` search, extracts the top URL (≈ 2 credits), and has Super parse it.
+  - In REPLAY, the card shows the parameter change it *would* apply (`applied: false`) and leaves the recorded run untouched. In LIVE, it applies like a normal shock.
+  - Caps: 1 per IP per minute, and `TAVILY_DAILY_CREDIT_CAP` (default 30 credits ≈ 15 checks a day). The Super call counts toward `PUBLIC_LIVE_DAILY_CAP_USD`.
 - **Grounding Proof Card:** shows the quote, the parameter change it caused, the URL and a timestamp, e.g. `"25% tariff on semiconductors" → Δc_raw = +0.25`.
 - **Cache every Tavily response to disk** under `fixtures/`. This saves credits and feeds REPLAY mode.
 - **Pitch to the Tavily judges:** Tavily sits *inside the control loop*, since agents decide when to search, and every changed parameter can be traced back to a quote.
@@ -337,7 +344,7 @@ The $10 reserve works out to `PUBLIC_LIVE_DAILY_CAP_USD=0.20`, about one short l
 - Compares **Lightning vs Nano 3**.
 - Measures Serverless Job and Endpoint cold starts.
 - Writes CSV and charts to **`docs/FEEDBACK.md`**, which is both the Devpost feedback field and our entry for the feedback prize.
-- Also note any problems we hit along the way: docs errors, bad defaults, missing features.
+- Also note any problems we hit along the way: docs errors, bad defaults, missing features. **Every session appends them to `docs/FEEDBACK_LOG.md` as they happen.** That log feeds the required feedback questions and the feedback prize (10 × $100).
 
 ## 9. UI (3 panes, dark terminal style)
 
@@ -368,7 +375,7 @@ tests/           engine unit tests (seeded, deterministic)
 - **P0, must ship:**
   - Engine §4.1–4.3 with tests
   - Router + limiter + telemetry
-  - Tavily → Super → ShockVector with a Proof Card
+  - Tavily → Super → ShockVector with a Proof Card, plus the "Check live news" button (§6)
   - Ultra CEOs on the two-speed loop
   - Crowd archetypes
   - AI vs baseline profit chart
@@ -420,10 +427,11 @@ tests/           engine unit tests (seeded, deterministic)
 - [x] Tavily: connected. Free plan, 1,000 credits/month. Still unknown: whether there are hackathon bonus credits. Put the app's key in `.env` as `TAVILY_API_KEY`.
 - [x] Token Factory prices verified (§3.3). Budget is $25 (§7.1).
 - [x] `scripts/day1_check.py` run on 2026-10-14. Spend $0.008. Raw results are in `bench/results/day1_check_20261014T043015Z.json`.
-- [ ] Open the Devpost rules page as a human and confirm the ⚠️ items in §1.
+- [x] Devpost rules and submission form confirmed by the user (2026-10-14): 10 × $100 feedback prizes; Serverless is encouraged but not required. Form map: `docs/SUBMISSION.md`.
 
 ## 14. Sources (checked 2026-10-14)
 
+- Devpost submission form, plus the facts the user confirmed by hand (2026-10-14): `docs/SUBMISSION.md`
 - Rules digest mirrored from Devpost: [RenatoMignone/nvidia-x-nebius-personal-ai docs/hackathon.md](https://github.com/RenatoMignone/nvidia-x-nebius-personal-ai/blob/main/docs/hackathon.md) · [tierones.io](https://tierones.io/opportunities/nebius-nvidia-ai-2026) · [startupgrantsindia](https://www.startupgrantsindia.com/competitions/nebius-x-nvidia-global-ai-hackathon) · official (bot-protected): <https://nebiusglobalaihackathon.devpost.com/rules>
 - Nemotron on Token Factory: <https://nebius.com/services/token-factory/nemotron> · pricing: <https://nebius.com/services/token-factory/models/nvidia-nemotron-models-inference> · [Ultra launch on Token Factory (Jun 4)](https://x.com/nebiusai/status/2062531459647226181)
 - Tavily credits and pricing: <https://docs.tavily.com/documentation/api-credits>

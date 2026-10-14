@@ -2,12 +2,16 @@
 
 | | |
 |---|---|
-| Model | **Sonnet 5.5**, effort medium |
+| Builder | **Gemini 4 Argon**, Pro account #2. Then a short Claude check (Sonnet 5.5, effort medium). |
+| Start | Run `uv run scripts/argon.py pack T12`, then follow `prompts/argon/HOW-TO.md` → "Build a task" |
+| Parallel with | T03, T11 (Argon) · T06 (Claude) |
 | Time | ~4 h |
-| Depends on | T10 |
+| Depends on | T10 committed |
 
 ---
 You are building the 2D market arena for the Market Digital Twin UI.
+
+**Only create or edit:** `components/Arena.tsx` and anything under `components/arena/` (all under `frontend/`). T11 runs in parallel. Don't edit `app/page.tsx`, `lib/store.ts` or `lib/events.ts`; if you need a change there, say so at the end.
 
 **Read only these:**
 - `SPEC.md` §9 (centre pane)

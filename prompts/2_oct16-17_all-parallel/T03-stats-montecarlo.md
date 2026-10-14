@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| Model | **Sonnet 5.5**, effort medium |
+| Builder | **Gemini 4 Argon**, Pro account #1. Then a short Claude check (Sonnet 5.5, effort medium). |
+| Start | Run `uv run scripts/argon.py pack T03`, then follow `prompts/argon/HOW-TO.md` → "Build a task" |
+| Parallel with | T11, T12 (Argon) · T06 (Claude) |
 | Time | ~3 h |
-| Depends on | T01 merged |
-| Run in parallel with | T04–T06, T10 |
+| Depends on | T01 and T02 committed (their code goes into the upload pack) |
 
 ---
 You are implementing the statistics and the Monte Carlo for the Market Digital Twin.

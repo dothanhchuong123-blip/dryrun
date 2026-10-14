@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| Model | **Sonnet 5.5**, effort medium |
+| Builder | **Gemini 4 Argon**, Pro account #2. Then a short Claude check (Sonnet 5.5, effort medium). |
+| Start | Run `uv run scripts/argon.py pack T02`, then follow `prompts/argon/HOW-TO.md` → "Build a task" |
+| Parallel with | T01, T10 (Argon) · T04, T05 (Claude) |
 | Time | ~3 h |
 | Depends on | nothing |
-| Run in parallel with | T01, T04, T05, T10 |
 
 ---
 You are implementing the inventory policy and the game-theory module of the Market Digital Twin engine.

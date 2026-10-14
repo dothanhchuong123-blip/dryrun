@@ -2,7 +2,9 @@
 
 | | |
 |---|---|
-| Model | **Sonnet 5.5**, effort medium |
+| Builder | **Gemini 4 Argon**, Pro account #3. Then a short Claude check (Sonnet 5.5, effort medium). |
+| Start | Run `uv run scripts/argon.py pack T10`, then follow `prompts/argon/HOW-TO.md` → "Build a task" |
+| Parallel with | T01, T02 (Argon) · T04, T05 (Claude) |
 | Time | ~4 h |
 | Depends on | nothing. It runs on a mock stream, so it can start any time. |
 
@@ -43,7 +45,12 @@ You are building the frontend shell of the Market Digital Twin, a dark "institut
 - Reasoning stream, colour-coded by role, with autoscroll and one collapsible group per epoch.
 - A slot for the grounding cards (T11 builds them).
 
-**Centre and right panes:** sized placeholders for now (T11 and T12 fill them).
+**Placeholders that T11 and T12 replace** (they run in parallel, so they must never edit the same file):
+- `components/Arena.tsx`: the centre pane. T12 replaces it.
+- `components/Terminal.tsx`: the right pane. T11 replaces it.
+- `components/GroundingCards.tsx`: the grounding slot in the left pane. T11 replaces it.
+
+Mount all three in `app/page.tsx` now with fixed sizes. After T10, nobody edits `app/page.tsx`, `lib/store.ts` or `lib/events.ts` without asking.
 
 **Done when** `npm run build` produces a static export, and `npm run dev` with the mock shows the HUD and an animated reasoning stream. Take a screenshot to confirm.
 

@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     model_fast_fallback: str = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
     daily_spend_cap_usd: float = 1.00
     public_live_daily_cap_usd: float = 0.20
+    tavily_daily_credit_cap: int = 30  # public "Check live news" button, SPEC §6
 
 
 @lru_cache

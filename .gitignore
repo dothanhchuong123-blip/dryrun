@@ -23,3 +23,6 @@ telemetry/*
 !telemetry/.gitkeep
 fixtures/tavily_cache/*
 !fixtures/tavily_cache/.gitkeep
+
+# review bundles for chat models (docs/ARGON.md)
+dist/

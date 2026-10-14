@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| Model | **Sonnet 5.5**, effort medium |
+| Builder | **Gemini 4 Argon**, Pro account #1. Then a short Claude check (Sonnet 5.5, effort medium). |
+| Start | Run `uv run scripts/argon.py pack T01`, then follow `prompts/argon/HOW-TO.md` → "Build a task" |
+| Parallel with | T02, T10 (Argon) · T04, T05 (Claude) |
 | Time | ~3 h |
 | Depends on | nothing |
-| Run in parallel with | T02, T04, T05, T10 |
 
 ---
 You are implementing the deterministic market engine for the Market Digital Twin project.

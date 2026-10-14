@@ -2,7 +2,9 @@
 
 | | |
 |---|---|
-| Model | **Sonnet 5.5**, effort medium |
+| Builder | **Claude Code**: **Sonnet 5.5**, effort medium |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/2_oct16-17_all-parallel/T06-tavily-scout.md` |
+| Parallel with | T03, T11, T12 (Argon) |
 | Time | ~3 h |
 | Depends on | T04 and T05 merged |
 
@@ -28,6 +30,11 @@ Check the installed `tavily-python` API first, e.g. `uv run python -c "import ta
   3. Send the text to Super with `shock_parser_messages` (thinking off).
   4. **Check that every quote appears in the extracted text.** Drop quotes that don't. If none are left, use the scenario's fallback shock.
   5. Emit cards in the EVENTS.md `grounding` format.
+- `async news_check(scenario) -> (ShockVector | None, list[card])`: the judges' "Check live news" button (SPEC §6).
+  - One `basic` search of the scenario's first seed query, then extract the top URL (≈ 2 credits), then the same Super parse and quote check.
+  - **Bypasses the cache on purpose**: it must be a real runtime call. It still writes the response to the cache.
+  - Cards carry `live: true`. The caller sets `applied`.
+  - Report the credits used, so T08 can enforce `TAVILY_DAILY_CREDIT_CAP`.
 - `DeepScout`
   - `should_trigger(history) -> str | None`: trigger on a margin drop of more than 15% over 3 ticks with no new shock, or on a lead-time spike.
   - When it triggers: Super writes the query (`ScoutQuery`), then run a basic search and the same pipeline.
@@ -46,6 +53,7 @@ Check the installed `tavily-python` API first, e.g. `uv run python -c "import ta
 - A fabricated quote is dropped.
 - The trigger logic fires correctly.
 - Offline mode raises on a cache miss.
+- `news_check` skips the cache read and reports its credits.
 
 **Live run** (≤ 15 Tavily credits and ≤ $0.03 of tokens): run `ground_shock` once for each of the 3 scenarios to fill the local cache. Report the cards it produced.
 

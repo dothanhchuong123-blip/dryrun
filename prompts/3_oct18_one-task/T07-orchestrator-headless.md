@@ -2,7 +2,9 @@
 
 | | |
 |---|---|
-| Model | **Opus 5.5**, effort high. This is the integration piece. |
+| Builder | **Claude Code**: **Opus 5.5**, effort high. This is the integration piece. |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/3_oct18_one-task/T07-orchestrator-headless.md` |
+| Parallel with | nothing. It wires everything together, so run it alone. |
 | Time | ~5 h |
 | Depends on | T01–T06 |
 | Target date | Oct 18 |

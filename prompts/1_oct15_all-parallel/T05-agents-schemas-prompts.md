@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| Model | **Sonnet 5.5** at effort high, or Opus 5.5 if you want the best CEO prompt |
+| Builder | **Claude Code**: **Sonnet 5.5** at effort high, or Opus 5.5 if you want the best CEO prompt |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/1_oct15_all-parallel/T05-agents-schemas-prompts.md` |
+| Parallel with | T04 (Claude) · T01, T02, T10 (Argon) |
 | Time | ~3 h |
 | Depends on | nothing |
-| Run in parallel with | T01, T02, T04, T10 |
 
 ---
 You are writing the LLM contracts and prompts for the Market Digital Twin.

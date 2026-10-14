@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| Model | **Sonnet 5.5**, effort medium |
+| Builder | **Claude Code**: **Sonnet 5.5**, effort medium |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/1_oct15_all-parallel/T04-llm-router.md` |
+| Parallel with | T05 (Claude) · T01, T02, T10 (Argon) |
 | Time | ~3 h |
 | Depends on | nothing |
-| Run in parallel with | T01, T02, T05, T10 |
 
 ---
 You are implementing the Nebius Token Factory client layer for the Market Digital Twin.

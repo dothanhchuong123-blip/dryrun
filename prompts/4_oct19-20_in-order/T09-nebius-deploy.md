@@ -2,7 +2,9 @@
 
 | | |
 |---|---|
-| Model | **Sonnet 5.5**, effort medium, **plus you** for the console and billing steps |
+| Builder | **Claude Code**: **Sonnet 5.5**, effort medium, **plus you** for the console and billing steps |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/4_oct19-20_in-order/T09-nebius-deploy.md` |
+| Parallel with | nothing. Starts after T08 (part 1 may start earlier). |
 | Time | ~3 h |
 | Depends on | Part 1 can run as early as Oct 19 with just `/health`. Part 2 needs T03 + T08. |
 
