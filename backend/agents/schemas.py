@@ -149,6 +149,9 @@ class BusinessProfile(BaseModel):
         cap = round(0.95 * self.price, 6)
         self.unit_cost = min(cap, self.unit_cost)
         self.search_terms = [t[:80] for t in self.search_terms]
+        # A rival price copied from our own price is a guess; make sure the UI marks it.
+        if self.rival_price == self.price and "rival_price" not in self.guessed_fields:
+            self.guessed_fields = [*self.guessed_fields, "rival_price"]
         return self
 
 

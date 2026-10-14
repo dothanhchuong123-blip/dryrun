@@ -22,8 +22,8 @@
     ]
   },
   "profile": {
-    "business_name": "Saigon Roasters",
-    "product_unit": "1 kg bag of roasted robusta",
+    "business_name": "Ho Chi Minh Robusta Roaster",
+    "product_unit": "bag of roasted robusta coffee",
     "price": 11.0,
     "unit_cost": 6.5,
     "weekly_sales": 280.0,
@@ -31,10 +31,10 @@
     "stock_weeks": 2.0,
     "rival_name": "Highland Supply",
     "rival_price": 10.5,
-    "supplier_region": "Central Highlands, Vietnam",
+    "supplier_region": "Central Highlands Vietnam",
     "customers": "independent cafés",
     "search_terms": [
-      "robusta coffee price Vietnam",
+      "robusta coffee price Vietnam Central Highlands",
       "coffee futures robusta record high"
     ],
     "guessed_fields": []

@@ -21,20 +21,20 @@
     ]
   },
   "profile": {
-    "business_name": "Bình Dương Furniture",
+    "business_name": "Bình Dương Solid Wood Furniture",
     "product_unit": "solid-wood dining set",
     "price": 972.0,
-    "unit_cost": 604.8,
+    "unit_cost": 605.0,
     "weekly_sales": 40.0,
     "lead_time_weeks": 5,
     "stock_weeks": 2.0,
     "rival_name": "Baltic Woodworks",
-    "rival_price": 950.4,
-    "supplier_region": "Bình Dương, Vietnam",
+    "rival_price": 950.0,
+    "supplier_region": "Bình Dương",
     "customers": "furniture retailers in Germany and the Netherlands",
     "search_terms": [
-      "Red Sea shipping disruption container rates transit times",
-      "Asia to Europe freight rates furniture"
+      "hardwood timber price Vietnam",
+      "Vietnam to Europe sea freight rates"
     ],
     "guessed_fields": []
   }

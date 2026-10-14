@@ -167,9 +167,9 @@ search_terms (1-3 news queries, each <=80 chars), guessed_fields.
 Rules:
 - Convert every currency to USD with these fixed rough rates: 25,000 VND = $1, 1 EUR = $1.08, $1 = $1. Use plain numbers in fields. NEVER put notes, units or currency symbols inside fields.
 - Convert other time units to weeks (1 month = 4 weeks) and other sales periods to units per week.
-- If a value is not in the text, infer a sensible one and add its field name to guessed_fields. Allowed names: price, unit_cost, weekly_sales, lead_time_weeks, stock_weeks, rival_price. List EVERY numeric value you had to infer, and leave out the ones the text states.
+- If a value is not in the text, infer a sensible one and add its field name to guessed_fields. Allowed names: price, unit_cost, weekly_sales, lead_time_weeks, stock_weeks, rival_price. A rival_price copied from price because the text gives none counts as inferred. List EVERY numeric value you had to infer, and leave out the ones the text states.
 - If no rival is named, invent a short generic name such as "Main competitor". If no supplier region is given, name the most likely one.
-- search_terms are NEWS queries about the product's INPUT COSTS and its SUPPLY ROUTE (raw material prices, tariffs, shipping routes, the supplier region), not about the business itself. Example for a coffee roaster: "robusta coffee price Vietnam".
+- search_terms are NEWS queries about the product's INPUT COSTS and its SUPPLY ROUTE (raw material prices, tariffs, shipping routes, the supplier region), not about the business itself. Write 2 queries (a third only if it covers a clearly different risk). Each must name the product or commodity plus the country, region or route that the text itself mentions, e.g. "robusta coffee price Vietnam". Only when the text says the goods are shipped overseas to customers, add that route (e.g. "Asia to Europe sea freight rates"). Otherwise stay with the input's source region. Do not bring in places the text does not suggest.
 Reply with JSON only."""
 
 

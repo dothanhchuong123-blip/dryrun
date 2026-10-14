@@ -21,8 +21,8 @@
     ]
   },
   "profile": {
-    "business_name": "Hanoi GPU Shop",
-    "product_unit": "mid-range graphics card",
+    "business_name": "Hanoi Graphics Imports",
+    "product_unit": "graphics card",
     "price": 420.0,
     "unit_cost": 330.0,
     "weekly_sales": 90.0,
@@ -33,8 +33,8 @@
     "supplier_region": "Taiwan",
     "customers": "gamers and small studios",
     "search_terms": [
-      "semiconductor tariff GPU prices supply chain",
-      "graphics card import tariff Taiwan"
+      "graphics card price Taiwan",
+      "semiconductor supply chain Taiwan"
     ],
     "guessed_fields": []
   }

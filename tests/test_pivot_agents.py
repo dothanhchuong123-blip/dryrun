@@ -153,3 +153,10 @@ def test_example_files(ex_id):
     assert 2 <= len(re.findall(r"[.!?](?:\s|$)", ex["text"])) <= 4
     p = BusinessProfile(**ex["profile"])
     assert p.unit_cost < p.price
+
+
+def test_rival_price_copied_from_price_is_marked_guessed():
+    p = BusinessProfile(**{**_profile(), "rival_price": _profile()["price"], "guessed_fields": []})
+    assert p.guessed_fields == ["rival_price"]
+    q = BusinessProfile(**{**_profile(), "rival_price": _profile()["price"], "guessed_fields": ["rival_price"]})
+    assert q.guessed_fields == ["rival_price"]
