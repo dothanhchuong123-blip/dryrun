@@ -1,0 +1,35 @@
+{
+  "id": "red_sea",
+  "title": "Red Sea Rerouting",
+  "subtitle": "Shipping diverted around the Cape of Good Hope stretches lead times",
+  "seed_queries": [
+    "Red Sea shipping disruption container rates transit times",
+    "Suez Canal rerouting Cape of Good Hope freight delays"
+  ],
+  "include_domains": [
+    "reuters.com",
+    "ft.com",
+    "bloomberg.com",
+    "freightos.com",
+    "drewry.co.uk",
+    "wto.org"
+  ],
+  "params_overrides": {
+    "c_raw0": 50.0,
+    "lead_time0": 3,
+    "holding_cost": 0.6
+  },
+  "horizon_ticks": 80,
+  "fallback_shock": {
+    "delta_c_raw": 0.12,
+    "delta_lead_time": 4,
+    "demand_shock": 0.0,
+    "severity": 0.5,
+    "evidence": [
+      {
+        "quote": "vessels rerouted around the Cape of Good Hope add roughly 10 days to transit",
+        "url": "https://example.com/fallback/red-sea"
+      }
+    ]
+  }
+}
