@@ -52,11 +52,15 @@ def cost_plus_decision(
     - plan = 4-tick moving average of A's demand
     - marketing stays constant
     """
-    if last_result is not None:
+    if last_result is not None and float(last_result.qty[0]) >= 1.0:
         mc_a = float(last_result.mc[0])
         atc_a = float(last_result.atc[0])
     else:
-        _, mc_arr, atc_arr = costs(state.last_qty, params.c_raw0, params)
+        # Cold start (or a zero-output tick): ATC(0) = FC/1 + ... would price A out of the market
+        # and lock U2 at zero output, so evaluate cost at half capacity instead.
+        q_ref = np.maximum(state.last_qty, 0.5 * np.asarray(params.k_cap, dtype=np.float64))
+        c_raw = last_result.c_raw if last_result is not None else params.c_raw0
+        _, mc_arr, atc_arr = costs(q_ref, c_raw, params)
         mc_a = float(mc_arr[0])
         atc_a = float(atc_arr[0])
 

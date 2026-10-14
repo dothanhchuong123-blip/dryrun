@@ -150,19 +150,19 @@ Sampling: NVIDIA recommends `temperature=1.0, top_p=0.95` ✅. For JSON calls, s
 
 ### 4.1 Consumer choice: MNL with an outside good
 
-$$U_{ij} = \beta_{0j}(t) - \alpha_i P_j + \gamma\ln(1+M_j) + \delta\,\text{Sent}_{ij} + \epsilon_{ij},\quad j\in\{A,B\}$$
+$$U_{ij} = \beta_{0j}(t) - \alpha_i P_j + \gamma\ln(1+M_j) + \delta\,\text{Sent}_{ij} + \text{loyalty}_{k(i),j} + \epsilon_{ij},\quad j\in\{A,B\}$$
 
-$$U_{i0} = -\alpha_i P_{\text{ref}}(t) + \epsilon_{i0}$$
+$$U_{i0} = -\alpha_i P_{\text{ref}} + \epsilon_{i0}$$
 
 $$\Pr_{ij} = \frac{e^{\bar U_{ij}}}{e^{\bar U_{i0}} + \sum_{k\in\{A,B\}} e^{\bar U_{ik}}}$$
 
 - Compute with **log-sum-exp**.
-- $\alpha_i$ is lognormal per archetype.
+- $\alpha_i$ is lognormal per archetype, sampled once per consumer and kept fixed for the run.
 - Sentiment is sampled from the archetype's Gaussian and clipped:
 
-$$\text{Sent}_{ij} = \text{clip}\big(\mathcal N(\mu_{k(i)}, \sigma_{k(i)}^2), -1, 1\big)$$
+$$\text{Sent}_{ij} = \text{clip}\big(\mathcal N(\mu_{k(i),j}, \sigma_{k(i),j}^2), -1, 1\big)$$
 
-- Elasticities $E_d = \%\Delta Q_A / \%\Delta P_A$ and $E_{AB} = \%\Delta Q_A / \%\Delta P_B$ are computed numerically by perturbing $P$ ±1% inside the engine.
+- Elasticities $E_d = \%\Delta D_A / \%\Delta P_A$ and $E_{AB} = \%\Delta D_A / \%\Delta P_B$ (expected demand $D_A$, not production) are computed numerically by perturbing $P$ ±1% inside the engine, with $\alpha_i$ and $\text{Sent}_{ij}$ held fixed.
 
 ### 4.2 Costs and capacity
 
@@ -174,10 +174,10 @@ $$c_{\text{raw}}(t) = c_{\text{raw}}(0)\,\big(1 + \Delta c_{\text{raw}}^{\text{T
 
 ### 4.3 Stockout spillover (symmetric, capped, fixed order)
 
-1. Expected demand: $D_j = \sum_i \Pr_{ij}$
+1. Expected demand: $D_j = (1+\text{demand\_shock})\sum_i \Pr_{ij}$, scaled down so that $D_A + D_B \le N$.
 2. Own sales and unmet demand: $S^{\text{own}}_j = \min(D_j, I_j)$, $U_j = D_j - S^{\text{own}}_j$
 3. Spillover into the rival $k \ne j$: $X_k = \min\big(\theta U_j,\; I_k - S^{\text{own}}_k\big)$
-4. Total sales: $S_j = S^{\text{own}}_j + X_j$. Everything else goes to the outside good (lost sales).
+4. Total sales: $S_j = S^{\text{own}}_j + X_j$. Everything else goes to the outside good: $\text{lost} = \sum_j (D_j - S_j)$.
 5. Goodwill erosion with mean reversion:
 
 $$\beta_{0j}(t{+}1) = \beta_{0j}(t) - \lambda\,\frac{U_j}{\max(D_j,\varepsilon)} + \kappa\,(\bar\beta_{0j} - \beta_{0j}(t))$$
@@ -208,8 +208,8 @@ The bullwhip ratio uses a rolling window of ≥ 8 ticks and is guarded against V
 
 - **Monte Carlo:** n = 100 paths run locally on every tick; n = 10,000 run in a Serverless Job. Both use **common random numbers**: the same seed drives the AI universe and the baseline universe in path r. The AI policy schedule is the frozen sequence of LLM decisions.
 - **Confidence interval:** $CI_{95} = \bar\pi \pm t_{0.025,n-1}\, s/\sqrt n$
-- **AI alpha test:** compute $\Delta_r = \pi^{AI}_r - \pi^{Base}_r$ and run `scipy.stats.ttest_rel(..., alternative="greater")`. Show the mean Δ, its CI95, Cohen's $d = \bar\Delta / s_\Delta$, and p. **Label n on every figure.**
-- **χ² test:** a 2×2 contingency table, (pre-shock window vs post-shock window) × (switched brand vs stayed), built from agent-level choice logs, then `scipy.stats.chi2_contingency`.
+- **AI alpha test:** compute $\Delta_r = \pi^{AI}_r - \pi^{Base}_r$ and run `scipy.stats.ttest_rel(..., alternative="greater")`. Show the mean Δ, its CI95, Cohen's $d_z = \bar\Delta / s_\Delta$ (labelled $d_z$; also show $d = \bar\Delta / \sqrt{(s_{AI}^2+s_{Base}^2)/2}$, because CRN shrinks $s_\Delta$), and p. If $s_\Delta = 0$, skip the test and report "no variation". **Label n on every figure.**
+- **χ² test:** a 2×2 contingency table, (pre-shock window vs post-shock window) × (switched brand vs stayed), built from agent-level choice logs with **one observation per consumer per window** (inside brands only; the outside good is excluded), then `scipy.stats.chi2_contingency`. Skip the test when any row or column sum is 0.
 - **UI badges:** "Live (n=100)" shows first, then switches to "Cloud-Verified (n=10,000)" when the job finishes.
 
 ### 4.7 Canonical tick sequence (all engine code follows this order)
@@ -241,7 +241,8 @@ Firms are indexed 0 = A and 1 = B, and per-firm arrays have shape `(2,)`. Each c
 - per-tick lognormal demand noise ($\sigma = 0.1$);
 - lead-time jitter of ±1 tick;
 - shock magnitude × U(0.8, 1.2);
-- multinomial choice sampling.
+
+All noise is pre-generated per path from fixed streams (not drawn conditionally), so the AI and baseline universes stay paired. Realised choice sampling (§4.7 step 9) is for the arena and χ² only; it does not enter MC profit.
 
 ## 5. LLM contracts (Pydantic v2, strict `json_schema`, clamp after validation)
 

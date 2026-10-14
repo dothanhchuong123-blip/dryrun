@@ -315,3 +315,14 @@ def test_baseline_cost_plus_and_clamp() -> None:
     p_hi, _, _ = clamp_decision(999.0, 100.0, 10.0, mc=60.0, atc=80.0, k_cap=300.0)
     assert pytest.approx(p_hi) == 320.0  # 4.0 * ATC
 
+
+
+def test_cost_plus_cold_start_is_not_priced_out():
+    from backend.engine.baseline import cost_plus_decision
+    from backend.engine.types import MarketParams, MarketState
+
+    params = MarketParams()
+    state = MarketState(tick=0, beta0=np.array(params.beta_bar), inventory=np.zeros(2), raw_inv=np.zeros(2))
+    price, plan, _ = cost_plus_decision(state, None, params)
+    assert price < 3 * params.p_ref
+    assert plan > 0

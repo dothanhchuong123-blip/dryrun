@@ -348,6 +348,10 @@ def step(
     )
     probs_mean = np.mean(probs, axis=0)
     demand = demand_multiplier * np.sum(probs[:, 1:], axis=0)
+    # Each consumer buys at most one unit per tick, so a positive demand shock cannot push total demand past N.
+    total_demand = float(np.sum(demand))
+    if total_demand > probs.shape[0]:
+        demand = demand * (probs.shape[0] / total_demand)
 
     # 5. Clear market with spillover
     cleared = clear_market(demand, inventory, params.theta)
