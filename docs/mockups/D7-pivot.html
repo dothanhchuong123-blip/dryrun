@@ -1,0 +1,1418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Twin · Test your plans</title>
+<!--
+Analyst + plans screen at 1440×900 (1280×800 in brackets):
+  top bar 64 px · footer 44 px · main 792 (692) px, no page scroll.
+  Sub-header 54 px: business pill, title, round + timer.
+  Body: 2 cards, 18 px gap, 28 px gutters. Log card 37% ≈ 510 (450) px wide; grid card 63% ≈ 868 (770) px.
+  Log card: header 64, checklist 50, rows scroll inside. Grid card: header 66, table head 56, 6 rows × 64 = 384, legend 36, actions 58.
+  Replay drawer: floating panel 10 px inset, min(1000 px, 100%) wide; market scene 900×320 logical, height capped by viewport.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap">
+<style>
+:root{
+  --bg-paper:#F6F7F9; --bg-card:#FFFFFF; --bg-subtle:#EEF1F5; --bg-sunk:#F8FAFC;
+  --ink:#17202E; --ink-2:#4A5565; --ink-3:#6B7686;
+  --line:#E3E7ED; --line-strong:#D3D9E2;
+  --firm-a:#4F46E5; --firm-a-soft:#EEEDFD; --firm-a-ink:#3730A3;
+  --firm-b:#C2700A; --firm-b-soft:#FDF1E1;
+  --rule:#6B7686; --no-buy:#B8C0CC;
+  --gain:#16794A; --gain-soft:#E3F3EA; --loss:#B42318; --loss-soft:#FBE7E4;
+  --nv-green:#76B900; --nv:#5F9400; --nv-soft:#EEF6DF;
+  --g3:#16794A; --g2:#9FD3B5; --g1:#E3F3EA; --z:#EEF1F5; --r1:#FBE7E4; --r2:#F2A69C;
+  --f-display:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"Inter",system-ui,-apple-system,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.04);
+  --float:0 12px 32px rgba(16,24,40,.12),0 2px 6px rgba(16,24,40,.06);
+  --top:64px; --foot:44px;
+  --accent-hover:#4338CA; --on-accent:#FFFFFF; --on-ink:#FFFFFF; --biz-num:#6366A8; --guess-ink:#9A5A07; --nv-ink:#4B7500;
+  --picked:#C9C6F7; --wait-today:#EDF0F4; --disabled-ink:#A3ACB9; --band:.12;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg-paper:#0E1319; --bg-card:#161C25; --bg-subtle:#1F2731; --bg-sunk:#121820;
+  --ink:#E6EAF0; --ink-2:#B4BDC9; --ink-3:#8A95A5; --line:#252F3C; --line-strong:#334050;
+  --firm-a:#8F88FF; --firm-a-soft:#25244A; --firm-a-ink:#C9C5FF; --firm-b:#F0A43C; --firm-b-soft:#3A2A12;
+  --rule:#8A95A5; --no-buy:#4A5566; --gain:#4CC38A; --gain-soft:#13301F; --loss:#FF7A6B; --loss-soft:#3A1B18;
+  --nv:#9CCF3A; --nv-soft:#1F2A10; --g3:#2C9A62; --g2:#1E5E3E; --g1:#173224; --z:#1F2731; --r1:#3A1D1A; --r2:#7E3128;
+  --accent-hover:#A49EFF; --on-accent:#0E1319; --on-ink:#0E1319; --biz-num:#A9A4F5; --guess-ink:#F0A43C; --nv-ink:#B6E06A;
+  --picked:#4B47A0; --wait-today:#1A212B; --disabled-ink:#5B6676; --band:.18;
+  --shadow:0 1px 2px rgba(0,0,0,.3); --float:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
+  color-scheme:dark;}}
+:root[data-theme=dark]{--bg-paper:#0E1319; --bg-card:#161C25; --bg-subtle:#1F2731; --bg-sunk:#121820;
+  --ink:#E6EAF0; --ink-2:#B4BDC9; --ink-3:#8A95A5; --line:#252F3C; --line-strong:#334050;
+  --firm-a:#8F88FF; --firm-a-soft:#25244A; --firm-a-ink:#C9C5FF; --firm-b:#F0A43C; --firm-b-soft:#3A2A12;
+  --rule:#8A95A5; --no-buy:#4A5566; --gain:#4CC38A; --gain-soft:#13301F; --loss:#FF7A6B; --loss-soft:#3A1B18;
+  --nv:#9CCF3A; --nv-soft:#1F2A10; --g3:#2C9A62; --g2:#1E5E3E; --g1:#173224; --z:#1F2731; --r1:#3A1D1A; --r2:#7E3128;
+  --accent-hover:#A49EFF; --on-accent:#0E1319; --on-ink:#0E1319; --biz-num:#A9A4F5; --guess-ink:#F0A43C; --nv-ink:#B6E06A;
+  --picked:#4B47A0; --wait-today:#1A212B; --disabled-ink:#5B6676; --band:.18;
+  --shadow:0 1px 2px rgba(0,0,0,.3); --float:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
+  color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg-paper);color:var(--ink);font:14px/1.55 var(--f-body);font-feature-settings:"cv11","ss01";letter-spacing:-.006em;overflow:hidden;transition:background-color .3s,color .3s;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum","cv11"}
+.muted{color:var(--ink-3)}
+.app{display:grid;grid-template-rows:var(--top) minmax(0,1fr) var(--foot);height:100vh;height:100dvh}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:16px;padding:0 24px;background:var(--bg-card);border-bottom:1px solid var(--line);min-width:0}
+.brand{font-family:var(--f-display);font-weight:650;font-size:16px;white-space:nowrap;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.brand i{display:inline-block;width:22px;height:22px;border-radius:7px;background:var(--firm-a);position:relative}
+.brand i::after{content:"";position:absolute;inset:6px;border-radius:50%;border:2.5px solid var(--on-accent);border-right-color:transparent}
+.steps{position:relative;display:flex;gap:2px;background:var(--bg-subtle);border-radius:8px;padding:3px;margin:0 auto;min-width:0}
+.steps button{position:relative;z-index:1;border:0;background:none;font-weight:600;font-size:13.5px;line-height:1;padding:9px 15px;color:var(--ink-3);border-radius:6px;cursor:pointer;display:flex;gap:7px;align-items:center;white-space:nowrap;transition:color .3s}
+.steps button .n{font-family:var(--f-num);font-size:11.5px;font-weight:600;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--line);transition:background .3s,color .3s}
+.steps button:hover{color:var(--ink-2)}
+.steps button.done{color:var(--ink-2)}
+.steps button.done .n{background:var(--gain-soft);color:var(--gain)}
+.steps button.on{color:var(--ink)}
+.steps button.on .n{background:var(--firm-a);color:var(--on-accent)}
+.steps .ind{position:absolute;top:4px;bottom:4px;left:4px;width:0;background:var(--bg-card);border-radius:6px;box-shadow:0 1px 3px rgba(16,24,40,.10);transition:left .5s var(--ease),width .5s var(--ease)}
+.right{display:flex;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:6px;white-space:nowrap;border:1px solid var(--line);background:var(--bg-card);color:var(--ink-2)}
+.chip .num{color:var(--ink);font-weight:500}
+.chip.mode{background:var(--bg-subtle);border-color:transparent}
+.chip.mode::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ink-3)}
+
+/* main + screens */
+main{overflow:auto;position:relative;min-height:0}
+.screen{min-height:100%;padding:24px 28px 28px}
+.wrap{max-width:1160px;margin:0 auto}
+h1,h2,h3{margin:0;font-weight:700;text-wrap:balance}
+h1{font-family:var(--f-display);font-size:26px;font-weight:600;letter-spacing:-.022em;line-height:1.2}
+h2{font-family:var(--f-display);font-size:18px;font-weight:600;letter-spacing:-.015em;line-height:1.25}
+h3{font-size:12.5px;font-weight:600;color:var(--ink-3);letter-spacing:0}
+.card{background:var(--bg-card);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--firm-a);background:var(--firm-a);color:var(--on-accent);font-weight:600;font-size:14px;padding:10px 18px;border-radius:6px;cursor:pointer;transition:background .2s,opacity .3s,transform .15s,border-color .2s,box-shadow .2s;white-space:nowrap;box-shadow:0 1px 2px rgba(79,70,229,.25)}
+.btn:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible,.cell:focus-visible,.steps button:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(79,70,229,.25)}
+.btn.ghost{background:var(--bg-card);color:var(--ink);border-color:var(--line-strong);box-shadow:var(--shadow)}
+.btn.ghost:hover{background:var(--bg-sunk);border-color:var(--ink-3)}
+.btn.sm{font-size:13px;padding:7px 13px;border-radius:6px}
+.btn:disabled{cursor:not-allowed;background:var(--bg-subtle);border-color:var(--bg-subtle);color:var(--disabled-ink);box-shadow:none}
+.btn.ghost:disabled{background:var(--bg-card);color:var(--disabled-ink);border-color:var(--line)}
+.sub{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;min-height:36px}
+.biz{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:13px;padding:6px 12px;border-radius:6px;background:var(--firm-a-soft);color:var(--firm-a-ink);white-space:nowrap}
+.biz::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--firm-a)}
+.biz .num{font-weight:500;color:var(--biz-num)}
+.empty{color:var(--ink-3);font-size:14.5px;padding:32px;text-align:center;line-height:1.6}
+
+/* screen 1 */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.pane{padding:28px;display:grid;gap:18px;align-content:start}
+textarea{width:100%;min-height:160px;resize:vertical;border:1px solid var(--line-strong);border-radius:8px;padding:16px;font:15.5px/1.6 var(--f-body);color:var(--ink);background:var(--bg-sunk);outline:none;transition:border-color .2s,background .2s,box-shadow .2s}
+textarea:focus{border-color:var(--firm-a);background:var(--bg-card);box-shadow:0 0 0 4px rgba(79,70,229,.10)}
+.examples{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--ink-3)}
+.ex{border:1px solid var(--line-strong);background:var(--bg-card);border-radius:6px;padding:6px 13px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink);transition:border-color .2s,background .2s,color .2s}
+.ex:hover{border-color:var(--firm-a);color:var(--firm-a);background:var(--firm-a-soft)}
+.ex.soon{cursor:default;color:var(--ink-3);font-weight:500;background:var(--bg-sunk);border-style:dashed}
+.ex.soon:hover{border-color:var(--line-strong);color:var(--ink-3);background:var(--bg-sunk)}
+.fields{display:grid;gap:2px}
+.f{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;padding:4px 8px;border-radius:6px;min-height:44px;transition:background .2s}
+.f:hover{background:var(--bg-sunk)}
+.f label{color:var(--ink-3);font-size:13.5px}
+.f input{border:1px solid transparent;border-radius:8px;padding:6px 10px;font:500 14.5px var(--f-body);color:var(--ink);background:transparent;width:100%;outline:none;transition:border-color .2s,background .2s,opacity .45s,transform .45s var(--ease),box-shadow .2s}
+.f input.n{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:13.5px}
+.f input:hover{border-color:var(--line-strong);background:var(--bg-card)}
+.f input:focus{border-color:var(--firm-a);background:var(--bg-card);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+.f input.ghosted{opacity:0;transform:translateY(4px)}
+.skel{height:12px;border-radius:6px;background:var(--bg-subtle);animation:breathe 1.2s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.4}}
+.guess{font-size:11.5px;font-weight:600;color:var(--guess-ink);background:var(--firm-b-soft);border-radius:6px;padding:2px 9px;opacity:0;transform:scale(.6);transition:opacity .3s,transform .45s cubic-bezier(.3,1.6,.5,1)}
+.guess.on{opacity:1;transform:none}
+.status{font-size:13px;color:var(--ink-3);display:flex;gap:8px;align-items:center;min-height:20px}
+
+/* screen 2 */
+.news{display:grid;gap:12px}
+.nc{padding:20px 22px;display:grid;grid-template-columns:1fr auto;gap:10px 24px;align-items:start;opacity:0;transform:translateY(12px);transition:border-color .2s,box-shadow .2s}
+.nc:hover{border-color:var(--line-strong);box-shadow:0 4px 14px rgba(16,24,40,.06)}
+.nc.in{animation:rise .65s var(--ease) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.nc .src{grid-column:1/-1;font-size:12.5px;color:var(--ink-3);display:flex;gap:8px;align-items:center}
+.nc .hl{font-size:16.5px;font-weight:600;line-height:1.35;letter-spacing:-.012em}
+.impact{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:16px;font-weight:600;padding:8px 12px;border-radius:6px;white-space:nowrap;text-align:right}
+.impact small{display:block;font-family:var(--f-body);font-size:12px;font-weight:500;opacity:.85}
+.impact.bad{background:var(--loss-soft);color:var(--loss)}
+.impact.ok{background:var(--bg-subtle);color:var(--ink-2)}
+.chain{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px}
+.chain q{color:var(--ink-2);font-style:italic;border-left:2px solid var(--line-strong);padding-left:10px}
+.chain .arr{color:var(--ink-3)}
+.dchip{font-family:var(--f-num);font-size:12.5px;font-weight:500;padding:3px 10px;border-radius:6px;background:var(--bg-subtle);color:var(--ink);white-space:nowrap}
+.used{font-size:12px;font-weight:600;color:var(--firm-a-ink);background:var(--firm-a-soft);padding:2px 9px;border-radius:6px}
+.nc.picked{border-color:var(--picked);box-shadow:0 0 0 3px rgba(79,70,229,.06)}
+
+/* screen 3+4 */
+.s3{display:grid;grid-template-rows:auto minmax(0,1fr);height:100%;padding-bottom:20px}
+.body3{display:grid;grid-template-columns:minmax(0,37fr) minmax(0,63fr);gap:18px;min-height:0}
+.logc,.gridc{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px 14px;border-bottom:1px solid var(--line)}
+.ch p{margin:4px 0 0;font-size:13px;color:var(--ink-3)}
+.log{flex:1;overflow:auto;padding:8px 12px 16px;scroll-behavior:smooth}
+.lrow{display:grid;grid-template-columns:76px minmax(0,1fr);gap:12px;padding:10px 8px;align-items:start;border-radius:6px;animation:slidein .5s var(--ease) both;transition:background .2s}
+.lrow:hover{background:var(--bg-sunk)}
+@keyframes slidein{from{opacity:0;transform:translateY(10px)}}
+.tag{font-size:11.5px;font-weight:600;text-align:center;border-radius:4px;padding:3px 0;line-height:1.4}
+.k-think .tag{background:var(--firm-a-soft);color:var(--firm-a-ink)}
+.k-test .tag{background:var(--bg-subtle);color:var(--ink-2)}
+.k-result .tag{background:var(--gain-soft);color:var(--gain)}
+.k-shoppers .tag{background:var(--nv-soft);color:var(--nv-ink)}
+.k-finish .tag{background:var(--ink);color:var(--on-ink)}
+.lt{font-size:14px;line-height:1.5;min-width:0}
+.lt .w{opacity:0;filter:blur(2px);transition:opacity .4s,filter .4s}
+.lt .w.on{opacity:1;filter:none}
+.lt b{font-weight:600}
+.meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px;font-size:12px;color:var(--ink-3)}
+.rchip{font-family:var(--f-num);font-size:12px;font-weight:500;padding:2px 8px;border-radius:6px;white-space:nowrap;animation:pop .45s cubic-bezier(.3,1.5,.5,1) both}
+.rchip.pos{background:var(--gain-soft);color:var(--gain)}
+.rchip.neg{background:var(--loss-soft);color:var(--loss)}
+.round{margin:12px 4px 4px;padding:12px 14px;display:grid;gap:6px;border-radius:8px;background:var(--bg-sunk);animation:slidein .5s var(--ease) both}
+.round .rh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12.5px}
+.round .rh b{font-size:13.5px;font-weight:600}
+.tbtn{justify-self:start;border:0;background:none;padding:0;color:var(--firm-a);font-size:13px;font-weight:600;cursor:pointer}
+.tbtn:hover{text-decoration:underline}
+.think{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--ease)}
+.think.open{grid-template-rows:1fr}
+.think>div{overflow:hidden}
+.think ol{margin:6px 0 2px;padding:10px 12px 10px 30px;background:var(--bg-card);border:1px solid var(--line);border-radius:6px;font-size:12.5px;color:var(--ink-2);line-height:1.7}
+.think li{opacity:0;transform:translateY(-3px);transition:opacity .3s,transform .3s}
+.think.open li{opacity:1;transform:none}
+.tablebox{flex:1;overflow:auto;min-height:0;padding:0 14px;position:relative}
+table.g{border-collapse:separate;border-spacing:6px;width:100%;min-width:600px;table-layout:fixed}
+table.g th{font-size:13px;font-weight:600;color:var(--ink-3);text-align:left;padding:8px 8px 4px;vertical-align:bottom;position:sticky;top:0;background:var(--bg-card);z-index:2;box-shadow:0 -8px 0 var(--bg-card),4px 0 0 var(--bg-card),-4px 0 0 var(--bg-card)}
+table.g th:first-child{width:31%}
+table.g th.today{color:var(--ink)}
+table.g th .hc{display:inline-block;padding:3px 10px;border-radius:6px}
+table.g th.today .hc{background:var(--ink);color:var(--on-ink)}
+table.g th small{display:block;font-weight:500;font-size:11.5px;color:var(--ink-3);margin:3px 0 0 2px}
+table.g td{padding:0;height:58px;vertical-align:middle}
+.pl{padding:4px 8px 4px 4px;font-weight:600;font-size:14px;line-height:1.3;animation:slidein .5s var(--ease) both}
+.pl .bd{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.badge{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:4px;animation:pop .5s cubic-bezier(.3,1.5,.5,1) both}
+.badge.best{background:var(--gain);color:var(--on-ink)}
+.badge.safe{background:var(--ink);color:var(--on-ink)}
+.badge.you{background:var(--firm-a-soft);color:var(--firm-a-ink);animation:none}
+@keyframes pop{from{opacity:0;transform:scale(.5)}}
+tr.base .pl{color:var(--ink-3);font-weight:500}
+.cell{width:100%;height:58px;border:0;border-radius:8px;background:var(--z);cursor:pointer;text-align:left;padding:7px 12px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;transition:background-color .7s var(--ease),color .7s,box-shadow .2s,transform .25s var(--ease);color:var(--ink)}
+.cell.wait{background:var(--bg-sunk);cursor:default;box-shadow:inset 0 0 0 1px var(--line)}
+.cell.wait .v,.cell.wait .p{opacity:0}
+.cell .v{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:16px;letter-spacing:-.01em;font-weight:600;line-height:1.2;transition:opacity .3s}
+.cell .p{font-size:11.5px;opacity:.8;transition:opacity .3s .15s}
+.cell .p span{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.cell .bar{position:absolute;left:10px;right:10px;bottom:7px;height:3px;border-radius:2px;transform:scaleX(0);transform-origin:left;background:var(--firm-a);opacity:.6}
+.cell.run .bar{animation:bar .55s linear forwards}
+@keyframes bar{to{transform:scaleX(1)}}
+.cell:not(.wait):hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(16,24,40,.10)}
+.cell.sel{box-shadow:0 0 0 2px var(--bg-card),0 0 0 4px var(--ink)}
+.cell.g3{background:var(--g3);color:#fff}.cell.g2{background:var(--g2)}.cell.g1{background:var(--g1)}
+.cell.z{background:var(--z);color:var(--ink-2)}.cell.r1{background:var(--r1)}.cell.r2{background:var(--r2)}
+.cell.basec{background:transparent;box-shadow:inset 0 0 0 1px var(--line-strong);cursor:default;color:var(--ink-2)}
+.cell.basec:hover{transform:none;box-shadow:inset 0 0 0 1px var(--line-strong)}
+.cell.basec .v{font-size:15px;font-weight:500}
+td.today .cell.wait{background:var(--wait-today)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3);padding:10px 20px;align-items:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+.acts{display:flex;justify-content:space-between;gap:10px;padding:12px 20px 16px;border-top:1px solid var(--line);align-items:center}
+.gempty{position:absolute;inset:70px 20px auto;text-align:center;color:var(--ink-3);font-size:14.5px;transition:opacity .4s;pointer-events:none}
+.addp{position:absolute;left:14px;right:14px;bottom:74px;z-index:5;padding:20px;display:grid;gap:14px;box-shadow:var(--float);border-radius:6px;transform-origin:bottom left;transition:opacity .3s,transform .4s var(--ease)}
+.addp.closed{opacity:0;transform:translateY(10px) scale(.98);pointer-events:none}
+.addp h3{text-transform:none;letter-spacing:0;font-size:15px}
+.sl{display:grid;grid-template-columns:150px 1fr 80px;gap:14px;align-items:center;font-size:13.5px}
+.sl output{font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right;font-weight:600}
+input[type=range]{accent-color:var(--firm-a);width:100%}
+input[type=checkbox]{accent-color:var(--firm-a);width:16px;height:16px}
+.pname{font-weight:600;color:var(--firm-a-ink)}
+
+/* screen 6 */
+.memo{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px;align-items:start}
+.mm{padding:32px;display:grid;gap:24px}
+.over{font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.mh{font-family:var(--f-display);font-size:28px;line-height:1.2;font-weight:600;letter-spacing:-.022em;margin:8px 0 0}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpis>div{padding:16px 18px;display:grid;gap:3px;border-radius:8px;background:var(--bg-sunk);border:1px solid var(--line);align-content:start}
+.kpis b{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:24px;letter-spacing:-.02em;font-weight:600;line-height:1.2}
+.kpis span{font-size:12.5px;color:var(--ink-3)}
+.ver{font-size:11.5px;font-weight:600;color:var(--nv-ink);background:var(--nv-soft);border-radius:6px;padding:2px 9px;justify-self:start;opacity:0;transform:scale(.6);transition:opacity .3s,transform .45s cubic-bezier(.3,1.5,.5,1)}
+.ver.on{opacity:1;transform:none}
+.vbar{height:4px;background:var(--bg-subtle);border-radius:6px;overflow:hidden;margin-top:6px;transition:opacity .4s}
+.vbar i{display:block;height:100%;width:0;background:var(--nv-green);border-radius:6px}
+.sec{display:grid;grid-template-columns:130px 1fr;gap:16px;font-size:15px;line-height:1.6}
+.sec h3{padding-top:3px}
+.sec p{margin:0}
+.srcs{padding:22px;display:grid;gap:14px}
+.srcs .s{display:grid;gap:5px;font-size:13.5px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.srcs .s:last-child{border:0;padding:0}
+.srcs a{color:var(--ink);font-weight:600;text-decoration:none}
+.srcs a:hover{color:var(--firm-a)}
+.srcs q{color:var(--ink-2);font-style:italic}
+.mact{display:flex;gap:10px;flex-wrap:wrap}
+.reveal>*{opacity:0;transform:translateY(10px)}
+.reveal.in>*{animation:rise .65s var(--ease) forwards}
+.reveal.in>*:nth-child(2){animation-delay:.08s}.reveal.in>*:nth-child(3){animation-delay:.16s}
+.reveal.in>*:nth-child(4){animation-delay:.24s}.reveal.in>*:nth-child(5){animation-delay:.32s}
+.reveal.in>*:nth-child(6){animation-delay:.4s}.reveal.in>*:nth-child(7){animation-delay:.48s}
+
+/* replay drawer */
+.scrim{position:fixed;inset:var(--top) 0 var(--foot);background:rgba(23,32,46,.22);opacity:0;pointer-events:none;transition:opacity .35s;z-index:20}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:calc(var(--top) + 10px);right:10px;bottom:calc(var(--foot) + 10px);width:min(1000px,calc(100% - 20px));background:var(--bg-card);border:1px solid var(--line);border-radius:6px;z-index:21;display:flex;flex-direction:column;overflow:auto;box-shadow:var(--float)}
+.dhead{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:20px;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line)}
+.dtitle{font-family:var(--f-display);font-weight:600;font-size:16px;letter-spacing:-.01em}
+.dtitle .muted{font-family:var(--f-body);font-weight:500;font-size:14px}
+.dsub{font-size:12.5px;color:var(--ink-3);margin-top:3px}
+.dsub b{color:var(--ink-2);font-weight:600}
+.dhero{text-align:right;line-height:1.1}
+.dhero .num{font-size:28px;letter-spacing:-.02em;font-weight:600;display:block;transition:color .4s}
+.dhero span:last-child{font-size:12px;color:var(--ink-3)}
+.dctl{display:flex;gap:6px}
+.ib{width:36px;height:36px;border:1px solid var(--line-strong);background:var(--bg-card);border-radius:6px;cursor:pointer;display:grid;place-items:center;font-size:14px;color:var(--ink-2);transition:background .2s}
+.ib:hover{background:var(--bg-sunk)}
+.ib.play{background:var(--firm-a);color:var(--on-accent);border-color:var(--firm-a)}
+.dbody{padding:16px 22px 18px;display:grid;gap:12px}
+.scenebox{position:relative;width:min(100%,calc((100vh - var(--top) - var(--foot) - 420px) * 2.8125));min-width:min(100%,560px);margin:0 auto;border-radius:8px;background:var(--bg-sunk);border:1px solid var(--line);overflow:hidden}
+.scenebox canvas{display:block;width:100%;aspect-ratio:900/320}
+.bub{position:absolute;transform:translate(-50%,-50%);background:var(--bg-card);border:1px solid var(--line);border-radius:8px 8px 8px 2px;padding:5px 10px;font-size:12.5px;font-weight:500;white-space:nowrap;box-shadow:var(--float);animation:bub .4s var(--ease) both;pointer-events:none;color:var(--ink-2)}
+.bub b{font-weight:600;color:var(--ink)}
+@keyframes bub{from{opacity:0;transform:translate(-50%,-30%) scale(.9)}}
+.cap{position:relative;height:42px;border-radius:8px;background:var(--bg-sunk);border:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 14px;font-size:14px;font-weight:500;overflow:hidden}
+.cap .ctab{width:9px;height:9px;border-radius:50%;background:var(--ink-3);flex:none;transition:background .3s}
+.cap .cw{font-family:var(--f-num);font-size:12px;color:var(--ink-3);white-space:nowrap}
+.cap .ct{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .25s,transform .25s}
+.cap .cu{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--firm-a);opacity:.35;transform-origin:left;transform:scaleX(0)}
+.cap .cu.go{animation:cu 4s linear forwards}
+@keyframes cu{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.chartbox{display:grid;gap:4px;margin-top:4px}
+.ctitle{font-family:var(--f-display);font-size:15px;font-weight:600;letter-spacing:-.01em}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.pins{position:relative;height:28px}
+.pin{position:absolute;transform:translateX(-50%);border:0;background:none;cursor:pointer;padding:0;display:grid;justify-items:center;gap:2px;font-size:11.5px;color:var(--ink-3);font-family:var(--f-num)}
+.pin i{width:10px;height:10px;border-radius:50%;background:var(--bg-card);box-shadow:inset 0 0 0 2px var(--line-strong);transition:background .3s,box-shadow .3s}
+.pin.hit i{background:var(--firm-a);box-shadow:inset 0 0 0 2px var(--firm-a)}
+.pin:hover{color:var(--ink)}
+
+/* footer */
+.foot{display:flex;align-items:center;gap:8px;padding:0 24px;background:var(--bg-card);border-top:1px solid var(--line);font-size:12px;min-width:0;overflow:hidden}
+.nv{font-weight:700;color:var(--ink);white-space:nowrap;display:flex;align-items:center;gap:7px;margin-right:4px}
+.nv::before{content:"";width:14px;height:14px;background:var(--nv-green);border-radius:4px}
+.mchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-2);padding:4px 10px;border-radius:6px;background:var(--bg-subtle);white-space:nowrap;transition:background .3s,color .3s}
+.mchip .dot{width:6px;height:6px;border-radius:50%;background:var(--line-strong);transition:background .3s}
+.mchip.nvc .dot{background:#A9CF6A}
+.mchip.live{background:var(--nv-soft);color:var(--nv-ink)}
+.mchip.live .dot{background:var(--nv-green);animation:live 1.2s ease-in-out infinite}
+.mchip.eng.live{background:var(--firm-a-soft);color:var(--firm-a-ink)}
+.mchip.eng.live .dot{background:var(--firm-a)}
+@keyframes live{50%{opacity:.25}}
+.foot .sp{flex:1}
+.lbl{color:var(--ink-3);white-space:nowrap}
+.demo{border:1px solid var(--firm-a);background:var(--firm-a);color:var(--on-accent);border-radius:6px;padding:5px 13px;font-weight:600;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .2s}
+.demo:hover{background:var(--accent-hover)}
+.demo:disabled{background:var(--bg-subtle);border-color:var(--bg-subtle);color:var(--ink-3);cursor:default}
+.tip{position:fixed;z-index:50;max-width:260px;background:var(--ink);color:var(--on-ink);font-size:12.5px;line-height:1.45;padding:8px 11px;border-radius:6px;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;box-shadow:var(--float)}
+.tip.on{opacity:1;transform:none}
+.toast{position:fixed;left:50%;bottom:64px;transform:translate(-50%,10px);background:var(--ink);color:var(--on-ink);font-size:13.5px;padding:10px 18px;border-radius:6px;opacity:0;transition:opacity .25s,transform .35s var(--ease);z-index:60;pointer-events:none;box-shadow:var(--float)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* morphs */
+::view-transition-group(*){animation-duration:.5s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
+::view-transition-old(root){animation:.28s ease both vtout}
+::view-transition-new(root){animation:.42s cubic-bezier(.2,.8,.2,1) .06s both vtin}
+:root[data-dir=back]::view-transition-old(root){animation-name:vtoutb}
+:root[data-dir=none]::view-transition-old(root){animation:.35s ease both fadeo}
+:root[data-dir=none]::view-transition-new(root){animation:.35s ease both fadei}
+@keyframes fadeo{to{opacity:0}}@keyframes fadei{from{opacity:0}}
+:root[data-dir=back]::view-transition-new(root){animation-name:vtinb}
+@keyframes vtout{to{opacity:0;transform:translateX(-16px)}}
+@keyframes vtin{from{opacity:0;transform:translateX(16px)}}
+@keyframes vtoutb{to{opacity:0;transform:translateX(16px)}}
+@keyframes vtinb{from{opacity:0;transform:translateX(-16px)}}
+.top{view-transition-name:topbar}.foot{view-transition-name:footbar}
+::view-transition-old(topbar),::view-transition-new(topbar),::view-transition-old(footbar),::view-transition-new(footbar){animation:none}
+::view-transition-old(cellmorph),::view-transition-new(cellmorph){height:100%;object-fit:cover;overflow:clip}
+::view-transition-group(cellmorph){animation-duration:.55s}
+@media (prefers-reduced-motion:reduce){*,::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation-duration:.01s!important;transition-duration:.01s!important}}
+
+/* narrow */
+@media (max-width:1180px){.steps button .l{display:none}.steps button.on .l{display:inline}.cred .x{display:none}}
+@media (max-width:900px){
+  body{overflow:auto}
+  .app{height:auto;min-height:100vh;grid-template-rows:auto 1fr auto}
+  .top{flex-wrap:wrap;padding:12px 16px;gap:10px}
+  .steps{order:3;width:100%;margin:0}
+  .steps button{flex:1;justify-content:center;padding:9px 4px}
+  .right{margin-left:auto}
+  .chip.mode{display:none}
+  main{overflow:visible}
+  .screen{padding:16px}
+  .two,.memo{grid-template-columns:1fr}
+  .pane{padding:20px}
+  .s3{height:auto}
+  .body3{grid-template-columns:1fr}
+  .log{max-height:320px}
+  .tablebox{overflow-x:auto}
+  .f{grid-template-columns:120px 1fr auto}
+  .sec{grid-template-columns:1fr;gap:4px}
+  .kpis{grid-template-columns:1fr}
+  .foot{flex-wrap:wrap;padding:10px 16px;gap:6px}
+  .foot .lbl,.foot .sp{display:none}
+  .scrim{inset:0}
+  .drawer{top:8px;bottom:8px;right:8px;width:calc(100% - 16px)}
+  .dhead{grid-template-columns:1fr auto;gap:10px;padding:14px 16px}
+  .dctl{grid-column:1/-1}
+  .dbody{padding:14px 16px}
+  .scenebox{min-width:0;width:100%}
+  .sl{grid-template-columns:1fr 70px}.sl label{grid-column:1/-1}
+  h1{font-size:25px}.mh{font-size:26px}
+}
+
+/* Mobbin-led additions */
+.newsgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+.yours{padding:20px;display:grid;gap:12px;position:sticky;top:0}
+.yours .row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--line)}
+.yours .row:last-child{border:0}
+.yours .row span:first-child{color:var(--ink-3)}
+.yours .big{font-family:var(--f-num);font-size:22px;letter-spacing:-.02em;font-weight:600;line-height:1.1}
+.checklist{display:flex;gap:6px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line)}
+.ck{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--ink-3);padding:3px 9px 3px 4px;border-radius:6px;background:var(--bg-sunk);border:1px solid var(--line);transition:all .35s var(--ease)}
+.ck i{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10px;background:var(--bg-subtle);color:var(--ink-3);transition:all .35s var(--ease)}
+.ck.now{color:var(--ink);border-color:var(--firm-a)}
+.ck.now i{background:var(--firm-a-soft);box-shadow:inset 0 0 0 2px var(--firm-a)}
+.ck.ok{color:var(--ink-2)}
+.ck.ok i{background:var(--gain);color:var(--on-ink)}
+tr.mine td:first-child .pl{color:var(--firm-a-ink)}
+tr.mine .cell{box-shadow:inset 0 0 0 1.5px var(--firm-a)}
+tr.bestrow .pl .nm{box-shadow:inset 0 -7px 0 var(--gain-soft)}
+.rgrid{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:18px;align-items:start}
+.settings{display:grid;gap:8px;padding:14px 16px;border-radius:8px;background:var(--bg-sunk);border:1px solid var(--line);font-size:13px}
+.settings .row{display:flex;justify-content:space-between;gap:8px}
+.settings .row span:first-child{color:var(--ink-3)}
+.settings .row span:last-child{font-family:var(--f-num);font-weight:500}
+.settings .lg{display:grid;gap:5px;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3)}
+.settings .lg i{display:inline-block;width:18px;height:0;vertical-align:middle;margin-right:7px;border-top:2.5px solid var(--firm-a)}
+.theme{width:34px;height:34px;border-radius:6px;border:1px solid var(--line);background:var(--bg-card);cursor:pointer;display:grid;place-items:center;color:var(--ink-2)}
+.theme:hover{background:var(--bg-subtle)}
+.theme svg{width:16px;height:16px}
+@media (max-width:900px){.newsgrid,.rgrid{grid-template-columns:1fr}.yours{position:static}}
+.cell .p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+table.g th .hc{white-space:nowrap}
+@media (max-width:1180px){
+  .body3{grid-template-columns:minmax(0,34fr) minmax(0,66fr)}
+  table.g{border-spacing:4px}
+  table.g th:first-child{width:26%}
+  .cell{padding:6px 9px}.cell .v{font-size:15px}.cell .p{font-size:11px}
+  .pl{font-size:13px}
+  .lrow{grid-template-columns:64px minmax(0,1fr);gap:10px}
+  .checklist{padding:10px 16px}
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><i></i>Market Twin</div>
+    <nav class="steps" id="steps" aria-label="Steps">
+      <div class="ind" id="ind"></div>
+      <button data-step="1"><span class="n">1</span><span class="l">Your business</span></button>
+      <button data-step="2"><span class="n">2</span><span class="l">News</span></button>
+      <button data-step="3"><span class="n">3</span><span class="l">Analyst</span></button>
+      <button data-step="4"><span class="n">4</span><span class="l">Plans</span></button>
+      <button data-step="5"><span class="n">5</span><span class="l">Memo</span></button>
+    </nav>
+    <div class="right">
+      <span class="chip mode">Example replay</span>
+      <button class="theme" id="themeBtn" title="Light / dark" aria-label="Switch light or dark mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+      <span class="chip cred" id="cred" title="Counted from this run's call log"><span><span class="num" id="tCalls">0</span> Nemotron calls</span><span>·</span><span class="num" id="tCost">$0.000</span><span class="x" id="tSave" hidden>· <span class="num" id="tPct">0</span>% cheaper than all-Ultra</span></span>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- 1 · Your business -->
+    <section class="screen" data-s="biz">
+      <div class="wrap two">
+        <div class="card pane">
+          <div>
+            <h1>Describe your business</h1>
+            <p class="muted" style="margin:6px 0 0">Like you would to a friend. Two or three sentences is enough.</p>
+          </div>
+          <textarea id="desc" placeholder="We make… we sell to… our main cost is… our big rival is…"></textarea>
+          <div class="examples">Or try one:
+            <button class="ex" id="exCoffee">Coffee roaster · bean spike</button>
+            <button class="ex soon" title="Coming soon">PC-parts shop · GPU tariff (soon)</button>
+            <button class="ex soon" title="Coming soon">Furniture maker · Red Sea (soon)</button>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+            <button class="btn" id="readBtn">Read my business →</button>
+            <span class="status" id="readStatus"></span>
+          </div>
+        </div>
+        <div class="card pane">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <h2>What Nemotron understood</h2>
+              <span class="biz" id="biz1" style="view-transition-name:biz" hidden>Saigon Roasters</span>
+            </div>
+            <span class="muted" style="font-size:12.5px">Edit anything</span>
+          </div>
+          <div class="fields" id="fields"></div>
+          <p class="muted" id="fieldsEmpty" style="margin:0;font-size:13.5px">Nemotron Super turns your words into the numbers the simulator needs. Anything it had to guess gets a <span class="guess on" style="display:inline">guessed</span> tag.</p>
+          <div><button class="btn" id="looksRight" disabled>Looks right → find news</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 · News -->
+    <section class="screen" data-s="news" hidden>
+      <div class="wrap" style="max-width:1160px">
+        <div class="sub">
+          <span class="biz" style="view-transition-name:biz">Saigon Roasters <span class="num">$38.00/bag</span></span>
+          <span class="muted" style="font-size:13px">Tavily · 3 searches · 3 min ago</span>
+        </div>
+        <h1 style="margin-bottom:6px">News that hits your business</h1>
+        <p class="muted" style="margin:0 0 18px">Each number is your gross profit over 6 months if you change nothing.</p>
+        <div class="newsgrid" id="newsWrap">
+          <div class="news" id="news"></div>
+          <aside class="card yours" id="yours">
+            <h3>Your numbers</h3>
+            <div><div class="big num">$114.2k</div><span class="muted" style="font-size:12.5px">gross profit, next 6 months, if nothing changes</span></div>
+            <div><div class="big num" style="color:var(--loss)">$107.8k</div><span class="muted" style="font-size:12.5px">after today’s news, if you do nothing</span></div>
+            <div><div class="row"><span>Price</span><span class="num">$38.00</span></div><div class="row"><span>Raw cost</span><span class="num">$21.00</span></div><div class="row"><span>Sales a week</span><span class="num">280</span></div><div class="row"><span>Stock on hand</span><span class="num">2 wk</span></div></div>
+          </aside>
+        </div>
+        <div id="newsEmpty" class="card empty" hidden>Describe your business first. Then we search the news about your product and supplier route.<br><br><button class="btn ghost sm" data-go="biz">← Your business</button></div>
+        <div style="display:flex;justify-content:space-between;gap:10px;margin-top:20px;flex-wrap:wrap" id="newsActs">
+          <button class="btn ghost" id="liveNews">Check live news</button>
+          <button class="btn" id="findBest">Find the best plan for this →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3+4 · Analyst + plans -->
+    <section class="screen s3" data-s="plans" hidden>
+      <div class="sub" style="margin-bottom:12px">
+        <span class="biz" style="view-transition-name:biz">Saigon Roasters <span class="num">$38.00/bag</span></span>
+        <h2 id="aTitle">Nemotron is testing plans</h2>
+        <span class="muted num" id="aStatus" style="font-size:13px"></span>
+      </div>
+      <div class="body3">
+        <div class="card logc">
+          <div class="ch"><div><h2 style="font-size:18px">Analyst log</h2><p>Nemotron Ultra decides what to test. The engine computes every number.</p></div></div>
+          <div class="checklist" id="checklist"><span class="ck"><i>✓</i>News read</span><span class="ck"><i>1</i>Round 1</span><span class="ck"><i>2</i>Round 2</span><span class="ck"><i>3</i>Round 3</span><span class="ck"><i>✓</i>Memo</span></div>
+          <div class="log" id="log"><div class="empty" id="logEmpty">Ultra's steps appear here: what it thinks, what it tests, what it learns.</div></div>
+        </div>
+        <div class="card gridc" style="position:relative">
+          <div class="ch">
+            <div><h2 style="font-size:18px">Which plan holds up?</h2><p>Gross profit over 6 months vs doing nothing · 1,000 runs per cell · click a cell to replay it</p></div>
+          </div>
+          <div class="tablebox" id="tablebox">
+            <table class="g" id="grid"><thead><tr id="ghead"><th>Plan</th></tr></thead><tbody id="gbody"></tbody></table>
+            <div class="gempty" id="gempty">Nemotron will test plans here. Each cell = 1,000 simulated runs.</div>
+          </div>
+          <div class="legend">
+            <span><i style="background:var(--g3)"></i>much better</span><span><i style="background:var(--g1)"></i>a bit better</span>
+            <span><i style="background:var(--z);border:1px solid var(--line)"></i>about the same</span><span><i style="background:var(--r1)"></i>worse</span>
+            <span>“bad case” = 1 run in 20 is worse than this</span>
+          </div>
+          <div class="acts">
+            <button class="btn ghost sm" id="addBtn" disabled>+ Add your own plan</button>
+            <button class="btn" id="toMemo" disabled>See the memo →</button>
+          </div>
+          <div class="card addp closed" id="addp">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3 style="color:var(--ink)">Your plan: <span class="pname" id="pName"></span></h3><button class="tbtn" id="addClose" style="color:var(--ink-3)">Close</button></div>
+            <div class="sl"><label for="sP">Price change</label><input type="range" id="sP" min="-10" max="10" step="1" value="4"><output id="oP"></output></div>
+            <div class="sl"><label for="sW">From week</label><input type="range" id="sW" min="1" max="12" step="1" value="2"><output id="oW"></output></div>
+            <div class="sl"><label for="sS">Extra stock</label><input type="range" id="sS" min="0" max="8" step="1" value="2"><output id="oS"></output></div>
+            <div class="sl"><label for="sX">Switch supplier</label><label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="sX"> Lâm Đồng (slower, less exposed)</label><span></span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span class="muted" style="font-size:12.5px">Engine only: free, about 1 s, no Nemotron call.</span><button class="btn sm" id="addGo">Test this plan</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 · Memo -->
+    <section class="screen" data-s="memo" hidden>
+      <div class="wrap">
+        <div id="memoEmpty" class="card empty" hidden>The memo appears once Nemotron has tested the plans (about 25 s).<br><br><button class="btn ghost sm" data-go="plans">← Analyst</button></div>
+        <div id="memoBody">
+          <div class="sub"><span class="biz" style="view-transition-name:biz">Saigon Roasters <span class="num">$38.00/bag</span></span><span class="muted" style="font-size:13px">Decision memo · written by Nemotron Ultra · every number from the engine</span></div>
+          <div class="memo">
+            <div class="card mm reveal" id="memoMain">
+              <div><div class="over">Recommendation</div><p class="mh" id="mHead" style="view-transition-name:pick"></p></div>
+              <div class="kpis">
+                <div><b class="num" id="kMean" style="color:var(--gain)"></b><span>vs doing nothing, 6 months</span></div>
+                <div><b class="num" id="kP5"></b><span>bad case (1 in 20)</span></div>
+                <div><b class="num" id="kRuns">1,000</b><span>simulated runs</span><span class="ver" id="kVer">Nebius-verified</span><div class="vbar" id="vbar"><i id="vfill"></i></div></div>
+              </div>
+              <div class="sec"><h3>Why</h3><p id="mWhy"></p></div>
+              <div class="sec"><h3>Watch out for</h3><p id="mWatch"></p></div>
+              <div class="sec"><h3>Recheck when</h3><p id="mRecheck"></p></div>
+              <div class="mact"><button class="btn" id="copyMd">Copy</button><button class="btn ghost" id="dlMd">Download .md</button><button class="btn ghost" id="again">Try another business</button></div>
+            </div>
+            <div style="display:grid;gap:20px" class="reveal" id="memoSide">
+              <div class="card srcs"><h3>Sources</h3><div id="mSrc" style="display:grid;gap:12px"></div></div>
+              <div class="card srcs">
+                <h3 id="miniTitle">Profit vs doing nothing</h3>
+                <div class="chart" id="miniChart"></div>
+                <div><button class="btn ghost sm" id="replayPick">▶ Replay this plan</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span class="nv">Powered by NVIDIA Nemotron</span>
+    <span class="mchip nvc" data-tier="ultra"><i class="dot"></i>Ultra · analyst</span>
+    <span class="mchip nvc" data-tier="super"><i class="dot"></i>Super · news &amp; setup reader</span>
+    <span class="mchip nvc" data-tier="fast"><i class="dot"></i>Lightning · shoppers</span>
+    <span class="mchip eng" data-tier="engine"><i class="dot"></i>Engine · every number</span>
+    <span class="sp"></span>
+    <span class="lbl">D7 · Test your plans · mock data</span>
+    <button class="demo" id="demoBtn">▶ Auto demo</button>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" hidden aria-label="Replay one plan">
+  <div class="dhead">
+    <div style="min-width:0">
+      <div class="dtitle"><span id="rPlan"></span> <span class="muted">· <span id="rShock"></span></span></div>
+      <div class="dsub"><b class="num" id="rWeek">Week 0 of 24</b> · <span id="rShares"></span></div>
+      <div class="dsub" id="rAbs"></div>
+    </div>
+    <div class="dhero"><span class="num" id="rDelta">$0.0k</span><span>vs doing nothing so far</span></div>
+    <div class="dctl">
+      <button class="ib" id="rRestart" title="Restart">↺</button>
+      <button class="ib" id="rBack" title="Back a week (←)">‹</button>
+      <button class="ib play" id="rPlay" title="Play / pause (Space)">❚❚</button>
+      <button class="ib" id="rFwd" title="Forward a week (→)">›</button>
+      <button class="ib" id="rClose" title="Back to grid (Esc)">✕</button>
+    </div>
+  </div>
+  <div class="dbody">
+    <div class="scenebox"><canvas id="scene"></canvas><div id="bubs"></div></div>
+    <div class="cap"><i class="ctab" id="ctab"></i><span class="cw" id="cw">Wk 0</span><span class="ct" id="ct">Both shops are calm. Nothing has hit yet.</span><i class="cu" id="cu"></i></div>
+    <div class="rgrid">
+      <div class="chartbox">
+        <div class="ctitle" id="rTitle"></div>
+        <div class="chart" id="rChart"></div>
+        <div class="pins" id="pins"></div>
+      </div>
+      <div class="settings" id="rSet"></div>
+    </div>
+  </div>
+</aside>
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const PROFILE = {you:'Saigon Roasters', youShort:'Saigon', rival:'Highland Supply', rivalShort:'Highland', region:'Main supplier', price:38, rivalPrice:37};
+const DATA = {
+  example: "We're Saigon Roasters. We roast and sell Vietnamese robusta to about 60 cafés in Ho Chi Minh City, roughly 1,200 bags a month at $38. Green beans cost us $21 a bag. Our big rival is Highland Supply.",
+  fields: [
+    {label:'Business', v:'Saigon Roasters'},
+    {label:'Product', v:'Roasted coffee, 1 bag'},
+    {label:'Your price', v:'$38.00', n:1},
+    {label:'Raw cost per bag', v:'$21.00', n:1},
+    {label:'Sales per week', v:'≈ 280 bags', n:1},
+    {label:'Supplier lead time', v:'3 weeks', n:1, guessed:1},
+    {label:'Stock on hand', v:'2 weeks', n:1, guessed:1},
+    {label:'Main rival', v:'Highland Supply'},
+    {label:'Rival price', v:'$37.00', n:1},
+    {label:'Customers', v:'Independent cafés'}
+  ],
+  news: [
+    {src:'Reuters', date:'12 Oct', ago:'2 days ago', title:'Robusta futures hit a record as drought cuts the Central Highlands harvest',
+     impact:-6.4, p5:-9.8, quote:'…prices rose 31% in four weeks…', chips:['bean cost +31%','lead time +1 wk'], used:1},
+    {src:'VnExpress', date:'10 Oct', ago:'4 days ago', title:'Port congestion at Cát Lái adds delays to inbound shipments',
+     impact:-1.1, p5:-2.6, quote:'…waiting times of five to seven days…', chips:['lead time +1 wk']},
+    {src:'Bloomberg', date:'8 Oct', ago:'6 days ago', title:'Café chains in Vietnam report steady demand into the fourth quarter',
+     impact:0, p5:-0.4, quote:'…same-store sales flat to slightly up…', chips:['demand ±0%']}
+  ],
+  shocks: [
+    {id:'s15', label:'Beans +15%', stamp:'BEANS +15%'},
+    {id:'news', label:'Beans +31%', sub:"Today's news", stamp:'BEANS +31%'},
+    {id:'s50', label:'Beans +50%', stamp:'BEANS +50%'},
+    {id:'port', label:'Port shut 3 wk', stamp:'PORT SHUT'}
+  ],
+  noShockProfit: 114.2,
+  baseline: {s15:111.1, news:107.8, s50:103.6, port:110.3},
+  soldOut: {s15:null, news:[7,9], s50:[6,10], port:[5,9]},
+  plans: {
+    raise5: {name:'Raise 5% now', spec:{p:5,pw:1,stock:0,sw:0}, cells:{s15:[1.4,-1.0], news:[2.1,-1.8], s50:[3.0,0.2], port:[-0.6,-3.1]}},
+    stock4: {name:'Buy 4 wk of beans now', spec:{p:0,pw:1,stock:4,sw:0}, cells:{s15:[0.3,-0.4], news:[5.0,1.2], s50:[8.1,3.9], port:[5.6,2.4]}},
+    combo:  {name:'Buy 4 wk + raise 3% in wk 3', spec:{p:3,pw:3,stock:4,sw:0}, cells:{s15:[0.9,-0.7], news:[7.4,3.0], s50:[10.2,5.1], port:[5.9,2.6]}},
+    lamdong:{name:'Switch to a Lâm Đồng supplier', spec:{p:0,pw:1,stock:0,sw:1}, cells:{s15:[-2.0,-3.4], news:[1.6,-0.9], s50:[6.3,2.8], port:[7.0,4.4]}},
+    cut5:   {name:'Cut price 5% to win cafés', spec:{p:-5,pw:1,stock:0,sw:0}, cells:{s15:[-2.6,-4.9], news:[-5.8,-9.0], s50:[-8.4,-12.0], port:[-1.9,-4.6]}}
+  },
+  best: 'combo', safest: 'stock4',
+  // t in seconds from start; ~25 s total
+  script: [
+    {t:0.4, e:'round', r:1, secs:9},
+    {t:0.9, e:'baseline'},
+    {t:1.2, e:'think', tier:'ultra', text:'Beans cost ~$1.40 a bag more by week 5. Highland’s stock looks thin.'},
+    {t:3.4, e:'test', plan:'raise5'},
+    {t:5.4, e:'test', plan:'stock4'},
+    {t:7.4, e:'shoppers', tier:'fast', text:'Small cafés: “we switch if the price rises more than 5%.”', ms:410},
+    {t:8.8, e:'result', text:'Stocking up wins today. Raising 5% loses cafés.', chips:[['Buy 4 wk',5.0],['Raise 5%',2.1]]},
+    {t:10.2, e:'round', r:2, secs:11},
+    {t:10.6, e:'think', tier:'ultra', text:'Lock in the old cost with stock. Raise less, and later than Highland.'},
+    {t:12.8, e:'test', plan:'combo'},
+    {t:14.8, e:'test', plan:'lamdong'},
+    {t:16.8, e:'result', text:'Stock + 3% raise leads, and its bad case stays positive.', chips:[['today',7.4],['bad case',3.0]]},
+    {t:18.0, e:'round', r:3, secs:7},
+    {t:18.4, e:'think', tier:'ultra', text:'Check the opposite: does cutting price win enough cafés to pay?'},
+    {t:20.2, e:'test', plan:'cut5'},
+    {t:22.4, e:'finish', tier:'ultra', text:'Pick: buy 4 weeks of beans now, raise 3% in week 3.'},
+    {t:23.6, e:'badges'},
+    {t:24.6, e:'memo'}
+  ],
+  thinking: {
+    1: ['raw beans +31% → about +$1.40 a bag by wk 5','280 bags/wk × $1.40 × ~17 wks ≈ $6.7k hit if we do nothing','Highland stock ≈ 2 wks, lead 3 wks → dry around wk 7?','cafés switch above +5% (Lightning, small cafés group)','test A: raise 5% now · test B: buy 4 wks at today’s cost','4 wks × 280 = 1,120 bags × $1.40 ≈ $1.6k saved, plus sales while Highland is out'],
+    2: ['stock-up +$5.0k, bad case +$1.2k → keep','raise 5%: loses ~9% of cafés → too much','3% < 5% switch point → keep cafés, +$1.14 a bag','wait to wk 3 so Highland moves first (they must by wk 5)','test: stock 4 wks + raise 3% in wk 3','also test Lâm Đồng: +1 wk lead, cost +4%, half the exposure','if beans only +15%, stock still pays? check column 1'],
+    3: ['best: stock + 3% → +$7.4k, bad case +$3.0k','downside check: cut 5% to win cafés','cut 5%: −$1.90 a bag × 280 × 23 wks ≈ −$12k; gain maybe +$6k → no','beans +15%: stock + 3% is +$0.9k, bad −$0.7k → thin but ok','safest overall: stock alone, worst bad case −$0.4k','pick stock + 3%; recheck if beans fall under +15%']
+  },
+  memo: {
+    head:'Buy 4 weeks of beans this week. Raise price 3% in week 3.',
+    why:'Beans are rising faster than cafés will accept on price. Stock bought now locks in today’s cost, and Highland is likely to run short around week 7.',
+    watch:'If beans rise only 15%, this plan just breaks even (+$0.9k). Stocking up alone is the safer pick there.',
+    recheck:'Robusta futures fall back under +15%, or Highland changes its price before week 3.',
+    sources:[
+      {t:'Reuters, 12 Oct · Robusta futures hit a record', q:'…prices rose 31% in four weeks…', used:'→ bean cost +31%'},
+      {t:'VnExpress, 10 Oct · Port congestion at Cát Lái', q:'…waiting times of five to seven days…', used:'→ lead time +1 wk'},
+      {t:'Bloomberg, 8 Oct · Café demand steady into Q4', q:'…same-store sales flat to slightly up…', used:'→ demand ±0%'}
+    ]
+  },
+  tele: {parse:[1,0.001], news:[3,0.004], end:[23,0.06,58]}
+};
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const MINUS = '−';
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const easeOut = k => 1 - Math.pow(1 - k, 3);
+const easeIO = k => k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3)/2;
+function fmtK(v, signed = true) {
+  const a = Math.abs(v), s = a.toFixed(1);
+  if (Math.abs(v) < 0.05) return '$0.0k';
+  return (signed ? (v > 0 ? '+' : MINUS) : (v < 0 ? MINUS : '')) + '$' + s + 'k';
+}
+const money = v => '$' + v.toFixed(2);
+function tween(dur, cb, ease = easeOut) {
+  return new Promise(res => {
+    const t0 = performance.now();
+    (function f(now) { const k = Math.min(1, (now - t0) / dur); cb(ease(k)); k < 1 ? requestAnimationFrame(f) : res(); })(t0);
+  });
+}
+function vt(fn, dir = 'fwd') {
+  document.documentElement.dataset.dir = dir;
+  if (document.startViewTransition && !reduced) return document.startViewTransition(fn).finished.catch(() => {});
+  fn(); return Promise.resolve();
+}
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
+function setLive(tier) { $$('.mchip').forEach(c => c.classList.toggle('live', c.dataset.tier === tier)); }
+const tele = {calls:0, cost:0, pct:0};
+function setTele(calls, cost, pct) {
+  const from = {...tele};
+  tween(700, k => {
+    tele.calls = Math.round(from.calls + (calls - from.calls)*k); tele.cost = from.cost + (cost - from.cost)*k;
+    $('#tCalls').textContent = tele.calls; $('#tCost').textContent = '$' + tele.cost.toFixed(tele.cost < 0.01 ? 3 : 2);
+    if (pct) { tele.pct = Math.round(pct*k); $('#tPct').textContent = tele.pct; }
+  });
+  if (pct) $('#tSave').hidden = false;
+}
+
+/* ---------- navigation ---------- */
+const STEP_SCREEN = {1:'biz', 2:'news', 3:'plans', 4:'plans', 5:'memo'};
+const ORDER = ['biz','news','plans','memo'];
+let screen = 'biz';
+const fresh = () => ({profile:false, newsIn:false, run:{started:false, done:false}, memoIn:false, userPlans:0});
+const state = fresh();
+function updateSteps() {
+  const idx = ORDER.indexOf(screen), on = screen === 'plans' ? [3,4] : [ {biz:1,news:2,memo:5}[screen] ];
+  const btns = $$('#steps button');
+  btns.forEach(b => { const n = +b.dataset.step; b.classList.toggle('on', on.includes(n)); b.classList.toggle('done', ORDER.indexOf(STEP_SCREEN[n]) < idx); });
+  requestAnimationFrame(() => {
+    const a = btns[on[0]-1], z = btns[on[on.length-1]-1], ind = $('#ind');
+    ind.style.left = a.offsetLeft + 'px'; ind.style.width = (z.offsetLeft + z.offsetWidth - a.offsetLeft) + 'px';
+  });
+}
+function go(to) {
+  if (to === screen) return Promise.resolve();
+  const dir = ORDER.indexOf(to) > ORDER.indexOf(screen) ? 'fwd' : 'back';
+  // the best plan's grid label morphs into the memo headline (and back)
+  const pk = $(`tr[data-plan="${DATA.best}"] .pl .nm`), from = screen;
+  if (pk && from === 'plans' && to === 'memo') pk.style.viewTransitionName = 'pick';
+  return vt(() => {
+    $$('.screen').forEach(s => s.hidden = s.dataset.s !== to);
+    if (pk) pk.style.viewTransitionName = from === 'memo' && to === 'plans' ? 'pick' : '';
+    screen = to; updateSteps(); $('#main').scrollTop = 0; onEnter(to);
+  }, dir).then(() => { if (pk) pk.style.viewTransitionName = ''; });
+}
+$$('#steps button').forEach(b => b.onclick = () => go(STEP_SCREEN[b.dataset.step]));
+$$('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+function onEnter(s) {
+  if (s === 'news') {
+    $('#newsEmpty').hidden = state.profile; $('#newsWrap').hidden = !state.profile; $('#newsActs').hidden = !state.profile;
+    if (state.profile && !state.newsIn) { state.newsIn = true; renderNews(); }
+  }
+  if (s === 'plans' && !state.run.started) {
+    if (state.profile) startRun();
+    else { $('#logEmpty').innerHTML = 'Ultra’s steps appear here once you’ve described your business.<br><br><button class="btn ghost sm" onclick="useExample()">Use the coffee example</button>'; }
+  }
+  if (s === 'memo') {
+    $('#memoEmpty').hidden = state.run.done; $('#memoBody').hidden = !state.run.done;
+    if (state.run.done && !state.memoIn) { state.memoIn = true; renderMemo(); }
+  }
+}
+async function useExample() { await go('biz'); await fillExample(); }
+
+/* ---------- 1 · business ---------- */
+function renderFields(skel) {
+  $('#fields').innerHTML = DATA.fields.map((f, i) => `<div class="f"><label for="fd${i}">${f.label}</label>${skel ? `<div class="skel" style="width:${40 + (i*37)%45}%"></div>` : `<input id="fd${i}" class="${f.n ? 'n ' : ''}ghosted" value="${f.v}">`}<span class="guess" data-g="${f.guessed ? 1 : 0}">guessed</span></div>`).join('');
+}
+let typing = false;
+async function fillExample() {
+  if (typing) return; typing = true;
+  const ta = $('#desc'), txt = DATA.example; ta.value = ''; ta.focus();
+  await tween(reduced ? 10 : 1500, k => { ta.value = txt.slice(0, Math.round(txt.length * k)); }, k => k);
+  typing = false; await parse();
+}
+async function parse() {
+  if (!$('#desc').value.trim()) { toast('Write a sentence or two first, or pick the example.'); $('#desc').focus(); return; }
+  const custom = $('#desc').value.trim() !== DATA.example;
+  $('#fieldsEmpty').hidden = true; $('#readBtn').disabled = true;
+  $('#readStatus').innerHTML = 'Nemotron Super is reading…'; setLive('super');
+  renderFields(true);
+  await sleep(1100);
+  renderFields(false); setLive(null);
+  await vt(() => { $('#biz1').hidden = false; });
+  const inputs = $$('#fields input');
+  for (let i = 0; i < inputs.length; i++) { inputs[i].classList.remove('ghosted'); await sleep(55); }
+  await sleep(150);
+  $$('.guess[data-g="1"]').forEach((g, i) => setTimeout(() => g.classList.add('on'), i * 160));
+  $('#readStatus').innerHTML = `<span class="num">0.8 s</span> · 2 fields guessed, check them` + (custom ? ' · mock uses the coffee numbers' : '');
+  $('#readBtn').disabled = false; $('#looksRight').disabled = false;
+  state.profile = true; setTele(...DATA.tele.parse);
+}
+$('#exCoffee').onclick = fillExample;
+$('#readBtn').onclick = parse;
+$('#looksRight').onclick = () => go('news');
+$$('.ex.soon').forEach(b => b.onclick = () => toast('Coming soon. The coffee roaster works today.'));
+
+/* ---------- 2 · news ---------- */
+function renderNews() {
+  $('#news').innerHTML = DATA.news.map((n, i) => `
+    <article class="card nc ${n.used ? 'picked' : ''}" style="animation-delay:${i * 0.12}s">
+      <div class="src">${n.src} · ${n.ago} ${n.used ? '<span class="used">Used for the plan test</span>' : ''}</div>
+      <div class="hl">${n.title}</div>
+      <div class="impact ${n.impact < -0.05 ? 'bad' : 'ok'}">${n.impact ? fmtK(n.impact) : '≈ $0'}<small>bad case ${fmtK(n.p5)}</small></div>
+      <div class="chain"><q>${n.quote}</q><span class="arr">→</span>${n.chips.map((c, j) => `<span class="dchip" ${n.used && j === 0 ? 'style="view-transition-name:shockchip"' : ''}>${c}</span>`).join('')}</div>
+    </article>`).join('');
+  requestAnimationFrame(() => $$('.nc').forEach(c => c.classList.add('in')));
+  setTele(...DATA.tele.news);
+}
+$('#findBest').onclick = () => go('plans');
+$('#liveNews').onclick = async () => {
+  const b = $('#liveNews'); b.disabled = true; b.textContent = 'Checking…'; setLive('super');
+  await sleep(1300); setLive(null); b.textContent = 'Check live news'; b.disabled = false;
+  toast('No new headlines since 3 min ago · 1 Tavily credit');
+};
+
+/* ---------- 3+4 · analyst + grid ---------- */
+function buildHead() {
+  $('#ghead').innerHTML = '<th>Plan</th>' + DATA.shocks.map(s => `<th class="${s.id === 'news' ? 'today' : ''}"><span class="hc" ${s.id === 'news' ? 'style="view-transition-name:shockchip"' : ''}>${s.label}</span>${s.sub ? `<small>${s.sub}</small>` : '<small>&nbsp;</small>'}</th>`).join('');
+}
+buildHead();
+function cls(v) { return v >= 5 ? 'g3' : v >= 1.5 ? 'g2' : v >= 0.5 ? 'g1' : v > -0.5 ? 'z' : v > -3 ? 'r1' : 'r2'; }
+function addRow(id, plan, opts = {}) {
+  const tr = document.createElement('tr'); tr.dataset.plan = id; if (opts.base) tr.className = 'base'; if (opts.you) tr.className = 'mine';
+  tr.innerHTML = `<td><div class="pl"><span class="nm">${plan.name}</span><div class="bd">${opts.you ? '<span class="badge you">Yours</span>' : ''}</div></div></td>` +
+    DATA.shocks.map(s => `<td class="${s.id === 'news' ? 'today' : ''}"><button class="cell wait" data-plan="${id}" data-shock="${s.id}"><span class="v"></span><span class="p"></span><i class="bar"></i></button></td>`).join('');
+  if (opts.base) $('#gbody').prepend(tr); else $('#gbody').appendChild(tr);
+  $('#gempty').style.opacity = 0;
+  return tr;
+}
+async function fillCell(id, sid, mean, p5) {
+  const c = $(`.cell[data-plan="${id}"][data-shock="${sid}"]`); if (!c) return;
+  c.classList.add('run'); await sleep(550);
+  c.classList.remove('wait', 'run'); c.classList.add(cls(mean));
+  c.querySelector('.p').innerHTML = `bad case <span>${fmtK(p5)}</span>`;
+  const v = c.querySelector('.v');
+  await tween(650, k => { v.textContent = fmtK(mean * k); });
+  v.textContent = fmtK(mean);
+}
+async function fillRow(id, plan) {
+  for (const s of DATA.shocks) { const [m, p] = plan.cells[s.id]; fillCell(id, s.id, m, p); await sleep(260); }
+}
+function logRow(kind, html, metaHtml = '') {
+  const log = $('#log'); $('#logEmpty')?.remove();
+  const d = document.createElement('div'); d.className = 'lrow k-' + kind;
+  d.innerHTML = `<span class="tag">${{think:'Think', test:'Test', result:'Result', shoppers:'Shoppers', finish:'Pick'}[kind]}</span><div class="lt">${html}<div class="meta">${metaHtml}</div></div>`;
+  log.appendChild(d); log.scrollTo({top: log.scrollHeight, behavior: reduced ? 'auto' : 'smooth'});
+  return d;
+}
+async function streamWords(row, text) {
+  const lt = row.querySelector('.lt'), meta = lt.querySelector('.meta');
+  const span = document.createElement('span'); lt.insertBefore(span, meta);
+  span.innerHTML = text.split(' ').map(w => `<span class="w">${w}</span>`).join(' ');
+  for (const w of span.querySelectorAll('.w')) { w.classList.add('on'); await sleep(55); }
+}
+function roundHead(r, secs) {
+  const d = document.createElement('div'); d.className = 'round';
+  d.innerHTML = `<div class="rh"><b>Round ${r} of 3</b><span class="muted">Ultra thought for <span class="num">${secs} s</span></span></div>
+    <button class="tbtn">Show full Nemotron thinking ▾</button>
+    <div class="think"><div><ol>${DATA.thinking[r].map((l, i) => `<li style="transition-delay:${i * 60}ms">${l}</li>`).join('')}</ol></div></div>`;
+  const btn = d.querySelector('.tbtn'), th = d.querySelector('.think');
+  btn.onclick = () => { const o = th.classList.toggle('open'); btn.textContent = o ? 'Hide Nemotron thinking ▴' : 'Show full Nemotron thinking ▾'; };
+  $('#logEmpty')?.remove(); $('#log').appendChild(d);
+}
+const chip = (label, v) => `<span class="rchip ${v >= 0 ? 'pos' : 'neg'}">${label} ${fmtK(v)}</span>`;
+let runTimer, runT0, round = 0, runTimers = [];
+// status checklist above the log: steps before n are done, step n is in progress
+function checkStep(n) { $$('#checklist .ck').forEach((c, i) => { c.classList.toggle('ok', i < n || n === 5 && i === 4); c.classList.toggle('now', i === n && n < 5); }); }
+checkStep(0);
+function startRun() {
+  state.run.started = true; runT0 = performance.now();
+  runTimer = setInterval(() => {
+    const s = Math.floor((performance.now() - runT0) / 1000);
+    $('#aStatus').textContent = `Round ${round || 1} of 3 · 0:${String(s).padStart(2, '0')}`;
+  }, 250);
+  const calls = [3, 4, 4, 4, 6, 6, 10, 10, 11, 11, 13, 14, 15, 15, 21, 22, 22, 23];
+  DATA.script.forEach((ev, i) => runTimers.push(setTimeout(() => { runEvent(ev); setTele(calls[i] || 23, 0.004 + 0.056 * (i + 1) / DATA.script.length); }, ev.t * 1000)));
+}
+async function runEvent(ev) {
+  if (ev.e === 'round') { round = ev.r; roundHead(ev.r, ev.secs); checkStep(ev.r); }
+  if (ev.e === 'baseline') {
+    setLive('engine');
+    addRow('none', {name:'Do nothing'}, {base:1});
+    for (const s of DATA.shocks) {
+      const c = $(`.cell[data-plan="none"][data-shock="${s.id}"]`);
+      c.classList.remove('wait'); c.classList.add('basec');
+      c.querySelector('.p').textContent = 'gross profit';
+      const v = c.querySelector('.v'), to = DATA.baseline[s.id];
+      tween(700, k => v.textContent = fmtK(to * k, false)); await sleep(120);
+    }
+    $('#addBtn').disabled = false;
+  }
+  if (ev.e === 'think' || ev.e === 'shoppers' || ev.e === 'finish') {
+    setLive(ev.tier);
+    const ms = ev.ms || (1400 + ev.text.length * 18);
+    const row = logRow(ev.e, '', `<span>${ev.tier === 'fast' ? 'Lightning · 12 shopper groups' : 'Ultra'}</span>·<span class="num">${(ms / 1000).toFixed(1)} s</span>`);
+    await streamWords(row, ev.text);
+  }
+  if (ev.e === 'test') {
+    setLive('engine');
+    const p = DATA.plans[ev.plan];
+    const row = logRow('test', `<b>${p.name}</b>`, `<span class="num">1,000 runs × 4 shocks</span><span class="st">· running…</span>`);
+    addRow(ev.plan, p); await sleep(250); await fillRow(ev.plan, p); await sleep(900);
+    const [m, b] = p.cells.news;
+    row.querySelector('.st').outerHTML = `· <span class="num">0.3 s</span> ${chip('today', m)} ${chip('bad case', b)}`;
+  }
+  if (ev.e === 'result') {
+    setLive('engine');
+    const row = logRow('result', '', ev.chips.map(c => chip(c[0], c[1])).join(''));
+    await streamWords(row, ev.text);
+  }
+  if (ev.e === 'badges') {
+    setLive(null);
+    $(`tr[data-plan="${DATA.best}"] .bd`).insertAdjacentHTML('beforeend', '<span class="badge best">Best today</span>'); $(`tr[data-plan="${DATA.best}"]`).classList.add('bestrow');
+    await sleep(350);
+    $(`tr[data-plan="${DATA.safest}"] .bd`).insertAdjacentHTML('beforeend', '<span class="badge safe">Safest</span>');
+    $(`.cell[data-plan="${DATA.best}"][data-shock="news"]`).classList.add('sel');
+  }
+  if (ev.e === 'memo') {
+    clearInterval(runTimer); state.run.done = true; checkStep(5);
+    $('#aTitle').textContent = 'Nemotron tested 5 plans';
+    $('#aStatus').textContent = 'Done · 3 rounds · 0:25';
+    $('#toMemo').disabled = false; setTele(...DATA.tele.end); setLive(null);
+  }
+}
+$('#toMemo').onclick = () => go('memo');
+
+/* tooltip on cells */
+const tip = $('#tip');
+$('#gbody').addEventListener('mousemove', e => {
+  const c = e.target.closest('.cell'); if (!c || c.classList.contains('wait')) { tip.classList.remove('on'); return; }
+  const pid = c.dataset.plan, sid = c.dataset.shock;
+  if (pid === 'none') tip.textContent = `Gross profit over 6 months if you change nothing. The other cells are measured against this.`;
+  else { const [m, p] = allPlans()[pid].cells[sid]; tip.textContent = `Average over 1,000 runs: ${fmtK(m)}. In 1 run out of 20 it’s worse than ${fmtK(p)}. Click to replay.`; }
+  tip.style.left = Math.min(innerWidth - 270, e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 16) + 'px'; tip.classList.add('on');
+});
+$('#gbody').addEventListener('mouseleave', () => tip.classList.remove('on'));
+$('#gbody').addEventListener('click', e => {
+  const c = e.target.closest('.cell'); if (!c || c.classList.contains('wait') || c.dataset.plan === 'none') return;
+  tip.classList.remove('on'); openReplay(c.dataset.plan, c.dataset.shock, c);
+});
+const userPlans = {};
+const allPlans = () => ({...DATA.plans, ...userPlans});
+
+/* add your own plan */
+function planName(p, w, s, x) {
+  const parts = [];
+  if (s) parts.push(`Buy ${s} wk`);
+  if (p) parts.push(`${p > 0 ? 'raise' : 'cut'} ${Math.abs(p)}% ${w > 1 ? 'in wk ' + w : 'now'}`);
+  if (x) parts.push('switch to Lâm Đồng');
+  const n = parts.join(' + ') || 'Do nothing, again';
+  return n[0].toUpperCase() + n.slice(1);
+}
+function readSliders() {
+  const p = +$('#sP').value, w = +$('#sW').value, s = +$('#sS').value, x = $('#sX').checked;
+  $('#oP').textContent = (p > 0 ? '+' : p < 0 ? MINUS : '') + Math.abs(p) + '%';
+  $('#oW').textContent = 'wk ' + w; $('#oS').textContent = s + ' wk';
+  $('#pName').textContent = planName(p, w, s, x);
+  return {p, pw:w, stock:s, sw:x ? 1 : 0};
+}
+['#sP','#sW','#sS','#sX'].forEach(id => $(id).oninput = readSliders); readSliders();
+function simulate(sp) {
+  const sev = {s15:0.15, news:0.31, s50:0.5, port:0.3}, cells = {};
+  for (const s of DATA.shocks) {
+    const v = sev[s.id], tol = 3 + v * 6, late = Math.max(0, sp.pw - 1) * 0.07;
+    let m = sp.p > 0 ? Math.min(sp.p, tol) * 0.4 - Math.max(0, sp.p - tol) * 1.6 : sp.p * 1.15;
+    m *= 1 - late;
+    m += s.id === 'port' ? sp.stock * 1.4 : sp.stock * (v * 4.2 - 0.35);
+    if (sp.sw) m += s.id === 'port' ? 7 : (v - 0.2) * 22 - 1.6;
+    const p5 = m - (1.3 + Math.abs(sp.p) * 0.28 + sp.stock * 0.18 + (sp.sw ? 0.8 : 0));
+    cells[s.id] = [Math.round(m * 10) / 10, Math.round(p5 * 10) / 10];
+  }
+  return cells;
+}
+$('#addBtn').onclick = () => { $('#addp').classList.toggle('closed'); };
+$('#addClose').onclick = () => $('#addp').classList.add('closed');
+$('#addGo').onclick = async () => {
+  if (state.userPlans >= 4) { toast('Up to 4 plans of your own per analysis.'); return; }
+  const sp = readSliders(), id = 'u' + (++state.userPlans);
+  const plan = {name: planName(sp.p, sp.pw, sp.stock, sp.sw), spec: sp, cells: simulate(sp)};
+  userPlans[id] = plan; $('#addp').classList.add('closed');
+  const row = logRow('test', `<b>${plan.name}</b> <span class="muted">(your plan)</span>`, `<span class="num">1,000 runs × 4 shocks</span><span class="st">· running…</span>`);
+  setLive('engine'); addRow(id, plan, {you:1});
+  const tb = $('#tablebox'); tb.scrollTo({top: tb.scrollHeight, behavior: 'smooth'});
+  await sleep(200); await fillRow(id, plan); await sleep(900); setLive(null);
+  const [m, b] = plan.cells.news;
+  row.querySelector('.st').outerHTML = `· <span class="num">0.3 s</span> ${chip('today', m)} ${chip('bad case', b)}`;
+};
+
+/* ---------- replay: data ---------- */
+function buildReplay(pid, sid) {
+  const plan = allPlans()[pid], sp = plan.spec, shock = DATA.shocks.find(s => s.id === sid);
+  const [mean, p5] = plan.cells[sid], so = DATA.soldOut[sid], W = 24, base = DATA.noShockProfit / W;
+  const loss = DATA.noShockProfit - DATA.baseline[sid];
+  const ramp = w => w < 2 ? 0 : Math.min(1, (w - 1) / 3);
+  const inSo = w => so && w >= so[0] && w <= so[1];
+  let rs = 0; for (let w = 1; w <= W; w++) rs += ramp(w);
+  const shape = [0];
+  for (let w = 1; w <= W; w++) {
+    let s;
+    if (mean >= 0) s = ramp(w) * 0.6 + (sp.p > 0 && w >= sp.pw ? sp.p * 0.08 : 0) + (sp.stock && w >= 4 && w < 4 + sp.stock * 2 ? 0.5 : 0) - (sp.stock && w < 4 ? 0.12 : 0) + (inSo(w) ? (sp.stock ? 1.1 : 0.5) : 0) + (sp.sw && w >= 2 ? 0.4 : 0);
+    else s = 0.25 + (w >= (sp.pw || 1) ? 1 : 0.2);
+    shape.push(s);
+  }
+  const ssum = shape.reduce((a, b) => a + b, 0);
+  const dn = [0], d = [0], dnW = [0];
+  for (let w = 1; w <= W; w++) { const x = base - loss * ramp(w) / rs; dnW.push(x); dn.push(dn[w - 1] + x); d.push(d[w - 1] + mean * shape[w] / ssum); }
+  const spread = w => (mean - p5) * Math.sqrt(w / W);
+  const priceA = [], priceB = [], shareA = [], shareB = [], stockA = [], stockB = [], dnA = [];
+  const sev = {s15:0.15, news:0.31, s50:0.5, port:0}[sid];
+  const arrive = sp.stock ? 4 : null;
+  for (let w = 0; w <= W; w++) {
+    const pOn = sp.p && w >= sp.pw;
+    priceA.push(38 * (1 + (pOn ? sp.p / 100 : 0)));
+    priceB.push(37 * (sid !== 's15' && w >= 5 ? 1.02 : 1));
+    let a = 0.42 - (pOn ? sp.p * 0.007 : 0), b = 0.40 + (pOn ? sp.p * 0.004 : 0);
+    if (inSo(w)) { a += sp.stock ? 0.19 : 0.12; b = 0.02; }
+    shareA.push(Math.max(0.05, a)); shareB.push(Math.max(0, b)); dnA.push(0.42 + (inSo(w) ? 0.12 : 0));
+    let sa = 130;
+    if (arrive && w >= arrive) sa += sp.stock * 26 * Math.max(0, 1 - (w - arrive) / (sp.stock * 2.5));
+    if (!sp.stock && inSo(w)) sa = 45;
+    stockA.push(sa);
+    stockB.push(so ? (w < 2 ? 130 : w < so[0] ? 130 - (w - 2) * 120 / (so[0] - 2) : w <= so[1] ? 0 : 115) : 130);
+  }
+  const mk = [];
+  mk.push({w:2, kind:'shock', text: sid === 'port' ? 'The port shuts for 3 weeks. Deliveries stop.' : `Supplier costs start rising (raw cost +${Math.round(sev * 100)}%).`});
+  if (sp.stock) { mk.push({w:1, kind:'stock', text:`You order ${sp.stock} extra weeks of stock at today’s cost.`}); mk.push({w:arrive, kind:'stock', text:`The extra ${sp.stock} weeks of stock arrive.`}); }
+  if (sp.p) mk.push({w:sp.pw, kind:'price', text:`You ${sp.p > 0 ? 'raise' : 'cut'} price ${Math.abs(sp.p)}%: $38.00 → ${money(priceA[sp.pw])}.`});
+  if (sp.sw) mk.push({w:2, kind:'stock', text:'First delivery arrives from the new supplier.'});
+  if (sid !== 's15') mk.push({w:5, kind:'rival', text:`${PROFILE.rival} raises price 2%: $37.00 → $37.74.`});
+  if (so) { mk.push({w:so[0], kind:'sold', text:`${PROFILE.rival} sells out. Its customers switch to you.`}); mk.push({w:so[1] + 1, kind:'rival', text:`${PROFILE.rival} restocks. Some customers go back.`}); }
+  mk.sort((x, y) => x.w - y.w);
+  return {pid, sid, plan, shock, mean, p5, dn, d, spread, priceA, priceB, shareA, shareB, stockA, stockB, dnA, sev, mk, so, arrive, inSo};
+}
+const lerpArr = (a, t) => { const i = Math.min(a.length - 2, Math.floor(t)), f = t - i; return a[i] + (a[i + 1] - a[i]) * f; };
+
+/* ---------- replay: chart ---------- */
+const CW = 900, PL = 48, PT = 14, PB = 26;
+function makeChart(host, R, opts = {}) {
+  const CW = opts.w || 900, CH = opts.h || 165, PR = opts.pr || 132;
+  const W = 24, xs = w => PL + (w / W) * (CW - PL - PR);
+  let lo = 0, hi = 0;
+  for (let w = 0; w <= W; w++) { lo = Math.min(lo, R.d[w] - R.spread(w)); hi = Math.max(hi, R.d[w] + R.spread(w)); }
+  const pad = (hi - lo) * 0.12 || 1; lo -= pad; hi += pad;
+  const ys = v => PT + (hi - v) / (hi - lo) * (CH - PT - PB);
+  const line = arr => arr.map((v, w) => (w ? 'L' : 'M') + xs(w).toFixed(1) + ' ' + ys(v).toFixed(1)).join(' ');
+  const up = R.d.map((v, w) => v + R.spread(w)), dnb = R.d.map((v, w) => v - R.spread(w));
+  const band = line(up) + ' ' + dnb.slice().reverse().map((v, i) => 'L' + xs(W - i).toFixed(1) + ' ' + ys(v).toFixed(1)).join(' ') + ' Z';
+  const step = (hi - lo) > 16 ? 5 : (hi - lo) > 6 ? 2 : 1, ticks = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) ticks.push(v);
+  const id = 'c' + Math.random().toString(36).slice(2, 7), pos = R.mean >= 0, col = pos ? 'var(--firm-a)' : 'var(--loss)';
+  host.innerHTML = `<svg viewBox="0 0 ${CW} ${CH}" role="img" aria-label="Profit versus doing nothing, week by week">
+    <defs><clipPath id="${id}"><rect class="clip" x="0" y="0" width="${opts.full ? CW : PL}" height="${CH}"/></clipPath></defs>
+    ${ticks.map(v => `<line x1="${PL}" x2="${CW - PR}" y1="${ys(v)}" y2="${ys(v)}" stroke="var(--bg-subtle)"/><text x="${PL - 8}" y="${ys(v) + 4}" text-anchor="end" font-size="11" fill="var(--ink-3)" font-family="Inter">${v ? fmtK(v) : '$0'}</text>`).join('')}
+    ${[0, 4, 8, 12, 16, 20, 24].map(w => `<text x="${xs(w)}" y="${CH - 6}" text-anchor="middle" font-size="11" fill="var(--ink-3)" font-family="Inter">wk ${w}</text>`).join('')}
+    ${R.mk.map(m => `<line x1="${xs(m.w)}" x2="${xs(m.w)}" y1="${PT}" y2="${CH - PB}" stroke="var(--line-strong)" stroke-dasharray="2 3"/>`).join('')}
+    <line x1="${PL}" x2="${CW - PR}" y1="${ys(0)}" y2="${ys(0)}" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="${CW - PR + 8}" y="${ys(0) + 4}" font-size="12" fill="var(--rule)" font-weight="600" class="dnl">Do nothing</text>
+    <g clip-path="url(#${id})">
+      <path d="${band}" style="fill:${col};fill-opacity:var(--band)"/>
+      <path d="${line(R.d)}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    </g>
+    <line class="ph" x1="${PL}" x2="${PL}" y1="${PT}" y2="${CH - PB}" stroke="var(--ink-3)" ${opts.full ? 'opacity="0"' : ''}/>
+    <circle class="hd" r="4.5" cx="${PL}" cy="${ys(0)}" fill="${col}" style="stroke:var(--bg-card)" stroke-width="2"/>
+    <text class="hl" x="${PL}" y="${ys(0)}" font-size="12.5" font-weight="700" fill="${col}" font-family="Inter"></text>
+  </svg>`;
+  const svg = host.querySelector('svg'), clip = svg.querySelector('.clip'), ph = svg.querySelector('.ph'), hd = svg.querySelector('.hd'), hl = svg.querySelector('.hl'), dnl = svg.querySelector('.dnl');
+  return {
+    xs,
+    set(t) {
+      const x = xs(t), v = lerpArr(R.d, t), y = ys(v);
+      clip.setAttribute('width', x); ph.setAttribute('x1', x); ph.setAttribute('x2', x);
+      hd.setAttribute('cx', x); hd.setAttribute('cy', y);
+      const lx = t > 20 ? CW - PR + 8 : x + 10;
+      let ly = y + 4; const dy = ys(0) + 4;
+      if (Math.abs(ly - dy) < 14 && lx >= CW - PR) ly = ly < dy ? dy - 14 : dy + 14;
+      hl.setAttribute('x', lx); hl.setAttribute('y', ly - (t <= 20 ? 8 : 0));
+      hl.textContent = (t >= 23.95 && CW >= 700 ? 'Your plan ' : '') + fmtK(v);
+      dnl.setAttribute('opacity', t > 20 && Math.abs(ly - dy) < 3 ? 0 : 1);
+    }
+  };
+}
+function chartTitle(R) {
+  const tgt = Math.abs(R.mean) * 0.25; let wk = 24;
+  for (let w = 1; w <= 24; w++) if (Math.abs(R.d[w]) >= tgt && Math.sign(R.d[w]) === Math.sign(R.mean)) { wk = w; break; }
+  if (Math.abs(R.mean) < 0.5) return 'Profit vs doing nothing: about the same all the way';
+  return R.mean > 0 ? `Profit vs doing nothing: ahead from week ${wk}` : `Profit vs doing nothing: behind from week ${wk}`;
+}
+
+/* ---------- replay: market scene (supplier → your shop + rival → 60 customers) ---------- */
+const SW = 900, SH = 320, NC = 60;
+const COL = {};
+const VARS = {A:'--firm-a', B:'--firm-b', O:'--no-buy', ink:'--ink', ink2:'--ink-2', ink3:'--ink-3', line:'--line', loss:'--loss', gain:'--gain', subtle:'--bg-subtle', asoft:'--firm-a-soft', bsoft:'--firm-b-soft', lsoft:'--loss-soft', card:'--bg-card', sunk:'--bg-sunk', strong:'--line-strong'};
+function readCol() { const cs = getComputedStyle(document.documentElement); for (const k in VARS) COL[k] = cs.getPropertyValue(VARS[k]).trim(); cafes.forEach(c => { if (!c.tw) c.c = COL[c.g]; }); }
+const ZONE = {A:{x:612, y:42, cols:10}, B:{x:612, y:202, cols:10}, O:{x:818, y:122, cols:3}};
+const SHOP = {A:{y:24, tag:'You'}, B:{y:184, tag:'Rival'}};
+const ROUTE = {A:[[200,160],[262,160],[262,82],[324,82]], B:[[200,160],[262,160],[262,242],[324,242]]};
+const FONT = {b:"600 13.5px 'Inter', sans-serif", s:"500 12px 'Inter', sans-serif", t:"600 11px 'Inter', sans-serif", n:"600 22px 'Inter', sans-serif", ns:"500 12px 'Inter', sans-serif"};
+const sc = $('#scene'), sx = sc.getContext('2d');
+let cafes = [], parcels = [], spawnAcc = {A:0, B:0}, pop = {A:null, B:null};
+let R = null, rt = 0, rPlaying = false, rWk = -1, rOpen = false, chartCtl = null, lastTs = 0;
+const WEEK_MS = 20000 / 24;
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+function mix(a, b, t) { const A = hex(a), B = hex(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+function sizeScene() { const w = sc.getBoundingClientRect().width, d = Math.min(2, devicePixelRatio || 1); sc.width = Math.round(w * d); sc.height = Math.round(w * SH / SW * d); }
+addEventListener('resize', () => { if (rOpen) sizeScene(); });
+function slot(g, k) { const z = ZONE[g], s = g === 'O' ? 20 : 18; return {x: z.x + (k % z.cols) * s, y: z.y + Math.floor(k / z.cols) * 17}; }
+function counts(wk) { const a = Math.round(R.shareA[wk] * NC), b = Math.round(R.shareB[wk] * NC); return {A:a, B:b, O:NC - a - b}; }
+function seedCafes(wk) {
+  const n = counts(wk);
+  cafes = Array.from({length:NC}, (_, i) => { const g = i < n.A ? 'A' : i < n.A + n.B ? 'B' : 'O'; return {g, x:0, y:0, c:COL[g], tw:null}; });
+  for (const g of ['A','B','O']) cafes.filter(c => c.g === g).forEach((c, k) => { const p = slot(g, k); c.x = p.x; c.y = p.y; });
+}
+// cafés that change shop fly over on an arc, one after another; the rest just close up the gaps
+function assignCafes(wk, now) {
+  const tgt = counts(wk), lists = {A:[], B:[], O:[]}, spare = [];
+  cafes.forEach(c => lists[c.g].push(c));
+  for (const g of ['A','B','O']) while (lists[g].length > tgt[g]) spare.push(lists[g].pop());
+  let n = 0;
+  for (const g of ['A','B','O']) while (lists[g].length < tgt[g]) { const c = spare.shift(); c.g = g; c.mv = n++; lists[g].push(c); }
+  for (const g of ['A','B','O']) lists[g].forEach((c, k) => {
+    const p = slot(g, k), moved = c.mv !== undefined;
+    if (moved || Math.abs(p.x - c.x) > .5 || Math.abs(p.y - c.y) > .5)
+      c.tw = {fx:c.x, fy:c.y, tx:p.x, ty:p.y, t0: now + (moved ? c.mv * 55 : 0), dur: moved ? 1150 : 450, fc:c.c, tc:COL[g], arc:moved};
+    delete c.mv;
+  });
+}
+function stepCafe(c, now) {
+  const tw = c.tw; if (!tw) return; let k = (now - tw.t0) / tw.dur; if (k < 0) return; k = Math.min(1, k);
+  const e = easeIO(k), lift = tw.arc ? Math.sin(Math.PI * e) : 0;
+  c.x = tw.fx + (tw.tx - tw.fx) * e - lift * 46; c.y = tw.fy + (tw.ty - tw.fy) * e; c.c = mix(tw.fc, tw.tc, e); c.fly = lift;
+  if (k >= 1) { c.tw = null; c.fly = 0; }
+}
+function rate(g, wk) {
+  if (R.sid === 'port' && wk >= 2 && wk <= 4) return 0;
+  if (g === 'B') return R.inSo(wk) ? 0 : R.so && wk >= R.so[0] - 3 && wk < R.so[0] ? 0.3 : wk >= 2 ? 0.75 : 1.1;
+  return wk >= 2 ? 0.8 : 1.1;
+}
+function bez(P, t) { const u = 1 - t; return [0, 1].map(i => u*u*u*P[0][i] + 3*u*u*t*P[1][i] + 3*u*t*t*P[2][i] + t*t*t*P[3][i]); }
+function rr(x, y, w, h, r, fill, stroke) { sx.beginPath(); sx.roundRect(x, y, w, h, r); if (fill) { sx.fillStyle = fill; sx.fill(); } if (stroke) { sx.strokeStyle = stroke; sx.lineWidth = 1; sx.stroke(); } }
+function tx(s, x, y, font, col, align = 'left') { sx.font = font; sx.fillStyle = col; sx.textAlign = align; sx.fillText(s, x, y); return sx.measureText(s).width; }
+function card(x, y, w, h) { sx.save(); sx.shadowColor = 'rgba(16,24,40,.08)'; sx.shadowBlur = 8; sx.shadowOffsetY = 2; rr(x, y, w, h, 8, COL.card); sx.restore(); rr(x + .5, y + .5, w - 1, h - 1, 8, null, COL.line); }
+function pill(s, x, y, bg, fg, font = FONT.t) { sx.font = font; const w = sx.measureText(s).width + 14; rr(x, y - 12, w, 17, 4, bg); tx(s, x + 7, y, font, fg); return w; }
+function drawSupplier(now) {
+  const x = 20, y = 96, wk = Math.max(0, rWk);
+  card(x, y, 180, 128);
+  rr(x + 16, y + 16, 26, 26, 6, COL.subtle);
+  sx.strokeStyle = COL.ink2; sx.lineWidth = 1.6; sx.lineJoin = 'round';
+  sx.beginPath(); sx.moveTo(x + 22, y + 25); sx.lineTo(x + 29, y + 21); sx.lineTo(x + 36, y + 25); sx.lineTo(x + 36, y + 34); sx.lineTo(x + 29, y + 38); sx.lineTo(x + 22, y + 34); sx.closePath(); sx.stroke();
+  sx.beginPath(); sx.moveTo(x + 22, y + 25); sx.lineTo(x + 29, y + 29); sx.lineTo(x + 36, y + 25); sx.moveTo(x + 29, y + 29); sx.lineTo(x + 29, y + 38); sx.stroke();
+  tx('Supplier', x + 52, y + 27, FONT.b, COL.ink); tx(PROFILE.region, x + 52, y + 43, FONT.s, COL.ink3);
+  const portShut = R.sid === 'port' && wk >= 2 && wk <= 4;
+  if (portShut) { pill('Port shut', x + 16, y + 84, COL.lsoft, COL.loss, "600 13px 'Inter', sans-serif"); }
+  else {
+    const c = R.sev * Math.max(0, Math.min(1, (rt - 2) / 3));
+    tx('Raw cost', x + 16, y + 70, FONT.s, COL.ink3);
+    tx((c > 0.004 ? '+' : '') + Math.round(c * 100) + '%', x + 16, y + 96, FONT.n, c > 0.004 ? COL.loss : COL.ink);
+  }
+  tx(`Lead time ${wk >= 2 && R.sid !== 's15' ? '4' : '3'} wk`, x + 16, y + 116, FONT.s, COL.ink3);
+}
+function drawShop(g, now) {
+  const s = SHOP[g], x = 324, y = s.y, w = 240, h = 116, wk = Math.max(0, rWk), col = COL[g];
+  card(x, y, w, h);
+  sx.beginPath(); sx.arc(x + 20, y + 22, 5, 0, Math.PI * 2); sx.fillStyle = col; sx.fill();
+  tx(g === 'A' ? PROFILE.you : PROFILE.rival, x + 32, y + 27, FONT.b, COL.ink); pill(s.tag, x + w - 54, y + 26, g === 'A' ? COL.asoft : COL.bsoft, col);
+  const pr = g === 'A' ? R.priceA : R.priceB, p = pop[g];
+  if (p && now < p.until) {
+    const k = Math.min(1, (now - p.t0) / 350), sc2 = 1 + .12 * Math.sin(Math.PI * k);
+    sx.save(); sx.translate(x + 16, y + 60); sx.scale(sc2, sc2);
+    rr(-6, -21, 190, 30, 6, g === 'A' ? COL.asoft : COL.bsoft); tx(`${money(p.from)} → ${money(p.to)}`, 0, 0, "600 18px 'Inter', sans-serif", col); sx.restore();
+  } else tx(money(pr[wk]), x + 16, y + 60, FONT.n, COL.ink);
+  if (g === 'A' && R.arrive && wk >= 1 && wk < R.arrive) tx(`+${R.plan.spec.stock} wk of stock on the way`, x + 118, y + 58, FONT.s, COL.A);
+  const st = lerpArr(g === 'A' ? R.stockA : R.stockB, rt) / 65;
+  tx('Stock', x + 16, y + 92, FONT.s, COL.ink3);
+  rr(x + 58, y + 84, 110, 8, 4, COL.subtle);
+  if (st > 0.05) rr(x + 58, y + 84, Math.max(8, 110 * Math.min(1, st / 4)), 8, 4, col);
+  if (st <= 0.05) pill('Sold out', x + 178, y + 96, COL.lsoft, COL.loss);
+  else tx(st.toFixed(1) + ' wk', x + 178, y + 93, FONT.ns, COL.ink2);
+}
+function drawZones(now) {
+  const wk = Math.max(0, rWk), n = counts(wk), dnA = Math.round(R.dnA[wk] * NC), d = n.A - dnA;
+  let w = tx(`${n.A}`, ZONE.A.x - 4, 26, "600 15px 'Inter', sans-serif", COL.A);
+  w += tx(' customers buy from you', ZONE.A.x - 4 + w, 26, FONT.b, COL.ink);
+  if (d) tx(`${d > 0 ? '+' : MINUS}${Math.abs(d)} vs do nothing`, ZONE.A.x + w + 4, 26, FONT.s, d > 0 ? COL.gain : COL.loss);
+  w = tx(`${n.B}`, ZONE.B.x - 4, 186, "600 15px 'Inter', sans-serif", COL.B);
+  tx(' buy from ' + PROFILE.rivalShort, ZONE.B.x - 4 + w, 186, FONT.b, COL.ink);
+  tx('Not buying', ZONE.O.x - 4, 106, FONT.s, COL.ink3);
+  sx.strokeStyle = COL.line; sx.lineWidth = 1.5; sx.setLineDash([3, 4]);
+  for (const g of ['A','B']) { const yy = SHOP[g].y + 58; sx.beginPath(); sx.moveTo(564, yy); sx.lineTo(598, yy); sx.stroke(); }
+  sx.setLineDash([]);
+  const flying = [];
+  for (const c of cafes) { stepCafe(c, now); if (c.fly) { flying.push(c); continue; } sx.beginPath(); sx.arc(c.x + 6, c.y + 6, 6, 0, Math.PI * 2); sx.fillStyle = c.c; sx.fill(); }
+  for (const c of flying) {
+    sx.beginPath(); sx.arc(c.x + 6, c.y + 6, 6 + c.fly * 1.5, 0, Math.PI * 2); sx.fillStyle = c.c; sx.fill();
+    sx.strokeStyle = COL.card; sx.lineWidth = 2; sx.stroke();
+  }
+}
+function drawRoutes(dt) {
+  const wk = Math.max(0, rWk);
+  sx.strokeStyle = COL.strong; sx.lineWidth = 1.5; sx.setLineDash([2, 5]);
+  for (const g of ['A','B']) { const P = ROUTE[g]; sx.beginPath(); sx.moveTo(...P[0]); sx.bezierCurveTo(...P[1], ...P[2], ...P[3]); sx.stroke(); }
+  sx.setLineDash([]);
+  if (rPlaying) for (const g of ['A','B']) { spawnAcc[g] += rate(g, wk) * dt / 1000; while (spawnAcc[g] >= 1) { spawnAcc[g]--; parcels.push({g, t:0}); } }
+  parcels = parcels.filter(p => p.t < 1);
+  for (const p of parcels) {
+    if (rPlaying) p.t += dt / (wk >= 2 && R.sid !== 's15' ? 1700 : 1300);
+    if (p.t < 0) continue;
+    const [px2, py2] = bez(ROUTE[p.g], p.t), big = p.big ? 1.35 : 1;
+    rr(px2 - 6 * big, py2 - 5 * big, 12 * big, 10 * big, 3, p.big ? COL.A : COL.ink3);
+  }
+}
+function drawScene(now, dt) {
+  sx.setTransform(sc.width / SW, 0, 0, sc.height / SH, 0, 0);
+  sx.clearRect(0, 0, SW, SH);
+  drawRoutes(dt); drawSupplier(now); drawShop('A', now); drawShop('B', now); drawZones(now);
+}
+function bubbles(wk) {
+  const P = R.plan.spec, soNow = R.inSo(wk); let list = [];
+  const you = PROFILE.youShort, rv = PROFILE.rivalShort;
+  if (wk < 2) list = [['78%','51%', `${rv} is <b>$1 cheaper</b>, but ${you} is fine`]];
+  else if (wk < 3) list = [['13%','22%', R.sid === 'port' ? '<b>No deliveries</b> this week' : 'Supplier costs <b>jumped</b>']];
+  else if (soNow) list = [['78%','51%', `<b>${rv} is out.</b> Buying from ${you}`]];
+  else if (R.so && wk > R.so[1]) list = [['78%','51%', `${you} <b>never ran out</b>`]];
+  else if (P.p > 0) list = [['78%','51%', `+${P.p}% is <b>still fine</b>`]];
+  else if (P.p < 0) list = [['78%','51%', `${you} got <b>cheaper</b>`]];
+  else if (P.stock) list = [['78%','51%', `${you} has <b>plenty in stock</b>`]];
+  const layer = $('#bubs'); layer.innerHTML = '';
+  list.slice(0, 2).forEach(([x, y, t]) => { const el = document.createElement('div'); el.className = 'bub'; el.style.left = x; el.style.top = y; el.innerHTML = t; layer.appendChild(el); });
+}
+const CAPCOL = {shock:'var(--loss)', price:'var(--firm-a)', stock:'var(--gain)', sold:'var(--firm-b)', rival:'var(--firm-b)', calm:'var(--ink-3)'};
+let capQ = [], capBusy = false;
+function caption(w, kind, text) { capQ.push({w, kind, text}); if (!capBusy) nextCap(); }
+async function nextCap() {
+  const c = capQ.shift(); if (!c) { capBusy = false; return; } capBusy = true;
+  const ct = $('#ct'); ct.style.opacity = 0; ct.style.transform = 'translateY(4px)'; await sleep(180);
+  ct.textContent = c.text; $('#cw').textContent = 'Wk ' + c.w; $('#ctab').style.background = CAPCOL[c.kind]; ct.style.opacity = 1; ct.style.transform = 'none';
+  const cu = $('#cu'); cu.classList.remove('go'); void cu.offsetWidth; cu.classList.add('go');
+  await sleep(capQ.length ? 1500 : 600); nextCap();
+}
+function onWeek(wk, jumped, now) {
+  $('#rWeek').textContent = `Week ${wk} of 24`;
+  const a = R.shareA[wk], b = R.shareB[wk];
+  $('#rShares').innerHTML = `<span style="color:var(--firm-a)">● ${PROFILE.youShort} <span class="num">${Math.round(a * 100)}%</span></span> · <span style="color:var(--firm-b)">● ${PROFILE.rivalShort} <span class="num">${Math.round(b * 100)}%</span></span> · not buying <span class="num">${Math.round((1 - a - b) * 100)}%</span>`;
+  for (const g of ['A','B']) {
+    const pr = g === 'A' ? R.priceA : R.priceB, prev = pr[Math.max(0, wk - 1)];
+    pop[g] = !jumped && Math.abs(pr[wk] - prev) > 0.001 ? {from:prev, to:pr[wk], t0:now, until:now + 1900} : null;
+  }
+  if (!jumped && R.arrive && wk === R.arrive) for (let i = 0; i < 5; i++) parcels.push({g:'A', t:-i * 0.12, big:true});
+  assignCafes(wk, now); bubbles(wk);
+  if (jumped) capQ = [];
+  R.mk.filter(m => m.w === wk).forEach(m => caption(m.w, m.kind, m.text));
+  if (wk === 24) caption(24, 'calm', `Week 24: ${fmtK(R.mean)} vs doing nothing. Bad case ${fmtK(R.p5)}.`);
+  $$('.pin').forEach(p => p.classList.toggle('hit', +p.dataset.w <= wk));
+}
+function frame(ts) {
+  if (!rOpen) return;
+  const dt = Math.min(64, ts - (lastTs || ts)); lastTs = ts;
+  if (rPlaying) { rt = Math.min(24, rt + dt / WEEK_MS); if (rt >= 24) { rPlaying = false; $('#rPlay').textContent = '▶'; } }
+  const wk = Math.floor(rt + 1e-6);
+  if (wk !== rWk) { const jumped = Math.abs(wk - rWk) > 1; rWk = wk; onWeek(wk, jumped, ts); }
+  drawScene(ts, dt); chartCtl.set(rt);
+  const v = lerpArr(R.d, rt), dn = lerpArr(R.dn, rt);
+  const rd = $('#rDelta'); rd.textContent = fmtK(v); rd.style.color = v > 0.05 ? 'var(--gain)' : v < -0.05 ? 'var(--loss)' : 'var(--ink-2)';
+  $('#rAbs').innerHTML = `Gross profit so far: <b class="num">${fmtK(dn + v, false)}</b> with the plan · <b class="num">${fmtK(dn, false)}</b> doing nothing`;
+  requestAnimationFrame(frame);
+}
+let openCell = null;
+async function openReplay(pid, sid, cellEl) {
+  R = buildReplay(pid, sid); rt = 0; rWk = -1; capQ = []; lastTs = 0; parcels = []; spawnAcc = {A:.6, B:.2}; pop = {A:null, B:null};
+  readCol(); seedCafes(0);
+  $('#rPlan').textContent = R.plan.name; $('#rShock').textContent = R.shock.label + (sid === 'news' ? ' (today’s news)' : '');
+  $('#rTitle').textContent = chartTitle(R);
+  chartCtl = makeChart($('#rChart'), R);
+  const sp = R.plan.spec, sg = v => (v > 0 ? '+' : v < 0 ? MINUS : '') + Math.abs(v);
+  $('#rSet').innerHTML = `<h3>This plan</h3>
+    <div class="row"><span>Price change</span><span>${sp.p ? sg(sp.p) + '% from wk ' + sp.pw : 'none'}</span></div>
+    <div class="row"><span>Extra stock</span><span>${sp.stock ? sp.stock + ' wk' : 'none'}</span></div>
+    <div class="row"><span>Supplier</span><span>${sp.sw ? 'switch' : 'same'}</span></div>
+    <div class="row"><span>Shock</span><span>${R.shock.label}</span></div>
+    <div class="lg"><span><i></i>expected (average)</span><span><i style="border-top:9px solid var(--firm-a-soft)"></i>high to low, 19 runs in 20</span><span><i style="border-top:2px dashed var(--rule)"></i>do nothing</span></div>`;
+  const xsPct = w => (chartCtl.xs(w) / CW * 100).toFixed(2) + '%';
+  const byW = {}; R.mk.forEach(m => (byW[m.w] = byW[m.w] || []).push(m.text));
+  $('#pins').innerHTML = Object.keys(byW).map(w => `<button class="pin" data-w="${w}" style="left:${xsPct(+w)}" title="${byW[w].join(' ')}"><i></i>${w}</button>`).join('');
+  $$('.pin').forEach(p => p.onclick = () => jump(+p.dataset.w));
+  $('#ct').textContent = 'Both shops are calm. Nothing has hit yet.'; $('#cw').textContent = 'Wk 0'; $('#ctab').style.background = CAPCOL.calm;
+  $$('.cell.sel').forEach(c => c.classList.remove('sel'));
+  openCell = cellEl; if (cellEl) cellEl.classList.add('sel');
+  rOpen = true; rPlaying = true; $('#rPlay').textContent = '❚❚';
+  if (cellEl) cellEl.style.viewTransitionName = 'cellmorph';
+  await vt(() => {
+    if (cellEl) cellEl.style.viewTransitionName = '';
+    $('#drawer').style.viewTransitionName = 'cellmorph';
+    $('#drawer').hidden = false; $('#scrim').classList.add('on'); sizeScene();
+  });
+  $('#drawer').style.viewTransitionName = '';
+  requestAnimationFrame(frame);
+}
+async function closeReplay() {
+  if (!rOpen) return;
+  const back = openCell && openCell.isConnected && screen === 'plans' ? openCell : null;
+  $('#drawer').style.viewTransitionName = 'cellmorph';
+  await vt(() => {
+    $('#drawer').style.viewTransitionName = ''; $('#drawer').hidden = true; $('#scrim').classList.remove('on');
+    if (back) back.style.viewTransitionName = 'cellmorph';
+  }, 'back');
+  if (back) back.style.viewTransitionName = '';
+  rOpen = false; rPlaying = false;
+}
+function jump(w) { rt = Math.max(0, Math.min(24, w)); rPlaying = false; $('#rPlay').textContent = '▶'; }
+function togglePlay() { if (rt >= 24) { rt = 0; rWk = -1; } rPlaying = !rPlaying; $('#rPlay').textContent = rPlaying ? '❚❚' : '▶'; }
+$('#rPlay').onclick = togglePlay;
+$('#rRestart').onclick = () => { rt = 0; rWk = -1; capQ = []; rPlaying = true; $('#rPlay').textContent = '❚❚'; };
+$('#rBack').onclick = () => jump(Math.ceil(rt) - 1);
+$('#rFwd').onclick = () => jump(Math.floor(rt) + 1);
+$('#rClose').onclick = closeReplay; $('#scrim').onclick = closeReplay;
+document.addEventListener('keydown', e => {
+  if (!rOpen || e.target.matches('input,textarea')) return;
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  if (e.key === 'ArrowLeft') jump(Math.ceil(rt) - 1);
+  if (e.key === 'ArrowRight') jump(Math.floor(rt) + 1);
+  if (e.key === 'Escape') closeReplay();
+});
+
+/* ---------- 5 · memo ---------- */
+function renderMemo() {
+  const m = DATA.memo, [mean, p5] = DATA.plans[DATA.best].cells.news;
+  $('#mHead').textContent = m.head; $('#mWhy').textContent = m.why; $('#mWatch').textContent = m.watch; $('#mRecheck').textContent = m.recheck;
+  $('#mSrc').innerHTML = m.sources.map(s => `<div class="s"><a href="#" onclick="return false">${s.t}</a><q>${s.q}</q><span class="dchip" style="justify-self:start">${s.used}</span></div>`).join('');
+  $('#memoMain').classList.add('in'); $('#memoSide').classList.add('in');
+  tween(900, k => { $('#kMean').textContent = fmtK(mean * k); $('#kP5').textContent = fmtK(p5 * k); });
+  $('#kP5').style.color = p5 >= 0 ? 'var(--gain)' : 'var(--loss)';
+  const R0 = buildReplay(DATA.best, 'news'), mc = makeChart($('#miniChart'), R0, {full:1, w:460, h:190, pr:96});
+  $('#miniTitle').textContent = chartTitle(R0);
+  setTimeout(() => tween(1600, k => mc.set(24 * k), easeIO), 500);
+  setTimeout(async () => {
+    setLive('engine'); $('#kRuns').nextElementSibling.textContent = 'Verifying on Nebius…';
+    await tween(2200, k => { $('#vfill').style.width = (k * 100) + '%'; $('#kRuns').textContent = Math.round(1000 + 9000 * k).toLocaleString('en-US'); }, easeIO);
+    $('#kRuns').nextElementSibling.textContent = 'simulated runs per cell'; $('#vbar').style.opacity = 0; $('#kVer').classList.add('on'); setLive(null);
+  }, 900);
+}
+function memoMd() {
+  const m = DATA.memo, [mean, p5] = DATA.plans[DATA.best].cells.news;
+  return `# Decision memo: Saigon Roasters\n\n## ${m.head}\n\n- ${fmtK(mean)} vs doing nothing over 6 months\n- Bad case (1 in 20): ${fmtK(p5)}\n- 10,000 simulated runs per cell · Nebius-verified\n\n**Why.** ${m.why}\n\n**Watch out for.** ${m.watch}\n\n**Recheck when.** ${m.recheck}\n\n## Sources\n${m.sources.map(s => `- ${s.t}: "${s.q}" ${s.used}`).join('\n')}\n\n_Every number comes from the simulator. Nemotron Ultra wrote the words. Mock data._\n`;
+}
+$('#copyMd').onclick = async () => { try { await navigator.clipboard.writeText(memoMd()); toast('Memo copied as Markdown'); } catch { toast('Copy blocked by the browser here'); } };
+$('#dlMd').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([memoMd()], {type:'text/markdown'})); a.download = 'saigon-roasters-memo.md'; a.click(); };
+function resetAll() {
+  runTimers.forEach(clearTimeout); runTimers = []; clearInterval(runTimer); round = 0;
+  Object.assign(state, fresh()); Object.keys(userPlans).forEach(k => delete userPlans[k]);
+  if (rOpen) { $('#drawer').hidden = true; $('#scrim').classList.remove('on'); rOpen = false; rPlaying = false; }
+  $('#gbody').innerHTML = ''; $('#gempty').style.opacity = 1; $('#addp').classList.add('closed');
+  $('#log').innerHTML = '<div class="empty" id="logEmpty">Ultra’s steps appear here: what it thinks, what it tests, what it learns.</div>';
+  $('#aTitle').textContent = 'Nemotron is testing plans'; $('#aStatus').textContent = ''; checkStep(0);
+  $('#toMemo').disabled = $('#addBtn').disabled = $('#looksRight').disabled = true; $('#readBtn').disabled = false;
+  $('#desc').value = ''; $('#fields').innerHTML = ''; $('#fieldsEmpty').hidden = false; $('#biz1').hidden = true; $('#readStatus').textContent = '';
+  $('#news').innerHTML = '';
+  $('#memoMain').classList.remove('in'); $('#memoSide').classList.remove('in'); $('#kVer').classList.remove('on');
+  $('#vbar').style.opacity = 1; $('#vfill').style.width = 0; $('#kRuns').textContent = '1,000';
+  tele.calls = tele.cost = tele.pct = 0; $('#tCalls').textContent = '0'; $('#tCost').textContent = '$0.000'; $('#tSave').hidden = true; setLive(null);
+}
+$('#again').onclick = async () => { await go('biz'); resetAll(); };
+$('#replayPick').onclick = async () => { await go('plans'); await sleep(150); openReplay(DATA.best, 'news', $(`.cell[data-plan="${DATA.best}"][data-shock="news"]`)); };
+
+/* ---------- auto demo ---------- */
+async function waitFor(fn) { while (!fn()) await sleep(150); }
+async function autoDemo() {
+  if (state.profile || screen !== 'biz') { await go('biz'); resetAll(); }
+  $('#demoBtn').textContent = 'Demo running…'; $('#demoBtn').disabled = true;
+  await sleep(500); await fillExample(); await sleep(1600);
+  await go('news'); await sleep(4200);
+  await go('plans'); await waitFor(() => state.run.done); await sleep(1400);
+  await openReplay(DATA.best, 'news', $(`.cell[data-plan="${DATA.best}"][data-shock="news"]`));
+  await waitFor(() => rt >= 24); await sleep(2600);
+  await closeReplay(); await sleep(800);
+  await go('memo'); $('#demoBtn').textContent = '▶ Auto demo'; $('#demoBtn').disabled = false;
+}
+$('#demoBtn').onclick = autoDemo;
+
+/* ---------- light / dark ---------- */
+function setTheme(t) {
+  const apply = () => { document.documentElement.dataset.theme = t; if (rOpen) readCol(); };
+  if (document.startViewTransition && !reduced) { document.documentElement.dataset.dir = 'none'; document.startViewTransition(apply); } else apply();
+  try { localStorage.setItem('d7-theme', t); } catch (e) {}
+}
+$('#themeBtn').onclick = () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  setTheme(cur === 'dark' ? 'light' : 'dark');
+};
+try { const t = localStorage.getItem('d7-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (rOpen) readCol(); });
+
+/* ---------- boot ---------- */
+updateSteps();
+addEventListener('resize', updateSteps);
+document.fonts && document.fonts.ready.then(updateSteps);
+</script>
+</body>
+</html>
+<!-- END D7 -->
