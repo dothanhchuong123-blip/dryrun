@@ -32,12 +32,12 @@ Example: **T01** on account #1.
    ```bash
    uv run scripts/argon.py pack T01
    ```
-   Finder opens `dist/argon/T01/`, which holds `UPLOAD_ME.md` and `PROMPT.txt`.
+   Finder opens with `UPLOAD_ME.md` selected, and **the prompt is already on your clipboard**. You only need to run `pack` once per job.
 2. **Send it.** In Gemini (account #1):
    1. Start a **new chat** and pick **Argon High**.
-   2. Click **+** and upload `UPLOAD_ME.md`.
-   3. Open `PROMPT.txt`, select all, copy, and paste it into the message box.
-   4. Send.
+   2. Drag `UPLOAD_ME.md` from Finder into the chat box.
+   3. Press **Cmd+V** to paste the prompt. If your clipboard got overwritten, the prompt is also in `PROMPT.txt` in the same folder.
+   4. Press Enter.
 3. **Wait.** Builds take a while. If the answer stops part-way, the import step tells you; reply `continue` in Gemini and repeat step 4 for each part.
 4. **Bring it back.** Click the **copy icon** under Gemini's answer, then run:
    ```bash

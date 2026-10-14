@@ -158,12 +158,21 @@ def pack(job: str, open_folder: bool = True) -> None:
             shutil.copy(img, d / img.name)
             print(f"  image: {img.name}")
     (d / "PROMPT.txt").write_text(prompt)
-    print(f"\nReady: {d}")
-    print("Upload everything in that folder except PROMPT.txt, then paste PROMPT.txt as your message.")
-    if not uploads and not images:
-        print("This review has no files to pack: upload your own screenshots or video instead.")
-    if open_folder and sys.platform == "darwin":
-        subprocess.run(["open", str(d)], check=False)
+    on_mac = sys.platform == "darwin"
+    if on_mac:
+        subprocess.run(["pbcopy"], input=prompt, text=True, check=False)
+    print(f"\nReady: {d}\n\nNow in Gemini (new chat, Argon High):")
+    if uploads or images:
+        print("  1. Drag UPLOAD_ME.md" + (" and the images" if images else "") + " from the Finder window into the chat box.")
+    else:
+        print("  1. Drag in your own screenshots or video (this review has no files to pack).")
+    print("  2. Press Cmd+V: the prompt is already on your clipboard (it's also in PROMPT.txt)."
+          if on_mac else "  2. Paste the contents of PROMPT.txt as your message.")
+    print("  3. Press Enter and wait until the answer is completely finished.")
+    print(f"  4. Click the copy icon under the answer, then run: uv run scripts/argon.py import {job}")
+    if open_folder and on_mac:
+        cmd = ["open", "-R", str(d / "UPLOAD_ME.md")] if uploads else ["open", str(d)]
+        subprocess.run(cmd, check=False)
 
 
 def allowed(rel: str, patterns: list[str]) -> bool:
