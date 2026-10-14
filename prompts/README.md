@@ -49,6 +49,7 @@ Then: Argon review **A3** (whole repo), `prompts/argon/reviews/A3-repo-review.md
 
 ### Oct 21–24 · buffer and polish (no new prompt files)
 - Connect the frontend to the live backend.
+- **UI restyle (deferred from T10 check, Oct 14).** The T10 shell works but looks like a debug console: boxes inside boxes, monospace everywhere, too many coloured outlines, internal labels ("T12 CANVAS SLOT") showing, weak headline numbers, cramped 3-row header. Write `docs/DESIGN.md` (fonts, surfaces, type scale, colour meaning, number format), then restyle `tailwind.config.ts`, `globals.css`, `app/page.tsx`, and bring T11/T12 in line. Do it before A5.
 - Scenarios 2–3.
 - P1 items from SPEC §11.
 - Argon reviews **A5** (UI) and **A4** (calibration).
