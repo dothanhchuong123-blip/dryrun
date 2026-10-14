@@ -29,10 +29,10 @@ Each numbered folder is one **wave**. **Everything inside a folder can run at th
 ### Wave 2 · Oct 16–17 · `prompts/2_oct16-17_all-parallel/`. Start each one as soon as its inputs are committed.
 | Done | Task | Builder | Needs | File |
 |---|---|---|---|---|
-| [ ] | T03 stats + Monte Carlo | Argon #1 → Claude check | T01, T02 | `prompts/2_oct16-17_all-parallel/T03-stats-montecarlo.md` |
-| [ ] | T11 charts + news cards | Argon #3 → Claude check | T10 | `prompts/2_oct16-17_all-parallel/T11-frontend-terminal.md` |
-| [ ] | T12 canvas arena | Argon #2 → Claude check | T10 | `prompts/2_oct16-17_all-parallel/T12-frontend-arena.md` |
-| [ ] | T06 Tavily scout + scenarios | Claude Sonnet 5.5 | T04, T05 | `prompts/2_oct16-17_all-parallel/T06-tavily-scout.md` |
+| [x] | T03 stats + Monte Carlo | Argon #1 → Claude check | T01, T02 | `prompts/2_oct16-17_all-parallel/T03-stats-montecarlo.md` |
+| [x] | T11 charts + news cards | Argon #3 → Claude check | T10 | `prompts/2_oct16-17_all-parallel/T11-frontend-terminal.md` |
+| [x] | T12 canvas arena | Argon #2 → Claude check | T10 | `prompts/2_oct16-17_all-parallel/T12-frontend-arena.md` |
+| [x] | T06 Tavily scout + scenarios | Claude Sonnet 5.5 | T04, T05 | `prompts/2_oct16-17_all-parallel/T06-tavily-scout.md` |
 
 ### Wave 3 · Oct 18 · Milestone A (headless run) · `prompts/3_oct18_one-task/`
 | Done | Task | Builder | Needs | File |
