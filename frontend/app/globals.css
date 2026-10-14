@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg-terminal: #07090e;
+  --bg-panel: #0c1018;
+  --bg-panel-alt: #101622;
+  --border-terminal: #1c2536;
+  --text-primary: #e2e8f0;
+  --text-muted: #64748b;
+  --tier-ultra-purple: #a855f7;
+  --tier-ultra-gold: #f59e0b;
+  --tier-super-cyan: #06b6d4;
+  --tier-fast-emerald: #10b981;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-terminal);
+  color: var(--text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom dark institutional scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #07090e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Responsive 3-pane terminal layout: stacks below 900px, 25% / 45% / 30% at >= 900px */
+.mdt-workspace-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: calc(100vh - 76px);
+}
+
+.mdt-pane-left,
+.mdt-pane-centre,
+.mdt-pane-right {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .mdt-workspace-grid {
+    flex-direction: row;
+    height: calc(100vh - 76px);
+    overflow: hidden;
+  }
+
+  .mdt-pane-left {
+    width: 25%;
+    flex: 0 0 25%;
+    height: 100%;
+  }
+
+  .mdt-pane-centre {
+    width: 45%;
+    flex: 0 0 45%;
+    height: 100%;
+  }
+
+  .mdt-pane-right {
+    width: 30%;
+    flex: 0 0 30%;
+    height: 100%;
+  }
+}
+
