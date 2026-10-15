@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     daily_spend_cap_usd: float = 1.00
     public_live_daily_cap_usd: float = 0.20
     tavily_daily_credit_cap: int = 30  # public "Check live news" button, SPEC §6
+    frontend_origin: str = ""  # CORS allow-origin for the Next.js site; "" = same origin only
 
 
 @lru_cache
