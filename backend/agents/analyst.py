@@ -119,6 +119,7 @@ def build_columns(
     rescaled = clamped = 0
     for raw in parsed.cases:
         d = raw.model_dump()
+        d["label"] = fit_name(d["label"])
         for k in ("rival_price_change_pct", "share_shift_pct"):
             if 0 < abs(d[k]) < 1:  # a fraction where percent points were asked for
                 d[k] *= 100.0
@@ -183,6 +184,23 @@ def build_columns(
 # --------------------------------------------------------------------------------------
 # The analyst
 # --------------------------------------------------------------------------------------
+
+
+NAME_CAP = 40  # schema maxLength for plan names, the pick and future labels; Ultra is asked for 32
+
+
+def fit_name(text: str, cap: int = NAME_CAP) -> str:
+    """A name or label within one character of `cap` was cut there by constrained decoding (FEEDBACK_LOG
+    2026-10-15; a cut trailing space is stripped, so 39 counts), e.g. "Highland cuts 8% and chains take 10% sh":
+    drop the partial last word and any dangling joiner. Ultra is asked for 32, so a whole name rarely gets here."""
+    text = " ".join(text.split())
+    if len(text) < cap - 1:
+        return text
+    words = text[:cap].split(" ")[:-1] or [text[:cap]]
+    while len(words) > 1 and (words[-1].lower() in {"and", "&", "+", "with", "or", "then", "in", "at", "of"}
+                              or not words[-1].strip(",;:-–—(+&/")):
+        words.pop()
+    return " ".join(words).rstrip(",;:-–—(+&/ ")
 
 
 def tidy(text: str, cap: int) -> str:
@@ -299,7 +317,7 @@ def neutral_crowd() -> tuple[CrowdSentiment, list[dict], bool]:
 
 def gut_name(name: str) -> str:
     """Row label of the owner's gut-call plan (review 2026-10-15, wave-3 verdict §C 8.1)."""
-    return (GUT_PREFIX + (name.strip() or "my plan"))[:40]
+    return fit_name(GUT_PREFIX + (name.strip() or "my plan"))
 
 
 class Analyst:
@@ -562,6 +580,7 @@ class Analyst:
             if len(self.specs) + len(out) >= self.max_plans:
                 break
             spec = PlanSpec.from_dict(model.to_engine())
+            spec = replace(spec, name=fit_name(spec.name))
             if spec.switch_supplier and spec.alt_cost_change_pct < ALT_COST_FLOOR_PCT:
                 notes.append(
                     f"Skipped “{spec.name}”: it assumes a supplier {-spec.alt_cost_change_pct:.0f}% cheaper than today's, "
@@ -591,7 +610,7 @@ class Analyst:
             await self._deterministic_search(rnd)
             return False
         assert isinstance(step, AnalystStep)
-        self.ultra_pick, self._stale = step.pick, False
+        self.ultra_pick, self._stale = fit_name(step.pick), False
         step = step.model_copy(update={"thought": tidy(step.thought, 300), "why": tidy(step.why, 300)})
         self.last_why = step.why
         await self._step(rnd, "think", step.thought, None, "ultra", latency)

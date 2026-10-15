@@ -8,7 +8,7 @@ from types import SimpleNamespace as NS
 import pytest
 
 from backend.agents import prompts, wording
-from backend.agents.analyst import Analyst, build_columns
+from backend.agents.analyst import Analyst, build_columns, fit_name
 from backend.agents.schemas import (
     AnalystStep,
     ArchetypeSentiment,
@@ -948,3 +948,37 @@ async def test_ultra_cannot_invent_a_cheaper_supplier():
     assert any("Skipped “Switch supplier -20%”" in n and "20% cheaper" in n for n in notes)
     assert not a.fallback_used
     assert "alt_cost_change_pct (0..50" in prompts.analyst_messages(PROFILE, [], "", "", 1, 3, [])[0]["content"]
+
+
+@pytest.mark.parametrize(("text", "want"), [
+    ("Highland cuts 8% and chains take 10% sh", "Highland cuts 8% and chains take 10%"),     # P4 coffee re-record
+    ("Switch supplier, stock 2w, raise 5% wk2,", "Switch supplier, stock 2w, raise 5%"),
+    ("Beans +35%, demand -20%, Highland cuts 5", "Beans +35%, demand -20%, Highland cuts"),
+    ("Raise price 5% and stock 4 weeks and mar", "Raise price 5% and stock 4 weeks"),       # dangling "and" goes too
+    ("Stock 3 weeks now, price +5% week 4", "Stock 3 weeks now, price +5% week 4"),          # under the cap: untouched
+    ("x" * 45, "x" * 40),
+])
+def test_fit_name_drops_a_word_cut_at_the_cap(text, want):
+    assert fit_name(text) == want
+
+
+async def test_cut_names_and_labels_are_trimmed_and_the_pick_still_matches():
+    rec = Recorder()
+    cut = "Stock 3 wk now, raise 3% wk 4 and mar"           # 37 chars: under the cap, untouched
+    long = "Stock 2 weeks now and push marketing har"         # 40 chars: cut
+    script = full_script()
+    script[ScenarioSet] = [scenario_set(case_dict("Highland cuts 8% and chains take 10% sh", delta_c_raw=0.0,
+                                                  rival_price_change_pct=-8, share_shift_pct=10),
+                                        case_dict("Worse", delta_c_raw=0.5))]
+    script[AnalystStep] = [step("test", [{"name": cut, "extra_stock_weeks": 3, "price_change_pct": 3},
+                                         {"name": long, "extra_stock_weeks": 2, "marketing_change_pct": 30}], pick=long),
+                           step("finish", pick=long)]
+    a = make_analyst(FakeRouter(script), rec)
+    await a.run()
+    labels = [c.label for c in a.shocks]
+    assert "Highland cuts 8% and chains take 10%" in labels
+    names = [s.name for s in a.specs]
+    assert cut in names and "Stock 2 weeks now and push marketing" in names
+    assert rec.of("memo")[0]["plan_name"] == "Stock 2 weeks now and push marketing"
+    system = prompts.analyst_messages(PROFILE, [], "", "", 1, 3, [])[0]["content"]
+    assert "(<=32 chars)" in system

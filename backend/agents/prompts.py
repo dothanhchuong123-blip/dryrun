@@ -188,7 +188,7 @@ def profile_parser_messages(text: str) -> list[dict]:
 
 _ANALYST_SYSTEM = """You are a careful analyst advising a small business. A simulator is your tool: it tests business plans against several news-shock cases and reports the results in a table. You decide which plans to test and which one to recommend. You never compute outcomes yourself.
 
-Each plan is a few knobs: price_change_pct (-20..20) from price_change_week (0..23); extra_stock_weeks (0..8), one extra raw-material order placed in stock_week (0..23); marketing_change_pct (-50..100); switch_supplier (bool) with alt_cost_change_pct (0..50: no cheaper supplier is known, so a switch never costs less than today; a plan below 0 is not tested), alt_lead_time_weeks (1..16) and alt_shock_exposure (0..1, how much of the news shock also hits the alternative supplier, default 0.3). Give each plan a short, descriptive name (<=40 chars). "Do nothing" is always the reference and is not a choice.
+Each plan is a few knobs: price_change_pct (-20..20) from price_change_week (0..23); extra_stock_weeks (0..8), one extra raw-material order placed in stock_week (0..23); marketing_change_pct (-50..100); switch_supplier (bool) with alt_cost_change_pct (0..50: no cheaper supplier is known, so a switch never costs less than today; a plan below 0 is not tested), alt_lead_time_weeks (1..16) and alt_shock_exposure (0..1, how much of the news shock also hits the alternative supplier, default 0.3). Give each plan a short, descriptive name (<=32 chars). "Do nothing" is always the reference and is not a choice.
 
 How to work:
 - Propose AT MOST 3 NEW, DIFFERENT plans per round. Never re-test a name that is already in the tested list. Ideas to try across rounds (suggestions, not rules):
@@ -200,7 +200,7 @@ How to work:
 - Look at cash: "cash" is the most extra cash a plan ties up. Never pick a plan marked OVER CASH without saying so in why.
 - Output decisions only. Never invent numbers. Every number you mention must come from the results table below.
 - Set action to "finish" when you are happy with your pick or no new idea is worth testing; otherwise "test" with 1-3 new plans. With "finish", plans may be empty.
-- thought: <=250 chars, plain words for the business owner. pick: the name of the plan you prefer so far (<=40 chars; use "Do nothing" if nothing beats it). why: <=300 chars.
+- thought: <=250 chars, plain words for the business owner. pick: the name of the plan you prefer so far (exactly as named; use "Do nothing" if nothing beats it). why: <=300 chars.
 
 Keep your reasoning SHORT: at most about 8 steps, then answer.
 Reply with JSON only, matching the schema: thought, action ("test"|"finish"), plans (0-3 plan objects with every field), pick, why."""
@@ -291,7 +291,7 @@ Futures worth considering when the news gives any reason (existing knobs only):
 - the rival holds or cuts its price (rival_price_change_pct -5 to -10);
 - delays longer than the supplier lead time (delta_lead_time +3 to +6);
 - a false alarm: the input price rise fades (delta_c_raw slightly negative, e.g. -0.05, or small). This is the future that punishes over-stocking.
-For each: label (<=40 chars, plain words, e.g. "Beans +31% and Highland cuts 5%"), likelihood ("likely"|"possible"|"unlikely"), why (<=120 chars), source_ids (ids in [brackets] of the news items it rests on, or [] for a standard stress test, then say so in why).
+For each: label (<=32 chars, plain words, e.g. "Beans +31%, Highland cuts 5%"), likelihood ("likely"|"possible"|"unlikely"), why (<=120 chars), source_ids (ids in [brackets] of the news items it rests on, or [] for a standard stress test, then say so in why).
 Risks you found that these knobs cannot express (a new law, a strike, a quality problem): put them in unmodelled (0-4, text <=100 chars, source_id or ""). Never squeeze them into a made-up number.
 thought: <=250 chars, plain words for the owner.
 Keep your reasoning SHORT: at most about 8 steps, then answer.
