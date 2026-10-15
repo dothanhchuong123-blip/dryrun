@@ -71,6 +71,7 @@
 ## Open items (SPEC §13, Day-1 checklist). Update this list as they get resolved.
 - [x] Day-1 Token Factory check done on 2026-10-14 for $0.008. Covered model IDs, base URL, thinking toggle, reasoning field, Ultra latency (K = 8) and rate limits. Results are in SPEC §3 and §5.
 - [x] Ultra ignores `reasoning_budget` and `reasoning_effort`. Control reasoning length through the prompt and `max_tokens` (SPEC §13).
+- [~] T09 checkpoint 2026-10-15: code pushed; demo goes on Render free (Nebius projects suspended until a $25 top-up; HF Docker Spaces are paid). Render connect + URL test still open, paused for UI/UX. See `docs/DEPLOY.md`.
 - [ ] Serverless Endpoint: CPU preset? cost to keep it up to Dec 15? does SSE work through it? cold starts?
 - [x] Token Factory prices verified · Tavily connected (free plan, 1,000 credits/month)
 - [x] Devpost rules and form confirmed by the user on 2026-10-14: 10 × $100 feedback prizes; Serverless Endpoints and Jobs are encouraged but **not required**. See `docs/SUBMISSION.md`.
