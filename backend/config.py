@@ -30,6 +30,18 @@ class Settings(BaseSettings):
     daily_spend_cap_usd: float = 1.00
     public_live_daily_cap_usd: float = 0.20
     tavily_daily_credit_cap: int = 30  # public "Check live news" button, SPEC §6
+    # Serverless Job "mc-10k" (T09, docs/DEPLOY.md). job_backend: "" = not deployed, "local" = subprocess, "nebius" = CLI.
+    job_backend: str = ""
+    job_data_dir: str = "/data"  # the Object Storage bucket, mounted here (endpoint and job see the same files)
+    job_bucket: str = ""
+    job_image: str = ""
+    job_platform: str = "cpu-d3"
+    job_preset: str = "4vcpu-16gb"
+    job_n_paths: int = 10000
+    job_timeout: str = "1h"
+    job_poll_s: float = 5.0
+    job_max_wait_s: float = 1800.0
+    nebius_cli: str = "nebius"
     frontend_origin: str = ""  # CORS allow-origin for the Next.js site; "" = same origin only
 
 

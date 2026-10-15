@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+.git
+.venv
+__pycache__
+node_modules
+frontend/node_modules
+frontend/.next
+telemetry/*.jsonl
+prompts
+docs
+dist
+.claude
