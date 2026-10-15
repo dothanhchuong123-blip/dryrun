@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BusinessProfile, PlanSpec } from "../../lib/events";
+import { follow, now } from "../../lib/follow";
 import { useMarketStore } from "../../lib/store";
 import { withTransition } from "../../lib/transition";
 import { ModelChip } from "../shell/ModelChip";
@@ -161,6 +162,29 @@ export function SetupScreen() {
     void cur.parseProfile(ex.text);
   }, [s.examples]);
 
+  // After Nemotron fills the form: let the rows fade up, then glide to the button and nudge it once.
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const fieldsRef = useRef<HTMLDivElement>(null);
+  const prevStatus = useRef(s.profileStatus);
+  const [nudge, setNudge] = useState(false);
+  useEffect(() => {
+    const was = prevStatus.current;
+    prevStatus.current = s.profileStatus;
+    if (was !== "reading" || s.profileStatus === "reading" || !s.profile) return;
+    const since = now();
+    const t1 = window.setTimeout(() => follow(fieldsRef.current, since, "start"), 250);
+    const t2 = window.setTimeout(() => {
+      follow(ctaRef.current, since, "center");
+      setNudge(true);
+    }, 1500);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [s.profileStatus, s.profile]);
+  const stage = !p || reading ? 1 : 2;
+  const goTo = (el: Element | null) => el?.scrollIntoView({ block: "start", behavior: "smooth" });
+
   const gutPlans = ((s.examples.find((e) => e.id === s.exampleId) as unknown as { gut_plans?: PlanSpec[] } | undefined)?.gut_plans) ?? [];
 
   const invalid =
@@ -174,12 +198,37 @@ export function SetupScreen() {
   return (
     <section className="screen" data-slot="SetupScreen">
       <div className="wrap">
-        <p className="su-intro">
-          Today&apos;s news hits your costs. Nemotron proposes plans; a simulator tests each one 1,000 times. Every number comes from the simulator, not the AI.
-        </p>
+        <ol className="su-guide fu" aria-label="How this works">
+          <li className={stage === 1 ? "on" : "done"}>
+            <span className="n">{stage > 1 ? "✓" : "1"}</span>
+            <span>
+              <b>Describe your business</b>
+              <small>or pick an example</small>
+            </span>
+          </li>
+          <li className={stage === 2 ? "on" : ""}>
+            <button type="button" onClick={() => goTo(fieldsRef.current)} disabled={!p}>
+              <span className="n">2</span>
+              <span>
+                <b>Check what Nemotron understood</b>
+                <small>edit any number</small>
+              </span>
+            </button>
+          </li>
+          <li>
+            <button type="button" onClick={() => ctaRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })} disabled={!p}>
+              <span className="n">3</span>
+              <span>
+                <b>Find the news that hits it</b>
+                <small>then Nemotron tests plans</small>
+              </span>
+            </button>
+          </li>
+        </ol>
         <div className="su-two">
-          <div className="card su-pane">
-            <div>
+          <div className={`card su-pane fu${stage === 1 ? " su-live" : ""}`} style={{ ["--i" as string]: 1 }}>
+            <div className="su-title">
+              <span className="su-n">1</span>
               <h1>Describe your business</h1>
             </div>
             <textarea
@@ -215,9 +264,10 @@ export function SetupScreen() {
             </div>
           </div>
 
-          <div className="card su-pane">
+          <div className={`card su-pane fu${stage === 2 ? " su-live" : ""}`} style={{ ["--i" as string]: 2 }} ref={fieldsRef}>
             <div className="su-head">
-              <div className="l">
+              <div className="l su-title">
+                <span className="su-n">2</span>
                 <h2>What Nemotron understood</h2>
                 {p && <span className="biz">{p.business_name}</span>}
               </div>
@@ -236,7 +286,7 @@ export function SetupScreen() {
                 ))}
               </div>
             ) : (
-              <div className={`su-fields${p ? "" : " empty"}`}>
+              <div className={`su-fields${p ? " reveal" : " empty"}`} key={p ? "filled" : "empty"}>
                 <TextRow k="business_name" label="Business" profile={p ?? EMPTY} guessed={false} locked={!p} />
                 <NumRow f={NUM_FIELDS[0]} profile={p ?? EMPTY} guessed={!!p?.guessed_fields.includes("price")} locked={!p} onBad={onBad} />
                 <NumRow f={NUM_FIELDS[1]} profile={p ?? EMPTY} guessed={!!p?.guessed_fields.includes("unit_cost")} locked={!p} onBad={onBad} />
@@ -256,7 +306,7 @@ export function SetupScreen() {
               <p className="su-empty">Nemotron could not read everything, so some values are plain defaults. Check them before you go on.</p>
             )}
             {p && gutPlans.length > 0 && (
-              <div className="su-gut" role="group" aria-label="What would you do?">
+              <div className="su-gut fu" style={{ ["--i" as string]: 13 }} role="group" aria-label="What would you do?">
                 <h3>What would you do?</h3>
                 <div className="row">
                   {gutPlans.map((g) => (
@@ -270,14 +320,21 @@ export function SetupScreen() {
                 </span>
               </div>
             )}
-            <div className="su-act">
+            <div className={`su-act su-go${p ? " fu" : ""}`} style={{ ["--i" as string]: 14 }} ref={ctaRef}>
+              <span className="su-n" aria-hidden>3</span>
               <button
-                className="btn"
+                className={`btn${nudge ? " nudge" : ""}`}
+                onAnimationEnd={() => setNudge(false)}
                 disabled={invalid || reading || s.analysis.status === "starting"}
                 onClick={() => withTransition(() => void s.startAnalysis())}
               >
                 Looks right → find news
               </button>
+              {p && (
+                <span className="nextline">
+                  Next: Tavily searches this week&apos;s news for {p.supplier_region || "your supplier"} and your market
+                </span>
+              )}
               {s.analysis.status === "error" && s.analysis.note && (
                 <span className="su-status err" role="alert">
                   {s.analysis.note}

@@ -245,10 +245,10 @@ export function PlanGrid() {
                       return (
                         <td key={s.id} className={today}>
                           <button
-                            className={`pg-cell ${heat(c.mean_delta_usd, maxAbs)}${over ? " over" : ""}${
+                            className={`pg-cell ${heat(c.mean_delta_usd, maxAbs)}${over ? " over" : ""}${c.source === "cloud" ? " ck" : ""}${
                               p.name === bestName && s.id === "news" ? " sel" : ""
                             }`}
-                            aria-label={`${p.name}, ${s.label}: ${formatDelta(c.mean_delta_usd)}, bad case ${formatDelta(c.p5_delta_usd)}${over ? ", over your cash" : ""}. Replay`}
+                            aria-label={`${p.name}, ${s.label}: ${formatDelta(c.mean_delta_usd)}, bad case ${formatDelta(c.p5_delta_usd)}${over ? ", over your cash" : ""}${c.source === "cloud" ? `, checked with ${c.n.toLocaleString("en-US")} runs` : ""}. Replay`}
                             onMouseEnter={(e) => show(`c:${p.name}|${s.id}`, e.currentTarget, cellBody(c, s))}
                             onMouseLeave={() => hide(`c:${p.name}|${s.id}`)}
                             onFocus={(e) => show(`c:${p.name}|${s.id}`, e.currentTarget, cellBody(c, s))}
@@ -257,13 +257,8 @@ export function PlanGrid() {
                           >
                             <span className="v num">
                               {formatDelta(c.mean_delta_usd)}
-                              {(over || c.source === "cloud") && (
+                              {over && (
                                 <span className="pg-marks">
-                                  {c.source === "cloud" && (
-                                    <span className="pg-ck" title={`Checked with ${c.n.toLocaleString("en-US")} runs on Nebius`}>
-                                      ✓<span className="pg-ckn"> {c.n.toLocaleString("en-US")} runs</span>
-                                    </span>
-                                  )}
                                   {over && (
                                     <span className="pg-ovtag" title="Needs more cash up front than you have">
                                       <span className="pg-lg">Over cash</span>
@@ -273,6 +268,11 @@ export function PlanGrid() {
                                 </span>
                               )}
                             </span>
+                            {c.source === "cloud" && (
+                              <span className="pg-ck" title={`Checked with ${c.n.toLocaleString("en-US")} runs on Nebius`} aria-hidden>
+                                ✓
+                              </span>
+                            )}
                             <span className="p">
                               <span className="pg-lg">bad case </span>
                               <span className="pg-sh">bad </span>
@@ -296,6 +296,11 @@ export function PlanGrid() {
         <span><i style={{ background: "var(--z)", border: "1px solid var(--line)" }} />about the same</span>
         <span><i style={{ background: "var(--r1)" }} />worse</span>
         <span>“bad case”: 1 run in 20 is worse than this</span>
+        {cellList.some((c) => c.source === "cloud") && (
+          <span className="pg-lg-ck">
+            <b>✓</b> checked with {Math.max(...cellList.map((c) => c.n)).toLocaleString("en-US")} runs on Nebius
+          </span>
+        )}
       </div>
 
       {memo && (
@@ -306,7 +311,7 @@ export function PlanGrid() {
               {memo.plan_name}
             </button>
           </span>
-          <button className="btn sm" onClick={() => withTransition(() => setStep("memo"))}>
+          <button className="btn sm nudge" onClick={() => withTransition(() => setStep("memo"))}>
             See the memo →
           </button>
         </div>

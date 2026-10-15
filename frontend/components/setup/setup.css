@@ -51,3 +51,41 @@
   .su-f label { grid-column: 1 / -1; }
   .su-f .hint { grid-column: 1 / -1; }
 }
+
+/* guide: the three things to do on this screen, in order */
+.su-guide { list-style: none; margin: 0 0 18px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.su-guide li > button, .su-guide li { display: flex; gap: 10px; align-items: center; text-align: left; }
+.su-guide li { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-card); color: var(--ink-3); transition: border-color 0.3s, background 0.3s, color 0.3s; }
+.su-guide li > button { all: unset; display: flex; gap: 10px; align-items: center; cursor: pointer; width: 100%; }
+.su-guide li > button:disabled { cursor: default; }
+.su-guide li > button:focus-visible { outline: 2px solid var(--firm-a); outline-offset: 4px; border-radius: 4px; }
+.su-guide b { display: block; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.su-guide small { display: block; font-size: 12px; }
+.su-guide .n, .su-n { flex: none; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--bg-subtle); color: var(--ink-2); font-size: 12.5px; font-weight: 700; transition: background 0.3s, color 0.3s; }
+.su-guide li.on { border-color: var(--firm-a); background: var(--firm-a-soft); }
+.su-guide li.on b { color: var(--firm-a-ink); }
+.su-guide li.on .n { background: var(--firm-a); color: #fff; }
+.su-guide li.done .n { background: var(--gain); color: #fff; }
+.su-title { display: flex; align-items: center; gap: 10px; }
+.su-pane.su-live { border-color: color-mix(in srgb, var(--firm-a) 45%, var(--line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--firm-a) 10%, transparent); transition: border-color 0.4s, box-shadow 0.4s; }
+.su-pane.su-live .su-title .su-n { background: var(--firm-a); color: #fff; }
+.su-go .su-n { background: var(--firm-a); color: #fff; }
+.su-go .nextline { flex-basis: 100%; }
+.su-fields.reveal > .su-f { animation: fu 0.55s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
+.su-fields.reveal > .su-f:nth-child(1) { --i: 1; }
+.su-fields.reveal > .su-f:nth-child(2) { --i: 2; }
+.su-fields.reveal > .su-f:nth-child(3) { --i: 3; }
+.su-fields.reveal > .su-f:nth-child(4) { --i: 4; }
+.su-fields.reveal > .su-f:nth-child(5) { --i: 5; }
+.su-fields.reveal > .su-f:nth-child(6) { --i: 6; }
+.su-fields.reveal > .su-f:nth-child(7) { --i: 7; }
+.su-fields.reveal > .su-f:nth-child(8) { --i: 8; }
+.su-fields.reveal > .su-f:nth-child(9) { --i: 9; }
+.su-fields.reveal > .su-f:nth-child(10) { --i: 10; }
+.su-fields.reveal > .su-f:nth-child(11) { --i: 11; }
+.su-fields.reveal > .su-f:nth-child(12) { --i: 12; }
+@media (max-width: 900px) {
+  .su-guide { grid-template-columns: 1fr; gap: 6px; }
+  .su-guide small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .su-fields.reveal > .su-f { animation-delay: 0s !important; } }
