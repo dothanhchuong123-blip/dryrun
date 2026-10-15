@@ -291,6 +291,29 @@ async def ask_crowd(
     return sentiment, _crowd_rows(got), missing
 
 
+def visible_key(spec: PlanSpec) -> tuple:
+    """What shoppers react to (see `shoppers_see`). Plans with the same key get the same reaction: timing and stock
+    are the engine's job, so a 5% rise now and in week 4 share one ask."""
+    return (spec.is_textbook, round(spec.price_change_pct, 2), round(spec.marketing_change_pct, 2))
+
+
+def keep_price_order(mu_a: np.ndarray, price_pct: float, rated: Sequence[tuple[float, np.ndarray]]) -> np.ndarray:
+    """Clamp each group's sentiment toward us so a higher price is never liked more than a lower one.
+
+    `rated` holds (price_change_pct, mu_a) of plans already rated at the same marketing change. Each group's new
+    mu_a is kept at or below what it gave any cheaper plan and at or above what it gave any dearer one. The groups
+    rated each plan separately and without anchors, so a 8% rise once scored milder than a 5% one (2026-10-15).
+    `rated` is itself in order (each entry was clamped on arrival), so the bounds never cross."""
+    lo = np.full_like(mu_a, -1.0)
+    hi = np.full_like(mu_a, 1.0)
+    for p, m in rated:
+        if p <= price_pct:
+            hi = np.minimum(hi, m)
+        if p >= price_pct:
+            lo = np.maximum(lo, m)
+    return np.clip(mu_a, lo, np.maximum(lo, hi))
+
+
 def shoppers_see(spec: PlanSpec) -> bool:
     """Shoppers react only to what they can see: a price change (incl. the textbook rule) or marketing."""
     return spec.is_textbook or spec.price_change_pct != 0 or spec.marketing_change_pct != 0
@@ -363,6 +386,8 @@ class Analyst:
         self.baseline: dict[str, float] = {}
         self.crowd_rows: dict[str, list[dict]] = {}
         self._sent: dict[str, CrowdSentiment] = {}
+        self._reactions: dict[tuple, asyncio.Task] = {}         # visible_key -> one shopper ask, shared
+        self._rated: dict[float, list[tuple[float, np.ndarray]]] = {}  # marketing % -> (price %, mu_a) in order
         self._notes: dict[str, str] = {}
         self.summary: dict[str, Any] = {}
         self.last_why = ""
@@ -487,9 +512,33 @@ class Analyst:
 
     # --- shoppers ----------------------------------------------------------------------------
     async def _crowd(self, spec: PlanSpec) -> tuple[CrowdSentiment, list[dict], bool]:
-        return await ask_crowd(self.router, self.profile, spec)
+        """One ask per visible setting (`visible_key`): a plan shoppers can't tell from one already rated reuses
+        that reaction instead of a second, possibly contradicting, call."""
+        key = visible_key(spec)
+        if key not in self._reactions:
+            self._reactions[key] = asyncio.ensure_future(ask_crowd(self.router, self.profile, spec))
+        return await asyncio.shield(self._reactions[key])
+
+    def _in_price_order(
+        self, spec: PlanSpec, crowd: tuple[CrowdSentiment, list[dict], bool]
+    ) -> tuple[tuple[CrowdSentiment, list[dict], bool], int]:
+        """Apply `keep_price_order` against plans already announced; returns the crowd and how many groups moved."""
+        sentiment, rows, missing = crowd
+        if spec.is_textbook or not shoppers_see(spec):
+            return crowd, 0  # the textbook price is set by the engine; an unseen plan is neutral by rule
+        rated = self._rated.setdefault(round(spec.marketing_change_pct, 2), [])
+        mu_a = keep_price_order(sentiment.mu[:, 0], spec.price_change_pct, rated)
+        rated.append((spec.price_change_pct, mu_a))
+        moved = int(np.sum(np.abs(mu_a - sentiment.mu[:, 0]) > 1e-9))
+        if not moved:
+            return crowd, 0
+        mu = sentiment.mu.copy()
+        mu[:, 0] = mu_a
+        rows = [{**r, "mu": [float(mu_a[i]), r["mu"][1]]} for i, r in enumerate(rows)]
+        return (CrowdSentiment(mu=mu, sigma=sentiment.sigma), rows, missing), moved
 
     async def _announce_crowd(self, rnd: int, spec: PlanSpec, crowd: tuple[CrowdSentiment, list[dict], bool]) -> None:
+        crowd, moved = self._in_price_order(spec, crowd)
         sentiment, rows, missing = crowd
         self._sent[spec.name] = sentiment
         self.crowd_rows[spec.name] = rows
@@ -500,6 +549,12 @@ class Analyst:
             return
         if missing:
             await self._fallback(rnd, f"Some shoppers did not answer for “{spec.name}”; counted as neutral.")
+        if moved:
+            await self._step(
+                rnd, "shoppers",
+                f"Kept {moved} shopper group{'s' if moved > 1 else ''} in price order: none likes “{spec.name}” more than "
+                "a cheaper plan or less than a dearer one.", spec.name, "engine",
+            )
         if spoken:
             top = max(spoken, key=lambda r: abs(r["mu"][0]))
             self._notes[spec.name] = f'{top["label"]}: "{top["bubble"]}"'

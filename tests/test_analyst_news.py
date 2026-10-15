@@ -5,10 +5,11 @@ import re
 from pathlib import Path
 from types import SimpleNamespace as NS
 
+import numpy as np
 import pytest
 
 from backend.agents import prompts, wording
-from backend.agents.analyst import Analyst, build_columns, fit_name
+from backend.agents.analyst import Analyst, build_columns, fit_name, gut_name, keep_price_order
 from backend.agents.schemas import (
     AnalystStep,
     ArchetypeSentiment,
@@ -991,3 +992,81 @@ def test_cash_not_given_is_not_shown_as_zero():
         assert "cash_available: not given" in user and "cash_available: 0" not in user
     user = prompts.analyst_messages({**PROFILE, "cash_available": 8000.0}, [], "", "", 1, 3, [])[-1]["content"]
     assert "cash_available: 8000.0" in user
+
+
+# --- shoppers stay in price order (2026-10-15: 8% once scored milder than 5%) ---------------------------------
+
+def test_keep_price_order_clamps_between_cheaper_and_dearer_plans():
+    rated = [(0.0, np.array([0.1, 0.0])), (5.0, np.array([-0.24, -0.3])), (10.0, np.array([-0.5, -0.6]))]
+    assert np.allclose(keep_price_order(np.array([-0.05, -0.9]), 8.0, rated), [-0.24, -0.6])  # within [dearer, cheaper]
+    assert np.allclose(keep_price_order(np.array([-0.3, -0.4]), 8.0, rated), [-0.3, -0.4])    # already in order: untouched
+    assert np.allclose(keep_price_order(np.array([0.5, 0.5]), -3.0, rated), [0.5, 0.5])       # a cut may be liked more
+    assert np.allclose(keep_price_order(np.array([0.9, -0.9]), 5.0, rated), [-0.24, -0.3])    # same price: same reaction
+    assert np.allclose(keep_price_order(np.array([0.7]), 3.0, []), [0.7])                      # nothing rated yet
+
+
+def crowd_by_plan(mu_a_of):
+    """Shoppers whose mu_a depends only on the plan name; records which plans were asked."""
+    asked = []
+
+    def reply(messages):
+        name = re.match(r'Plan "(.*)" \(batch', messages[1]["content"]).group(1)
+        asked.append(name)
+        return crowd_batch(messages, mu_a=mu_a_of[name])
+    return reply, asked
+
+
+async def test_dearer_gut_call_is_never_liked_more_than_the_cheaper_seed():
+    gut = gut_name("Raise price 8% now")
+    reply, _ = crowd_by_plan({"Raise price 5% now": -0.24, gut: -0.05})
+    script = full_script()
+    script[CrowdBatch] = [reply] * 20
+    rec = Recorder()
+    a = make_analyst(FakeRouter(script), rec, max_rounds=0, gut_plan=plan_dict("Raise price 8% now", price_change_pct=8))
+    await a.run()
+    assert np.allclose(a._sent["Raise price 5% now"].mu[:, 0], -0.24)
+    assert np.allclose(a._sent[gut].mu[:, 0], -0.24)                     # clamped from -0.05
+    assert np.allclose(a._sent[gut].mu[:, 1], -0.1)                      # the rival column is left alone
+    row = next(d for d in rec.of("crowd") if d["plan_name"] == gut)["archetypes"]
+    assert all(r["mu"][0] == pytest.approx(-0.24) and r["bubble"] for r in row)
+    assert any(d["kind"] == "shoppers" and "Kept 12 shopper groups in price order" in d["text"] and d["plan_name"] == gut
+               for d in rec.of("agent_step"))
+
+
+async def test_ordered_reactions_are_left_alone():
+    gut = gut_name("Raise price 8% now")
+    reply, _ = crowd_by_plan({"Raise price 5% now": -0.1, gut: -0.4})
+    script = full_script()
+    script[CrowdBatch] = [reply] * 20
+    rec = Recorder()
+    a = make_analyst(FakeRouter(script), rec, max_rounds=0, gut_plan=plan_dict("Raise price 8% now", price_change_pct=8))
+    await a.run()
+    assert np.allclose(a._sent[gut].mu[:, 0], -0.4)
+    assert not any("price order" in d["text"] for d in rec.of("agent_step"))
+
+
+async def test_marketing_plans_are_ordered_only_among_themselves():
+    reply, _ = crowd_by_plan({"Raise price 5% now": -0.3, "Raise 8% + ads": 0.2})
+    script = full_script()
+    script[CrowdBatch] = [reply] * 20
+    script[AnalystStep] = [step("test", [{"name": "Raise 8% + ads", "price_change_pct": 8, "marketing_change_pct": 30}]),
+                           step("finish")]
+    a = make_analyst(FakeRouter(script), Recorder())
+    await a.run()
+    assert np.allclose(a._sent["Raise 8% + ads"].mu[:, 0], 0.2)       # different marketing: not compared
+
+
+async def test_same_visible_setting_reuses_one_reaction():
+    reply, asked = crowd_by_plan({"Raise price 5% now": -0.24})
+    script = full_script()
+    script[CrowdBatch] = [reply] * 20
+    script[AnalystStep] = [
+        step("test", [{"name": "Stock 2 wk + raise 5% wk 3", "price_change_pct": 5, "price_change_week": 3,
+                       "extra_stock_weeks": 2}]),
+        step("finish"),
+    ]
+    a = make_analyst(FakeRouter(script), Recorder())
+    await a.run()
+    assert set(asked) == {"Raise price 5% now"} and len(asked) == 2      # two halves, asked once for both plans
+    assert np.allclose(a._sent["Stock 2 wk + raise 5% wk 3"].mu, a._sent["Raise price 5% now"].mu)
+    assert a.crowd_rows["Stock 2 wk + raise 5% wk 3"] == a.crowd_rows["Raise price 5% now"]
