@@ -58,7 +58,7 @@ The app now tests a user's own business plans against live news. The spec is **S
 **v3.1 (Oct 15):** realism update (SPEC §15 v3.1, EVENTS v2.1, DESIGN §12.3a). **All remaining builds are Claude sessions.** Argon only reviews finished work or gives advice (A2–A9).
 
 ```
-Oct 15–16   P1 ✓ · D7 ✓ · P2 engine planner (Claude Opus) ──┐   F0 frontend shell v2 (Claude Sonnet), alongside P2
+Oct 15–16   P1 ✓ · D7 ✓ · P2 ✓ ──┐   F0 frontend shell v2 (Claude Sonnet), alongside P2
 Oct 17      P3 analyst loop + futures + news (Claude) ◄──────┘   F1 · F2 · F3 screens (3 Claude sessions, parallel, after F0)
 Oct 18      P4 orchestrator + CLI (Claude Opus) = MILESTONE A    (F1–F3 finish)
 Oct 19–20   T08 API v2 → T09 Nebius deploy = MILESTONE B
@@ -69,7 +69,7 @@ Oct 21–24   connect frontend ↔ backend, polish · Argon reviews A2 · A4 · 
 | Done | Task | Builder | Needs | File |
 |---|---|---|---|---|
 | [x] | P1 pivot schemas, prompts, example businesses (+ native tool-call check) | Claude Sonnet 5.5 (effort high) | nothing | `prompts/3_oct15-16_pivot-parallel/P1-profile-schemas-prompts.md` |
-| [ ] | P2 engine planner: calibration, plans, grid, cell replay (+ v3.1 bridge, cash, rival split) | Claude **Opus 5.5** (effort high) | T01–T03 | `prompts/3_oct15-16_pivot-parallel/P2-engine-planner.md` |
+| [x] | P2 engine planner: calibration, plans, grid, cell replay (+ v3.1 bridge, cash, rival split) | Claude **Opus 5.5** (effort high) | T01–T03 | `prompts/3_oct15-16_pivot-parallel/P2-engine-planner.md` |
 | [x] | D7 pivot mockup, screens 1–6 (numbers to refresh for v3.1: optional Claude task) | Argon #2 → you approved | nothing | `prompts/3_oct15-16_pivot-parallel/D7-pivot-mockup.md` |
 
 ### Wave 3b · Oct 15–17 · `prompts/3b_oct17_one-task/` + F0
