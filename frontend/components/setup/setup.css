@@ -5,16 +5,16 @@
 .su-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .su-head .l { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .su-text {
-  width: 100%; min-height: 170px; resize: vertical; border: 1px solid var(--line-strong); border-radius: 8px; padding: 16px;
+  width: 100%; min-height: 170px; resize: vertical; border: 1px solid var(--line-strong); border-radius: 12px; padding: 16px;
   font-size: 15.5px; line-height: 1.6; font-family: inherit; color: var(--ink); background: var(--bg-sunk); outline: none;
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
-.su-text:focus-visible { border-color: var(--firm-a); background: var(--bg-card); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18); }
+.su-text:focus-visible { border-color: var(--firm-a); background: var(--bg-card); box-shadow: 0 0 0 3px var(--focus); }
 .su-examples { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--ink-3); }
-.su-ex { border: 1px solid var(--line-strong); background: var(--bg-card); border-radius: 6px; padding: 6px 13px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink); transition: border-color 0.2s, background 0.2s, color 0.2s; }
+.su-ex { border: 1px solid var(--line-strong); background: var(--bg-card); border-radius: 980px; padding: 6px 13px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--ink); transition: border-color 0.2s, background 0.2s, color 0.2s; }
 .su-ex:hover { border-color: var(--firm-a); color: var(--firm-a-ink); background: var(--firm-a-soft); }
 .su-ex.on { border-color: var(--firm-a); background: var(--firm-a-soft); color: var(--firm-a-ink); }
-.su-ex:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
+.su-ex:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus); }
 .su-act { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .su-status { font-size: 13px; color: var(--ink-3); display: flex; gap: 8px; align-items: center; }
 .su-status.err { color: var(--loss); }
@@ -22,28 +22,28 @@
 @keyframes su-spin { to { transform: rotate(360deg); } }
 .su-fields { display: grid; gap: 2px; }
 .su-fields.empty { opacity: 0.55; }
-.su-f { display: grid; grid-template-columns: 170px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 4px 8px; border-radius: 6px; min-height: 44px; }
+.su-f { display: grid; grid-template-columns: 170px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 4px 8px; border-radius: 9px; min-height: 44px; }
 .su-f:hover { background: var(--bg-sunk); }
 .su-f label { color: var(--ink-3); font-size: 13.5px; }
 .su-f .box { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.su-f input { border: 1px solid transparent; border-radius: 6px; padding: 6px 10px; font-size: 14.5px; font-weight: 500; font-family: inherit; color: var(--ink); background: transparent; width: 100%; min-width: 0; outline: none; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s; }
+.su-f input { border: 1px solid transparent; border-radius: 9px; padding: 6px 10px; font-size: 14.5px; font-weight: 500; font-family: inherit; color: var(--ink); background: transparent; width: 100%; min-width: 0; outline: none; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s; }
 .su-f input.n { font-variant-numeric: tabular-nums; font-feature-settings: "tnum", "cv11"; }
 .su-f input:hover:not(:disabled) { border-color: var(--line-strong); background: var(--bg-card); }
-.su-f input:focus-visible { border-color: var(--firm-a); background: var(--bg-card); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18); }
+.su-f input:focus-visible { border-color: var(--firm-a); background: var(--bg-card); box-shadow: 0 0 0 3px var(--focus); }
 .su-f input[aria-invalid="true"] { border-color: var(--loss); background: var(--loss-soft); }
 .su-f input:disabled { cursor: not-allowed; }
 .su-f .unit { color: var(--ink-3); font-size: 12.5px; white-space: nowrap; }
 .su-f .hint { grid-column: 2 / -1; font-size: 12px; color: var(--loss); margin-top: -2px; padding-left: 10px; }
 .su-f .hint.ok { color: var(--ink-3); }
-.su-guess { font-size: 11.5px; font-weight: 600; color: var(--guess-ink); background: var(--firm-b-soft); border-radius: 4px; padding: 2px 8px; white-space: nowrap; }
-.su-skel { height: 12px; border-radius: 6px; background: var(--bg-subtle); animation: su-breathe 1.2s ease-in-out infinite; }
+.su-guess { font-size: 11.5px; font-weight: 600; color: var(--guess-ink); background: var(--firm-b-soft); border-radius: 980px; padding: 2px 8px; white-space: nowrap; }
+.su-skel { height: 12px; border-radius: 9px; background: var(--bg-subtle); animation: su-breathe 1.2s ease-in-out infinite; }
 @keyframes su-breathe { 50% { opacity: 0.4; } }
 .su-empty { margin: 0; font-size: 13.5px; color: var(--ink-3); }
 .su-gut { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 8px; }
 .su-gut .row { display: flex; gap: 8px; flex-wrap: wrap; }
-.su-gut button { border: 1px solid var(--line-strong); background: var(--bg-card); border-radius: 6px; padding: 6px 13px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink); }
+.su-gut button { border: 1px solid var(--line-strong); background: var(--bg-card); border-radius: 980px; padding: 6px 13px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--ink); }
 .su-gut button[aria-pressed="true"] { background: var(--firm-a-soft); border-color: var(--firm-a); color: var(--firm-a-ink); }
-.su-gut button:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
+.su-gut button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus); }
 @media (max-width: 900px) {
   .su-two { grid-template-columns: 1fr; }
   .su-pane { padding: 18px; }
@@ -55,7 +55,7 @@
 /* guide: the three things to do on this screen, in order */
 .su-guide { list-style: none; margin: 0 0 18px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .su-guide li > button, .su-guide li { display: flex; gap: 10px; align-items: center; text-align: left; }
-.su-guide li { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-card); color: var(--ink-3); transition: border-color 0.3s, background 0.3s, color 0.3s; }
+.su-guide li { padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-card); color: var(--ink-3); transition: border-color 0.3s, background 0.3s, color 0.3s; }
 .su-guide li > button { all: unset; display: flex; gap: 10px; align-items: center; cursor: pointer; width: 100%; }
 .su-guide li > button:disabled { cursor: default; }
 .su-guide li > button:focus-visible { outline: 2px solid var(--firm-a); outline-offset: 4px; border-radius: 4px; }

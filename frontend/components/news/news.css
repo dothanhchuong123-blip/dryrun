@@ -7,27 +7,27 @@
 .nw-cap { margin: -6px 0 0; font-size: 12px; color: var(--ink-3); }
 .nw-card { padding: 18px 22px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 24px; align-items: start; transition: border-color 0.2s, box-shadow 0.2s; }
 .nw-card:hover { border-color: var(--line-strong); }
-.nw-card.picked { border-color: var(--picked); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08); }
+.nw-card.picked { border-color: var(--picked); box-shadow: 0 0 0 3px color-mix(in srgb, var(--firm-a) 10%, transparent); }
 .nw-src { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-3); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .nw-hl { font-size: 16.5px; font-weight: 600; line-height: 1.35; letter-spacing: -0.012em; color: var(--ink); text-decoration: none; }
 .nw-hl:hover { text-decoration: underline; }
-.nw-hl:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); border-radius: 4px; }
-.nw-impact { font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 600; padding: 8px 12px; border-radius: 6px; white-space: nowrap; text-align: right; }
+.nw-hl:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus); border-radius: 4px; }
+.nw-impact { font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 600; padding: 8px 12px; border-radius: 9px; white-space: nowrap; text-align: right; }
 .nw-impact small { display: block; font-size: 12px; font-weight: 500; opacity: 0.85; }
 .nw-impact.bad { background: var(--loss-soft); color: var(--loss); }
 .nw-impact.ok { background: var(--bg-subtle); color: var(--ink-2); }
 .nw-chain { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13.5px; }
 .nw-chain q { color: var(--ink-2); font-style: italic; border-left: 2px solid var(--line-strong); padding-left: 10px; background: var(--bg-sunk); border-radius: 0 4px 4px 0; padding-block: 3px; padding-right: 8px; quotes: none; }
 .nw-chain .arr { color: var(--ink-3); }
-.nw-dchip { font-variant-numeric: tabular-nums; font-size: 12.5px; font-weight: 500; padding: 3px 10px; border-radius: 6px; background: var(--bg-subtle); color: var(--ink); white-space: nowrap; }
+.nw-dchip { font-variant-numeric: tabular-nums; font-size: 12.5px; font-weight: 500; padding: 3px 10px; border-radius: 980px; background: var(--bg-subtle); color: var(--ink); white-space: nowrap; }
 .nw-cost { grid-column: 1 / -1; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.nw-tag { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 6px; white-space: nowrap; }
+.nw-tag { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 980px; white-space: nowrap; }
 .nw-tag.used { color: var(--firm-a-ink); background: var(--firm-a-soft); }
 .nw-tag.fresh { color: var(--nv-ink); background: var(--nv-soft); }
 .nw-tag.skip { color: var(--guess-ink); background: var(--firm-b-soft); }
 .nw-tag.mkt { color: var(--ink-2); background: var(--bg-subtle); }
 .nw-skel { padding: 20px 22px; display: grid; gap: 12px; }
-.nw-skel i { display: block; height: 12px; border-radius: 6px; background: var(--bg-subtle); animation: nw-breathe 1.2s ease-in-out infinite; }
+.nw-skel i { display: block; height: 12px; border-radius: 9px; background: var(--bg-subtle); animation: nw-breathe 1.2s ease-in-out infinite; }
 @keyframes nw-breathe { 50% { opacity: 0.4; } }
 .nw-load { color: var(--ink-3); font-size: 14px; margin: 0 0 4px; }
 .nw-acts { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
@@ -45,29 +45,36 @@
 @keyframes nw-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .nw-spin { animation: none; } }
 
-/* "How we found this": the Tavily queries and Nemotron's read, ticking off one by one */
-.nw-search { padding: 16px 20px; margin: 14px 0 22px; display: grid; gap: 10px; }
-.nw-sh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
-.nw-sh b { color: var(--ink); }
-.nw-skip { margin-left: auto; border: 0; background: none; color: var(--ink-3); font: inherit; font-size: 12.5px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-.nw-skip:hover { color: var(--ink); }
-.nw-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.nw-q { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 6px; background: var(--bg-sunk); font-size: 13.5px; transition: background 0.3s; }
-.nw-q .ic { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; font-weight: 700; }
-.nw-q.done .ic { background: var(--gain); color: #fff; animation: fu 0.35s var(--ease) both; }
-.nw-q .what { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; min-width: 0; color: var(--ink-2); }
-.nw-q .lbl { color: var(--ink-3); }
-.nw-q.done .lbl b { color: var(--ink); }
-.nw-q code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--ink); background: var(--bg-card); border: 1px solid var(--line); border-radius: 4px; padding: 1px 7px; overflow-wrap: anywhere; }
-.nw-q.run code { border-color: color-mix(in srgb, var(--firm-a) 45%, var(--line)); }
-.nw-q small { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+/* search status: one quiet line that shimmers while Tavily searches and Nemotron reads, then settles */
+.nw-search { padding: 16px 18px; margin: 16px 0 26px; display: grid; gap: 12px; position: relative; overflow: hidden; }
+.nw-sr { display: flex; align-items: center; gap: 14px; }
+.nw-orb { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--firm-a-soft); color: var(--firm-a); transition: background 0.5s var(--ease), color 0.5s var(--ease); }
+.nw-search.searching .nw-orb svg { animation: nw-seek 1.6s var(--ease) infinite; }
+@keyframes nw-seek { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(2px, -1.5px); } 50% { transform: translate(-1px, 1.5px); } 75% { transform: translate(-2px, -1px); } }
+.nw-search.done .nw-orb { background: var(--gain-soft); color: var(--gain); }
+.nw-search.done .nw-orb svg { animation: nw-pop 0.5s var(--spring) both; }
+@keyframes nw-pop { from { opacity: 0; transform: scale(0.4); } }
+.nw-st { display: grid; gap: 1px; min-width: 0; flex: 1; }
+.nw-st b { font-size: 15px; font-weight: 600; letter-spacing: -0.016em; color: var(--ink); }
+.nw-sub { font-size: 13px; color: var(--ink-3); }
+.nw-shimmer { background: linear-gradient(90deg, var(--ink) 0%, var(--ink) 35%, var(--ink-3) 50%, var(--ink) 65%, var(--ink) 100%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent !important; animation: nw-shim 2s linear infinite; }
+@keyframes nw-shim { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+.nw-skip { align-self: center; border: 0; background: var(--bg-subtle); color: var(--ink-2); font: inherit; font-size: 12.5px; font-weight: 500; padding: 5px 12px; border-radius: 980px; cursor: pointer; transition: background 0.2s; }
+.nw-skip:hover { background: var(--line); color: var(--ink); }
+.nw-srcs { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 50px; }
+.nw-fav { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); padding: 3px 10px 3px 3px; border-radius: 980px; background: var(--bg-sunk); border: 1px solid var(--line); animation: fu 0.7s var(--ease) both; animation-delay: calc(0.25s + var(--i, 0) * 220ms); }
+.nw-fav i { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-style: normal; font-size: 10px; font-weight: 700; color: #fff; background: hsl(var(--h, 210) 55% 52%); }
+.nw-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; overflow: hidden; transition: opacity 0.6s var(--ease); }
+.nw-bar i { position: absolute; top: 0; bottom: 0; width: 40%; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--firm-a), transparent); animation: nw-run 1.4s var(--ease) infinite; }
+@keyframes nw-run { from { left: -40%; } to { left: 100%; } }
+.nw-search.done .nw-bar { opacity: 0; }
+@media (max-width: 900px) { .nw-srcs { padding-left: 0; } }
+@media (prefers-reduced-motion: reduce) { .nw-shimmer { animation: none; color: var(--ink) !important; background: none; } .nw-bar i, .nw-search.searching .nw-orb svg { animation: none; } }
 .nw-impact.pending { display: inline-flex; align-items: center; gap: 8px; background: var(--bg-subtle); color: var(--ink-3); font-size: 13px; font-weight: 500; }
 .nw-read { grid-column: 1 / -1; justify-self: start; font-size: 12.5px; font-weight: 600; color: var(--firm-a-ink); text-decoration: none; }
 .nw-read:hover { text-decoration: underline; }
 .nw-acts .nextline { flex-basis: 100%; justify-content: flex-end; }
 .nw-acts.nw-wait { opacity: 0.55; }
 @media (max-width: 900px) {
-  .nw-q { grid-template-columns: 22px minmax(0, 1fr); }
-  .nw-q small { grid-column: 2; }
   .nw-acts .nextline { justify-content: flex-start; }
 }

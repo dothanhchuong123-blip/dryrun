@@ -43,6 +43,24 @@ const JOB_WORDS: Record<string, string> = {
 };
 
 /** Screen 4: the plans × futures grid. Fills in cell by cell as the engine finishes. */
+/** SF-Symbols-style marks: exclamationmark.circle.fill and checkmark, drawn in currentColor. */
+function IconCash() {
+  return (
+    <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
+      <circle cx="8" cy="8" r="7.5" fill="currentColor" />
+      <path d="M8 4.3v4.4" stroke="var(--pg-ic-ink, #fff)" strokeWidth="1.7" strokeLinecap="round" />
+      <circle cx="8" cy="11.3" r="1" fill="var(--pg-ic-ink, #fff)" />
+    </svg>
+  );
+}
+function IconCheck() {
+  return (
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden>
+      <path d="M3.2 8.6l3.1 3L12.8 4.6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function PlanGrid() {
   const plans = useMarketStore((s) => s.plans);
   const shocks = useMarketStore((s) => s.shocks);
@@ -245,7 +263,7 @@ export function PlanGrid() {
                       return (
                         <td key={s.id} className={today}>
                           <button
-                            className={`pg-cell ${heat(c.mean_delta_usd, maxAbs)}${over ? " over" : ""}${c.source === "cloud" ? " ck" : ""}${
+                            className={`pg-cell ${heat(c.mean_delta_usd, maxAbs)}${over ? " over" : ""}${
                               p.name === bestName && s.id === "news" ? " sel" : ""
                             }`}
                             aria-label={`${p.name}, ${s.label}: ${formatDelta(c.mean_delta_usd)}, bad case ${formatDelta(c.p5_delta_usd)}${over ? ", over your cash" : ""}${c.source === "cloud" ? `, checked with ${c.n.toLocaleString("en-US")} runs` : ""}. Replay`}
@@ -257,22 +275,21 @@ export function PlanGrid() {
                           >
                             <span className="v num">
                               {formatDelta(c.mean_delta_usd)}
-                              {over && (
+                              {(over || c.source === "cloud") && (
                                 <span className="pg-marks">
                                   {over && (
-                                    <span className="pg-ovtag" title="Needs more cash up front than you have">
-                                      <span className="pg-lg">Over cash</span>
-                                      <span className="pg-sh" aria-hidden>⚠</span>
+                                    <span className="pg-ov" title="Needs more cash up front than you have">
+                                      <IconCash />
+                                    </span>
+                                  )}
+                                  {c.source === "cloud" && (
+                                    <span className="pg-ck" title={`Checked with ${c.n.toLocaleString("en-US")} runs on Nebius`}>
+                                      <IconCheck />
                                     </span>
                                   )}
                                 </span>
                               )}
                             </span>
-                            {c.source === "cloud" && (
-                              <span className="pg-ck" title={`Checked with ${c.n.toLocaleString("en-US")} runs on Nebius`} aria-hidden>
-                                ✓
-                              </span>
-                            )}
                             <span className="p">
                               <span className="pg-lg">bad case </span>
                               <span className="pg-sh">bad </span>
@@ -296,9 +313,14 @@ export function PlanGrid() {
         <span><i style={{ background: "var(--z)", border: "1px solid var(--line)" }} />about the same</span>
         <span><i style={{ background: "var(--r1)" }} />worse</span>
         <span>“bad case”: 1 run in 20 is worse than this</span>
+        {cellList.some((c) => isOver(c)) && (
+          <span className="pg-lg-ic ov">
+            <IconCash /> needs more cash than you have
+          </span>
+        )}
         {cellList.some((c) => c.source === "cloud") && (
-          <span className="pg-lg-ck">
-            <b>✓</b> checked with {Math.max(...cellList.map((c) => c.n)).toLocaleString("en-US")} runs on Nebius
+          <span className="pg-lg-ic ck">
+            <IconCheck /> checked with {Math.max(...cellList.map((c) => c.n)).toLocaleString("en-US")} runs on Nebius
           </span>
         )}
       </div>

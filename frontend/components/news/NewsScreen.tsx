@@ -6,7 +6,6 @@ import { formatDelta, formatSignedPercent } from "../../lib/format";
 import { follow, now, reducedMotion } from "../../lib/follow";
 import { useMarketStore } from "../../lib/store";
 import { withTransition } from "../../lib/transition";
-import { ModelChip } from "../shell/ModelChip";
 import "./news.css";
 
 const MINUS = "−";
@@ -22,6 +21,13 @@ function relDate(iso: string): string {
   if (d < 14) return `${d} days ago`;
   if (d < 60) return `${Math.round(d / 7)} weeks ago`;
   return `${Math.round(d / 30)} months ago`;
+}
+
+/** a stable hue per outlet, for its monogram */
+function hue(s: string): number {
+  let h = 0;
+  for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  return h;
 }
 
 function cap(s: string): string {
@@ -111,7 +117,7 @@ function Skeletons({ n }: { n: number }) {
 }
 
 /** How long each reveal beat holds before the next one, by kind of beat (ms). */
-const BEAT_MS: Record<string, number> = { q: 600, read: 900, h: 300, c: 500, i: 650, end: 0 };
+const BEAT_MS: Record<string, number> = { search: 1800, read: 1100, h: 250, c: 450, i: 600, end: 0 };
 /** analyses whose news reveal already played once; going back to this screen shows everything at once */
 const played = new Set<string>();
 
@@ -134,26 +140,19 @@ export function NewsScreen() {
   const loading = news.length === 0 && (status === "starting" || status === "running");
   const country = cap(profile?.country || "your country");
 
-  // The Tavily queries the backend runs: the profile's supply terms (news, last week) and market terms (local, last month).
-  const queries = useMemo(
-    () => [
-      ...(profile?.search_terms ?? []).slice(0, 3).map((q) => ({ q, kind: "supply" as const })),
-      ...(profile?.market_terms ?? []).slice(0, 2).map((q) => ({ q, kind: "market" as const })),
-    ],
-    [profile],
-  );
+  // distinct outlets, shown as they "come back" from the search
+  const sources = useMemo(() => [...new Set(news.map((n) => n.source).filter(Boolean))].slice(0, 6), [news]);
 
   // One id per beat, in the order things appear.
   const steps = useMemo(() => {
-    const out = queries.map((_, i) => `q:${i}`);
-    out.push("read");
+    const out = ["search", "read"];
     if (supply.length) out.push("h:supply");
     for (const n of supply) out.push(`c:${n.id}`, ...(n.impact_usd != null ? [`i:${n.id}`] : []));
     if (market.length) out.push("h:market");
     for (const n of market) out.push(`c:${n.id}`);
     out.push("end");
     return out;
-  }, [queries, supply, market]);
+  }, [supply, market]);
 
   const key = analysisId ?? "local";
   const [beat, setBeat] = useState(() => (played.has(key) || reducedMotion() ? Number.MAX_SAFE_INTEGER : 0));
@@ -174,7 +173,7 @@ export function NewsScreen() {
     }
     // hold on "Nemotron is reading" until the articles exist
     if (beat > readIdx && news.length === 0) return;
-    const kind = steps[Math.max(0, beat - 1)]?.split(":")[0] ?? "q";
+    const kind = steps[Math.max(0, beat - 1)]?.split(":")[0] ?? "search";
     const t = window.setTimeout(() => setBeat((b) => b + 1), beat === 0 ? 250 : (BEAT_MS[kind] ?? 500));
     return () => window.clearTimeout(t);
   }, [beat, steps, readIdx, news.length, key]);
@@ -205,8 +204,20 @@ export function NewsScreen() {
     setMsg(err ? { text: err, err: true } : { text: "Looking for fresh news…", err: false });
   };
 
-  const qState = (i: number) => (beat > i + 1 || beat > readIdx ? "done" : "run");
   const readDone = beat > readIdx + 1 && news.length > 0;
+  const phase = readDone ? "done" : seen("read") ? "reading" : "searching";
+  const title =
+    phase === "done"
+      ? `Found ${news.length} ${news.length === 1 ? "story" : "stories"} that affect you`
+      : phase === "reading"
+        ? "Reading the articles"
+        : "Searching the news";
+  const subline =
+    phase === "done"
+      ? `${supply.length} move your costs · ${market.length} about your market · searched by Tavily, read by Nemotron Super`
+      : phase === "reading"
+        ? "Nemotron Super is picking the ones that touch your costs"
+        : `Tavily is looking through this week's news for your supply route and ${country}`;
 
   return (
     <section className="screen" data-slot="NewsScreen">
@@ -219,45 +230,47 @@ export function NewsScreen() {
           Tavily searches the news, Nemotron Super reads each article, and the simulator prices what it does to your gross profit over 6 months.
         </p>
 
-        <div className="card nw-search fu" style={{ ["--i" as string]: 2 }} aria-label="How we found this news">
-          <div className="nw-sh">
-            <b>How we found this</b>
-            <span className="nw-credit">Search by Tavily</span>
-            <ModelChip tier="super" job="reads the news" />
+        <div className={`card nw-search fu ${phase}`} style={{ ["--i" as string]: 2 }} aria-live="polite" data-step="read">
+          <div className="nw-sr">
+            <span className="nw-orb" aria-hidden>
+              {phase === "done" ? (
+                <svg viewBox="0 0 16 16" width="14" height="14">
+                  <path d="M3.4 8.4l3 3 6.2-6.8" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 16 16" width="15" height="15">
+                  <circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                  <path d="M10.4 10.4l3.2 3.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              )}
+            </span>
+            <div className="nw-st">
+              <b key={title} className={phase === "done" ? "fu" : "nw-shimmer"}>
+                {title}
+              </b>
+              <span key={subline} className="nw-sub fu">
+                {subline}
+              </span>
+            </div>
             {!finished && (
               <button className="nw-skip" onClick={() => setBeat(Number.MAX_SAFE_INTEGER)}>
-                Show all
+                Skip
               </button>
             )}
           </div>
-          <ol className="nw-steps">
-            {queries.map((x, i) =>
-              seen(`q:${i}`) ? (
-                <li key={i} className={`nw-q fu ${qState(i)}`} data-step={`q:${i}`}>
-                  <span className="ic" aria-hidden>{qState(i) === "done" ? "✓" : <span className="nw-spin" />}</span>
-                  <span className="what">
-                    <span className="lbl">{x.kind === "supply" ? "Searching news" : `Searching ${country}`}</span>
-                    <code>{x.q}</code>
-                  </span>
-                  <small>{x.kind === "supply" ? "news · last 7 days" : `local results · ${country} · last month`}</small>
-                </li>
-              ) : null,
-            )}
-            {seen("read") && (
-              <li className={`nw-q fu ${readDone ? "done" : "run"}`} data-step="read">
-                <span className="ic" aria-hidden>{readDone ? "✓" : <span className="nw-spin" />}</span>
-                <span className="what">
-                  {news.length === 0 ? (
-                    <span className="lbl">Nemotron Super is reading the articles…</span>
-                  ) : (
-                    <span className="lbl">
-                      Nemotron Super read the articles: <b>{supply.length}</b> move your costs, <b>{market.length}</b> are about your market
-                    </span>
-                  )}
+          {sources.length > 0 && (
+            <div className="nw-srcs" aria-label={`Sources: ${sources.join(", ")}`}>
+              {sources.map((src, i) => (
+                <span key={src} className="nw-fav" style={{ ["--i" as string]: i }}>
+                  <i style={{ ["--h" as string]: hue(src) }}>{src.replace(/^www\./, "")[0]?.toUpperCase()}</i>
+                  {src}
                 </span>
-              </li>
-            )}
-          </ol>
+              ))}
+            </div>
+          )}
+          <div className="nw-bar" aria-hidden>
+            <i />
+          </div>
         </div>
 
         {news.length === 0 && !loading && (
