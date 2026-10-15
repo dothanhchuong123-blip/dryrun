@@ -78,7 +78,7 @@ Oct 21–24   connect frontend ↔ backend, polish · Argon reviews A2 · A4 · 
 
 | Done | Task | Builder | Needs | File |
 |---|---|---|---|---|
-| [ ] | **P2b engine recalibration**: price sensitivity, outside option, per-path uncertainty (SPEC §15.3 change approved 2026-10-15) | Claude **Opus 5.5** (effort high) | P2 | `prompts/3b_oct17_one-task/P2b-engine-recalibration.md` |
+| [x] | **P2b engine recalibration**: price sensitivity, outside option, per-path uncertainty (SPEC §15.3 change approved 2026-10-15) | Claude **Opus 5.5** (effort high) | P2 | `prompts/3b_oct17_one-task/P2b-engine-recalibration.md` |
 | [ ] | P3 analyst loop, futures step, shopper reactions, news watch (offline part can run alongside P2b; **live run after P2b**) | Claude Sonnet 5.5 (effort high) | P1, P2 (+P2b for the live run) | `prompts/3b_oct17_one-task/P3-analyst-news.md` |
 | [ ] | F0 frontend shell v2: types, store, stream, mock, page shell | Claude Sonnet 5.5 (effort medium). **Can start now**, alongside P2 | EVENTS v2.1 | `prompts/ui_oct17-20_frontend/F0-frontend-shell-v2.md` |
 

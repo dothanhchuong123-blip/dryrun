@@ -1,6 +1,7 @@
-"""Tests for backend.engine.planner (task P2, SPEC §15.2-15.5, §15.9). Seeded, no I/O except tmp_path."""
+"""Tests for backend.engine.planner (tasks P2 and P2b, SPEC §15.2-15.5, §15.9). Seeded, no I/O except tmp_path."""
 from __future__ import annotations
 
+import itertools
 import json
 import time
 from dataclasses import replace
@@ -13,6 +14,8 @@ from backend.engine.planner import (
     TEXTBOOK_RULE,
     PlanSpec,
     ShockCase,
+    _arch_arrays,
+    _choice_probs,
     _simulate,
     _streams,
     calibrate,
@@ -36,6 +39,19 @@ COFFEE = {
     "exposed_cost_share": 0.85, "cash_available": 8000,
     "guessed_fields": ["lead_time_weeks", "stock_weeks", "exposed_cost_share"],
 }
+# The other two examples (fixtures/examples/*.json), only the fields the engine reads
+PC_PARTS = {
+    "product_unit": "graphics card", "price": 420.0, "unit_cost": 330.0, "weekly_sales": 90.0,
+    "lead_time_weeks": 4, "stock_weeks": 3.0, "rival_name": "TechNova", "rival_price": 415.0,
+    "exposed_cost_share": 0.9, "cash_available": 40000.0,
+}
+FURNITURE = {
+    "product_unit": "solid-wood dining set", "price": 972.0, "unit_cost": 605.0, "weekly_sales": 40.0,
+    "lead_time_weeks": 5, "stock_weeks": 2.0, "rival_name": "Baltic Woodworks", "rival_price": 950.0,
+    "exposed_cost_share": 0.6, "cash_available": 0.0,
+}
+EXAMPLES = {"coffee_hcmc": COFFEE, "pc_parts": PC_PARTS, "furniture_eu": FURNITURE}
+COFFEE_NEWS = {"delta_c_raw": 0.35, "delta_lead_time": 1, "demand_shock": -0.1}  # its fallback shock
 NO_SHOCK = ShockCase(id="none", label="No change")
 COST_40 = ShockCase(id="news", label="Beans +40%", delta_c_raw=0.4, onset_week=2, ramp_weeks=1)
 STOCK_UP = PlanSpec(name="Stock up 4 weeks now", extra_stock_weeks=4, stock_week=0)
@@ -43,7 +59,7 @@ RAISE = PlanSpec(name="Raise price 5% now", price_change_pct=5)
 TICK_KEYS = {
     "tick", "universe", "price", "qty", "demand", "sales", "unmet", "spill_in", "lost", "inventory",
     "raw_inv", "rop", "orders", "profit", "cum_profit", "shares", "c_raw", "lead_time", "mc", "atc",
-    "bullwhip", "unit_cost", "cover_weeks", "in_transit",
+    "bullwhip", "unit_cost", "cover_weeks", "in_transit", "old_cost_share", "spot_cost",
 }
 N_TEST = 400
 
@@ -83,6 +99,68 @@ def test_calibration_engine_units(cal):
     assert cal.params.k_cap[0] == pytest.approx(1.6 * cal.d0)
     assert cal.k_q * cal.d0 == pytest.approx(280.0)
     assert cal.rival_markup == pytest.approx(10.5 / 6.5 - 1.0)
+
+
+def _start_demand(c, p_a: float) -> np.ndarray:
+    """Expected engine demand [A, B, outside] at the starting state, with your price at p_a."""
+    alpha, loyalty_t, counts = _arch_arrays(c.archetypes)
+    m0 = c.init["marketing"]
+    probs = _choice_probs(
+        np.array([[p_a, c.init["price"][1]]]), np.array([[m0, m0]]), np.asarray([c.params.beta_bar]), 0.0,
+        alpha[None, :], loyalty_t, c.params.gamma, c.params.p_ref,
+    )
+    d = (probs[0] * counts).sum(-1)
+    return np.array([d[0], d[1], counts.sum() - d.sum()])
+
+
+@pytest.mark.parametrize("name", list(EXAMPLES))
+def test_calibration_lerner_and_outside_share(name):
+    """P2b: today's price is profit-maximising (Lerner) and 15% of shoppers choose "don't buy"."""
+    prof = EXAMPLES[name]
+    c = calibrate(prof)
+    lo, hi = _start_demand(c, 99.0), _start_demand(c, 101.0)  # +-1% around engine price 100 (SPEC §4.1)
+    elasticity = (hi[0] - lo[0]) / (hi[0] + lo[0]) / 0.01
+    assert elasticity == pytest.approx(-prof["price"] / (prof["price"] - prof["unit_cost"]), abs=0.05)
+    start = _start_demand(c, 100.0)
+    assert start[2] / start.sum() == pytest.approx(0.15, abs=0.01)
+    assert c.outside_share == pytest.approx(0.15, abs=0.01)
+    assert 0.5 <= c.alpha_scale <= 4.0
+    assert c.params.beta_bar[0] == pytest.approx(c.params.beta_bar[1])  # both firms move together
+
+
+@pytest.mark.parametrize("name", list(EXAMPLES))
+def test_no_free_lunch_from_a_price_rise(name):
+    """P2b: with no shock, raising the price 5% is not a free win."""
+    c = calibrate(EXAMPLES[name])
+    cell = evaluate_cell(c, RAISE, NO_SHOCK, n_paths=1000)
+    assert cell["mean_delta_usd"] <= 0.0
+
+
+def test_staged_plan_beats_cost_plus_on_the_news():
+    c = calibrate(COFFEE)
+    news = default_shock_cases(COFFEE_NEWS, COFFEE)[1]
+    staged = PlanSpec(name="Stock 4 + raise 10% wk 5", extra_stock_weeks=4, price_change_pct=10,
+                      price_change_week=5)
+    grid = evaluate_grid(c, [staged, PlanSpec(name=TEXTBOOK_RULE)], [news], n_paths=1000)
+    assert _cell(grid, staged.name, "news")["mean_delta_usd"] > _cell(grid, TEXTBOOK_RULE, "news")["mean_delta_usd"]
+
+
+def test_seed_plans_have_a_real_downside():
+    c = calibrate(COFFEE)
+    shipping = default_shock_cases(COFFEE_NEWS, COFFEE)[3]
+    grid = evaluate_grid(c, [RAISE, STOCK_UP], [shipping, NO_SHOCK], n_paths=1000)
+    assert min(cell["p5_delta_usd"] for cell in grid["cells"]) < 0.0
+
+
+def test_alpha_draw_is_last_and_lognormal():
+    """The per-path alpha multiplier is drawn after the P2 streams, so those don't shift."""
+    st = _streams(7, 3, 400, 24)
+    rng = np.random.default_rng([7, 3])
+    assert np.array_equal(st["noise"][0], rng.lognormal(0.0, 0.1, size=24))
+    assert np.array_equal(st["jitter"][0], rng.integers(-1, 2, size=24))
+    assert st["scale"][0] == rng.uniform(0.8, 1.2) and st["rival_weeks"][0] == rng.uniform(1.0, 4.0)
+    assert st["alpha_mult"][0] == rng.lognormal(0.0, 0.25)
+    assert np.std(np.log(st["alpha_mult"])) == pytest.approx(0.25, abs=0.03)
 
 
 # ---------------------------------------------------------------- data types
@@ -320,6 +398,24 @@ def test_simulate_detail_payload(cal):
     assert min(gap) >= -0.01 and max(gap) > 0.1
     assert detail["weeks"][-1]["U2"]["unit_cost"][0] <= detail["weeks"][-1]["U2"]["c_raw"] + 0.01
     json.dumps(detail)
+
+
+def test_old_cost_share_and_spot_cost(cal):
+    """P2b replay fields for the two-colour stock bar."""
+    weeks = simulate_detail(cal, STOCK_UP, COST_40)["weeks"]
+    for t in range(COST_40.onset_week):
+        assert weeks[t]["U2"]["old_cost_share"] == [1.0, 1.0]
+        assert weeks[t]["U2"]["spot_cost"] == [pytest.approx(6.5), pytest.approx(6.5)]
+    assert weeks[-1]["U2"]["spot_cost"][0] == pytest.approx(weeks[-1]["U2"]["c_raw"], abs=0.011)
+    assert weeks[-1]["U2"]["spot_cost"][0] > 6.5
+    shares = [w["U2"]["old_cost_share"][0] for w in weeks]
+    assert all(0.0 <= x <= 1.0 for x in shares) and shares[-1] < 0.1
+    assert all(b <= a + 1e-9 for a, b in itertools.pairwise(shares))  # old stock only runs down
+    # the extra stock is bought before the shock, so the plan keeps old-cost stock for longer
+    plan_old = sum(w["U1"]["old_cost_share"][0] for w in weeks)
+    assert plan_old > sum(shares)
+    calm = simulate_detail(cal, PlanSpec.do_nothing(), NO_SHOCK)["weeks"]
+    assert all(w["U2"]["old_cost_share"] == [1.0, 1.0] for w in calm)  # no cost change: all "old"
 
 
 def test_run_job_round_trips_through_json(tmp_path):

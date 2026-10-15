@@ -2,7 +2,8 @@
 
 Pure, seeded NumPy. No LLM calls and no I/O, except the job CLI at the bottom
 (`python -m backend.engine.planner --job in.json --n 10000 --out out.json`).
-Implemented in task P2 (prompts/3_oct15-16_pivot-parallel/P2-engine-planner.md).
+Implemented in task P2 (prompts/3_oct15-16_pivot-parallel/P2-engine-planner.md), recalibrated in
+P2b (prompts/3b_oct17_one-task/P2b-engine-recalibration.md).
 
 How a cell is computed:
 - Every plan and "Do nothing" in a shock column run side by side on the same random
@@ -36,6 +37,7 @@ TEXTBOOK_RULE = "Textbook price rule"
 _DEMAND_NOISE_SIGMA = 0.1
 _SHOCK_SCALE = (0.8, 1.2)
 _RIVAL_STOCK_WEEKS = (1.0, 4.0)
+_ALPHA_MULT_SIGMA = 0.25       # per-path price sensitivity x Lognormal(0, 0.25^2) (P2b)
 # Calibration (SPEC §15.3)
 _ENGINE_PRICE = 100.0
 _P_REF = 105.0
@@ -43,6 +45,9 @@ _HOLDING_RATE = 0.004          # x c_raw0 per unit per week, about 20% a year
 _CAPACITY_MULT = 1.6
 _MARKETING_SHARE = 0.05        # starting marketing = 5% of gross margin
 _GAMMA_BOUNDS = (0.02, 0.35)
+_OUTSIDE_SHARE = 0.15          # share of shoppers who choose "don't buy" at the start (P2b)
+_ALPHA_SCALE_BOUNDS = (0.5, 4.0)
+_CAL_ITERS = 200
 # Plan mechanics (SPEC §15.4)
 _PLAN_BUFFER = 1.1             # production plan = 4-week MA of own demand + 10%
 _RIVAL_GAP = 1.05              # rival tolerates sitting up to 5% above you...
@@ -204,6 +209,8 @@ class Calibration:
     rival_markup: float
     init: dict
     profile: dict
+    alpha_scale: float = 1.0       # factor on every archetype's alpha (P2b, "your price is about right")
+    outside_share: float = 0.0     # share choosing "don't buy" at the start (P2b)
 
     @property
     def usd(self) -> float:
@@ -276,13 +283,14 @@ def _choice_probs(
 ) -> np.ndarray:
     """MNL probabilities for [A, B] per archetype, shape (S, 2, 12). Outside = 1 - sum.
 
-    Adapted from montecarlo._archetype_choice_probs, laid out (S, 2, 12) so the archetype sum is a
+    `alpha` is (S, 12) or (1, 12): per-row price sensitivity, so a path's alpha draw (§15.5.2)
+    applies to every plan in the column. Adapted from montecarlo._archetype_choice_probs, laid out (S, 2, 12) so the archetype sum is a
     contiguous reduction. Utilities are taken relative to the outside good (U - U_0), which is the
     log-sum-exp normalisation with the outside good as the pivot: stable because U - U_0 stays small.
     """
     util = (
         beta0[:, :, None]
-        - alpha[None, None, :] * (price[:, :, None] - p_ref)
+        - alpha[:, None, :] * (price[:, :, None] - p_ref)
         + gamma * np.log1p(np.maximum(marketing, 0.0))[:, :, None]
         + sent
         + loyalty_t[None, :, :]
@@ -295,9 +303,15 @@ def _choice_probs(
 def calibrate(profile: Mapping[str, Any], seed: int = 0) -> Calibration:
     """Turn a BusinessProfile dict into engine units (SPEC §15.3).
 
-    Engine prices put your price at 100. The marketing effect gamma is set so the starting
-    marketing level (5% of gross margin) is break-even at the margin (Dorfman-Steiner): we assume
-    the owner's current spend is about right, so changing it is not a free win.
+    Engine prices put your price at 100. Three "about right today" assumptions, solved together
+    at the starting prices with neutral sentiment and no shock, given the rival's price:
+    - **Your price is about right.** Every archetype's alpha is scaled by one factor `s` (clamped to
+      [0.5, 4]) so your own-price elasticity meets the Lerner condition E_d = -P / (P - c): today's
+      price is profit-maximising at today's cost, so a price change is not a free win.
+    - **Some shoppers can walk away.** Both firms' beta_bar move by the same amount so 15% of
+      shoppers choose "don't buy" (the rival keeps its relative position).
+    - **Your marketing is about right.** The marketing effect gamma is set so the starting level
+      (5% of gross margin) is break-even at the margin (Dorfman-Steiner).
     """
     prof = dict(profile)
     price = float(prof["price"])
@@ -317,24 +331,47 @@ def calibrate(profile: Mapping[str, Any], seed: int = 0) -> Calibration:
         lead_time0=int(prof.get("lead_time_weeks", 3)),
     )
     archetypes = make_archetypes(params.n_consumers, np.random.default_rng(seed))
-    alpha, loyalty_t, counts = _arch_arrays(archetypes)
+    alpha0, loyalty_t, counts = _arch_arrays(archetypes)
+    n_cons = float(counts.sum())
     prices = np.array([[_ENGINE_PRICE, p_b]])
-    beta0 = np.asarray(params.beta_bar, dtype=np.float64)[None, :]
+    beta_start = np.asarray(params.beta_bar, dtype=np.float64)
     margin = _ENGINE_PRICE - c0
+    e_target = -_ENGINE_PRICE / margin
+    logit_target = float(np.log(_OUTSIDE_SHARE / (1.0 - _OUTSIDE_SHARE)))
 
+    scale, shift = 1.0, 0.0
     gamma, m0, d = float(params.gamma), 0.0, np.zeros(2)
-    for _ in range(50):
+    for _ in range(_CAL_ITERS):
+        alpha = (alpha0 * scale)[None, :]
+        beta0 = (beta_start + shift)[None, :]
         probs = _choice_probs(prices, np.array([[m0, m0]]), beta0, 0.0, alpha, loyalty_t, gamma, _P_REF)
         d = (probs[0] * counts).sum(-1)
+        p_a = probs[0, 0]
+        own = -_ENGINE_PRICE * float((counts * alpha[0] * p_a * (1.0 - p_a)).sum()) / max(float(d[0]), _EPS)
+        out = min(max(1.0 - float(d.sum()) / n_cons, 1e-6), 1.0 - 1e-6)
+        new_scale = _clip(scale * (e_target / own) ** 0.7, *_ALPHA_SCALE_BOUNDS)
+        new_shift = shift + 0.8 * (float(np.log(out / (1.0 - out))) - logit_target)
         new_m0 = _MARKETING_SHARE * margin * float(d[0])
-        slope = float((counts * probs[0, 0] * (1.0 - probs[0, 0])).sum())
+        slope = float((counts * p_a * (1.0 - p_a)).sum())
         new_gamma = _clip((1.0 + new_m0) / max(margin * slope, _EPS), *_GAMMA_BOUNDS)
-        done = abs(new_m0 - m0) < 1e-9 * max(new_m0, 1.0) and abs(new_gamma - gamma) < 1e-12
-        m0, gamma = new_m0, new_gamma
+        done = (
+            abs(new_m0 - m0) < 1e-9 * max(new_m0, 1.0)
+            and abs(new_gamma - gamma) < 1e-12
+            and abs(new_scale - scale) < 1e-10
+            and abs(new_shift - shift) < 1e-10
+        )
+        m0, gamma, scale, shift = new_m0, new_gamma, new_scale, new_shift
         if done:
             break
+    archetypes = replace(archetypes, alpha_mu=np.asarray(archetypes.alpha_mu) + np.log(scale))
+    probs = _choice_probs(
+        prices, np.array([[m0, m0]]), (beta_start + shift)[None, :], 0.0, (alpha0 * scale)[None, :],
+        loyalty_t, gamma, _P_REF,
+    )
+    d = (probs[0] * counts).sum(-1)
     d0, d0_b = float(d[0]), float(d[1])
-    params = replace(params, gamma=gamma, k_cap=(_CAPACITY_MULT * d0, _CAPACITY_MULT * d0))
+    beta_bar = (float(beta_start[0] + shift), float(beta_start[1] + shift))
+    params = replace(params, gamma=gamma, beta_bar=beta_bar, k_cap=(_CAPACITY_MULT * d0, _CAPACITY_MULT * d0))
     k_q = float(prof["weekly_sales"]) / d0
     init = {
         "price": [_ENGINE_PRICE, p_b],
@@ -356,6 +393,8 @@ def calibrate(profile: Mapping[str, Any], seed: int = 0) -> Calibration:
         rival_markup=rival_price / unit_cost - 1.0,
         init=init,
         profile=prof,
+        alpha_scale=float(scale),
+        outside_share=float(1.0 - d.sum() / n_cons),
     )
 
 
@@ -435,19 +474,22 @@ def _streams(seed: int, start: int, n: int, horizon: int) -> dict[str, np.ndarra
     """Per-path streams from default_rng([seed, r]) (as montecarlo._pregenerate_crn_streams).
 
     Path r draws the same numbers whatever the chunking, so a cell run alone equals the grid cell.
-    The shock size is one draw per path: one future, one magnitude.
+    The shock size is one draw per path: one future, one magnitude. So is the price-sensitivity
+    multiplier, drawn last so the earlier streams don't shift (P2b).
     """
     noise = np.empty((n, horizon))
     jitter = np.empty((n, horizon), dtype=np.int64)
     scale = np.empty(n)
     rival = np.empty(n)
+    alpha_mult = np.empty(n)
     for i in range(n):
         rng = np.random.default_rng([int(seed), start + i])
         noise[i] = rng.lognormal(0.0, _DEMAND_NOISE_SIGMA, size=horizon)
         jitter[i] = rng.integers(-1, 2, size=horizon)
         scale[i] = rng.uniform(*_SHOCK_SCALE)
         rival[i] = rng.uniform(*_RIVAL_STOCK_WEEKS)
-    return {"noise": noise, "jitter": jitter, "scale": scale, "rival_weeks": rival}
+        alpha_mult[i] = rng.lognormal(0.0, _ALPHA_MULT_SIGMA)
+    return {"noise": noise, "jitter": jitter, "scale": scale, "rival_weeks": rival, "alpha_mult": alpha_mult}
 
 
 # --------------------------------------------------------------------------------------
@@ -522,7 +564,8 @@ def _simulate(
     scale = np.tile(streams["scale"], V * P)
     rival_weeks = np.tile(streams["rival_weeks"], V * P)
 
-    alpha, loyalty_t, counts = _arch_arrays(cal.archetypes)
+    alpha_arch, loyalty_t, counts = _arch_arrays(cal.archetypes)
+    alpha = np.tile(streams["alpha_mult"], V * P)[:, None] * alpha_arch[None, :]  # (S, 12)
     c0, d0 = float(prm.c_raw0), cal.d0
     exposed = float(init["exposed_cost_share"])
     k_cap = np.asarray(prm.k_cap, dtype=np.float64)
@@ -559,6 +602,10 @@ def _simulate(
     rows = np.arange(S)
     mkt = np.column_stack([m0 * mkt_mult, np.full(S, m0)])
     mkt_b_only = np.full(S, m0)
+    # Replay only: units bought at the pre-shock cost, followed through raw stock, finished goods and
+    # the pipeline in proportion (the pools are weighted-average, so old and new units mix evenly).
+    if record:
+        raw_old, fg_old, pipe_old = raw.copy(), inv.copy(), pipe_q.copy()
 
     out = {k: np.empty((T, S)) for k in ("price", "sales", "cost", "marketing", "holding", "paid")}
     trace: dict[str, list[Any]] = {}
@@ -573,6 +620,9 @@ def _simulate(
         raw_val = raw_val + arr_v
         pipe_total = np.maximum(pipe_total - arr_q, 0.0)
         extra_transit = np.where(extra_arrival == t, 0.0, extra_transit)
+        pre_shock = lvl == 0.0 or dc == 0.0  # orders placed now are at the pre-shock cost
+        if record:
+            raw_old = raw_old + pipe_old[:, t, :]
 
         # 2. Active shock: spot order costs, lead times, demand multipliers
         spot_b = c0 * np.maximum(_cost_factor(exposed, dc * scale, lvl), 0.01)
@@ -609,8 +659,14 @@ def _simulate(
             need = np.where(steady, np.maximum(plan_q[:, 1] - raw[:, 1], 0.0), 0.0)
             raw[:, 1] += need
             raw_val[:, 1] += need * spot_b
+            if record and pre_shock:
+                raw_old[:, 1] += need
         qty = np.maximum(np.minimum(plan_q, raw), 0.0)
         wac_raw = np.where(raw > _EPS, raw_val / np.maximum(raw, _EPS), spot)
+        if record:
+            moved = qty * np.where(raw > _EPS, raw_old / np.maximum(raw, _EPS), 0.0)
+            raw_old = np.maximum(raw_old - moved, 0.0)
+            fg_old = fg_old + moved
         raw = np.maximum(raw - qty, 0.0)
         raw_val = np.where(raw > _EPS, np.maximum(raw_val - qty * wac_raw, 0.0), 0.0)
         fg_val = fg_val + qty * wac_raw
@@ -637,6 +693,8 @@ def _simulate(
         # 6. Profit: material on units sold at the finished goods' weighted-average cost
         unit_cost = np.where(inv > _EPS, fg_val / np.maximum(inv, _EPS), wac_raw)
         sold = np.minimum(sales, inv)
+        if record:
+            fg_old = np.maximum(fg_old - sold * np.where(inv > _EPS, fg_old / np.maximum(inv, _EPS), 0.0), 0.0)
         inv = np.maximum(inv - sales, 0.0)
         fg_val = np.where(inv > _EPS, np.maximum(fg_val - unit_cost * sold, 0.0), 0.0)
         holding = h * (inv + raw)
@@ -672,6 +730,9 @@ def _simulate(
         pipe_v[rows, arr_a, 0] += orders[:, 0] * spot_a
         pipe_q[rows, arr_b, 1] += orders[:, 1]
         pipe_v[rows, arr_b, 1] += orders[:, 1] * spot_b
+        if record and pre_shock:
+            pipe_old[rows, arr_a, 0] += orders[:, 0]
+            pipe_old[rows, arr_b, 1] += orders[:, 1]
         pipe_total = pipe_total + orders
         out["paid"][t] = orders[:, 0] * spot_a
 
@@ -689,6 +750,9 @@ def _simulate(
                 "in_transit": pipe_total, "probs": probs, "exp_dem": exp_dem, "follow": follow,
                 "extra_now": extra_now, "extra_arrival": extra_arrival,
                 "cash_a": p_a * sales[:, 0] - out["paid"][t] - mkt[:, 0] - holding[:, 0],
+                "old_cost_share": np.clip((raw_old + fg_old) / np.maximum(raw + inv, _EPS), 0.0, 1.0)
+                * (raw + inv > _EPS),
+                "spot_cost": spot,
             }
             for key, val in snap.items():
                 trace.setdefault(key, []).append(np.array(val, copy=True))
@@ -932,7 +996,9 @@ def simulate_detail(
     """One path, week by week: U1 = the plan, U2 = "Do nothing", same streams (SPEC §15.9).
 
     Each week's tick dicts carry every `tick` key of docs/EVENTS.md except `choices_b64` (U1 has
-    `choices` instead), in USD and real units, plus the v2.1 keys.
+    `choices` instead), in USD and real units, plus the v2.1 keys and the P2b keys `old_cost_share`
+    (share of raw + finished stock bought at the pre-shock cost, 0-1) and `spot_cost` (today's
+    purchase price per unit, USD) for the two-colour stock bar.
     """
     spec, case = _as_plan(plan), _as_shock(shock)
     if isinstance(crowd, Mapping) and "mu" not in crowd:
@@ -978,6 +1044,8 @@ def simulate_detail(
                 "unit_cost": _round(tr["unit_cost"][t, row] * k_p),
                 "cover_weeks": _round(tr["cover_weeks"][t, row]),
                 "in_transit": _round(tr["in_transit"][t, row] * k_q),
+                "old_cost_share": _round(tr["old_cost_share"][t, row], 4),
+                "spot_cost": _round(tr["spot_cost"][t, row] * k_p),
             }
             if row == 0:
                 tick["cum_cash_delta"] = _round(cum_cash[t] * usd)

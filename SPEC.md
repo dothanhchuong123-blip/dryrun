@@ -511,7 +511,12 @@ The visual plan with wireframes is `docs/PIVOT-PLAN.html`. The screens are speci
   - Capacity for both firms = `1.6 × d0`. Starting raw stock for A = `stock_weeks × d0`; for B = **`U(1, 4) × d0`, drawn per path** (v3.1: we don't know the rival's stock, so it's a range, not a guess). The draw is part of the common random numbers, so every plan in a column sees the same rival stock on path `r`. Finished goods = `1 × d0` each.
 - **Dollars out = engine money × k_p × k_q.**
 - **Rival markup:** `m_B = rival_price / unit_cost − 1`, with B's raw cost the same as A's.
+- **"About right today" (P2b, approved 2026-10-15).** Solved together at the starting prices, with neutral sentiment and no shock, given the rival's price (a small fixed-point loop):
+  - **Your price is about right.** Every archetype's α is scaled by one factor `s` so your own-price elasticity meets the Lerner condition $E_d = -P/(P - c_{\text{raw}0})$. So today's price is profit-maximising at today's cost, and a price change is never a free win. `s` is clamped to [0.5, 4] and recorded as `Calibration.alpha_scale` (coffee 1.08, pc_parts 2.13, furniture 1.20).
+  - **Some shoppers can walk away.** Both firms' β̄ move by the same amount so that **15%** of shoppers choose "don't buy" (`Calibration.outside_share`, `params.beta_bar`). The rival keeps its relative position.
+  - **Your marketing is about right** (Dorfman–Steiner): γ makes the starting marketing level, 5% of gross margin, break-even at the margin.
 - **Test:** with "Do nothing" and no shock, mean weekly sales of A must be within ±10% of `weekly_sales`, and mean weekly gross profit within ±15% of `(price − unit_cost) × weekly_sales`.
+- **Tests (P2b):** for all 3 examples, the starting own elasticity is $-P/(P-c)$ ± 0.05 and the outside share is 0.15 ± 0.01; with no shock, "Raise price 5% now" has `mean_delta_usd ≤ 0`.
 
 ### 15.4 Plans (`PlanSpec`)
 
@@ -597,8 +602,9 @@ where `ramp(t)` goes 0 → 1 from `onset_week` over `ramp_weeks`. With the alter
 #### 15.5.2 What each cell reports
 
 **Each cell (plan × shock case):**
-- **Paired with "Do nothing"** under the same shock, using **common random numbers**: path `r` uses the same streams (demand noise, lead-time jitter, shock size, rival starting stock) for every plan in that column.
+- **Paired with "Do nothing"** under the same shock, using **common random numbers**: path `r` uses the same streams (demand noise, lead-time jitter, shock size, rival starting stock, price sensitivity) for every plan in that column.
 - **Per-path randomness:** the same as §4.7. Demand noise σ = 0.1, lead-time jitter ±1 week, shock size × U(0.8, 1.2), rival starting stock U(1, 4) weeks (§15.3).
+- **Price-sensitivity uncertainty (P2b):** each path also draws `alpha_mult ~ Lognormal(0, 0.25²)`, which multiplies α for every archetype on that path ("will my customers accept it?"). It is drawn after the other streams, so they don't shift. The shock size stays U(0.8, 1.2): Ultra's futures already cover "how big".
 - **Reports** (all in USD over 24 weeks):
   - `mean_delta_usd`: mean of (plan profit − do-nothing profit)
   - `p5_delta_usd`: 5th percentile of that difference, shown as "the 1-in-20 bad case"
@@ -686,6 +692,7 @@ Each file holds `{id, title, subtitle, text, scenario_id, seed_queries, fallback
 - Per-consumer choices are synthesised from the archetype counts. Within each archetype, consumers are assigned in a fixed order, so the arena stays stable.
 - It also returns event markers: shock onset, sold out, price change, extra stock arriving.
 - **v3.1 additions to each week's tick** (so the replay scene can label its nodes with real unit economics): `unit_cost` `[A, B]` (weighted-average material cost per unit, USD), `cover_weeks` `[A, B]` (raw plus finished stock ÷ the 4-week average demand), `in_transit` `[A, B]` (units ordered but not yet arrived), and, on U1 only, `cum_cash_delta` (cumulative cash vs do nothing, §15.5.2).
+- **P2b additions to each week's tick** (for the two-colour stock bar, F3): `old_cost_share` `[A, B]` (the share of raw plus finished stock bought at the **pre-shock** unit cost, 0–1; units are followed through the weighted-average pools in proportion) and `spot_cost` `[A, B]` (today's purchase price per unit, USD).
 - **v3.1 markers:** `rival_price` (the case's rival move starts) and `new_player` (the share shift starts), alongside the old ones.
 
 In the replay, **U1 = the plan** and **U2 = do nothing**, in dollars. The LIVE-only Ultra rival in replays is a **P1 stretch goal** (§15.10).

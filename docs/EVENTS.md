@@ -101,6 +101,7 @@ Each event is sent as `event: <name>` followed by `data: <json>`, in roughly thi
 ```
 
 - **(v2.1)** extra keys, all in real units: `"unit_cost": [6.9, 7.6]` (weighted-average material cost per unit), `"cover_weeks": [2.9, 1.4]`, `"in_transit": [560, 280]`, and on U1 only `"cum_cash_delta": -7280.0` (cumulative cash vs do nothing).
+- **(P2b)** extra keys for the two-colour stock bar: `"old_cost_share": [0.62, 0.15]` (share of raw plus finished stock bought at the pre-shock unit cost, 0–1) and `"spot_cost": [7.4, 7.4]` (today's purchase price per unit, USD). Both universes.
 - Each week sends one `tick` for `U1` and one for `U2`. The U2 event omits `choices_b64` and `cum_cash_delta`.
 - `bullwhip` may be `null` until 8 weeks have passed.
 - **Throttle:** the frontend applies at most one store update per week. The arena reads `choices_b64` into a typed array held in a ref.
