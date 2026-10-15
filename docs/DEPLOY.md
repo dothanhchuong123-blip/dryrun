@@ -1,18 +1,16 @@
 # Deploying (T09)
 
-## Decision (2026-10-15): public demo on Hugging Face Spaces, not Nebius compute
-Nebius projects are suspended until a $25 top-up, and a 24/7 CPU endpoint to Dec 15 would cost about $90-195.
-We stay eligible through Token Factory runtime calls (SPEC §1). The Nebius deploy below stays as an optional short
-run (a few hours) for benchmark numbers if we choose to top up. Hugging Face needs no card.
+## Decision (2026-10-15): public demo on Render (free), not Nebius compute or Hugging Face
+- Nebius projects are suspended until a $25 top-up; a 24/7 CPU endpoint to Dec 15 would cost about $90-195.
+- Hugging Face Docker Spaces now need PRO (paid). Static Spaces are free but can't run the backend.
+- We stay eligible through Token Factory runtime calls (SPEC §1). The Nebius section below is an optional short run.
 
-### Hugging Face Spaces (Docker, free)
-1. Create a Space: SDK **Docker**, public. Add secrets `NEBIUS_API_KEY` and `TAVILY_API_KEY` in Settings.
-2. The Space repo needs a README with this front matter (keep the project README.md untouched; use a separate Space README):
-   `---\ntitle: Market Digital Twin\nsdk: docker\napp_port: 7860\n---`
-3. Push this repo's files (Dockerfile, backend/, fixtures/, frontend/out/, pyproject.toml, uv.lock) to the Space git remote.
-   `frontend/out` is gitignored here, so build it first and force-add it in the Space copy.
-4. The image runs as uid 1000 on `$PORT` (7860) with `JOB_BACKEND=local`: the 10k verify job runs in-process.
-5. Free Spaces sleep after inactivity; set up an uptime ping on `/health` to keep it awake, and test from a logged-out browser.
+### Render (free Docker web service)
+1. Push the repo to GitHub (Render deploys from a repo; `render.yaml` and the multi-stage `Dockerfile` are in it).
+2. render.com → New → Blueprint → pick the repo. Add secrets `NEBIUS_API_KEY` and `TAVILY_API_KEY` when asked.
+3. The image builds the frontend itself, serves it, and runs the 10k verify job in-process (`JOB_BACKEND=local`, ~140 MB peak).
+4. Free services sleep after 15 min idle (first visit ~50 s). Ping `GET /health` every 10 min with a free monitor (UptimeRobot).
+5. Test from a logged-out browser and check that SSE streams (`curl -N <url>/api/analyses/<id>/events`).
 
 ---
 
