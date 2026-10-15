@@ -982,3 +982,12 @@ async def test_cut_names_and_labels_are_trimmed_and_the_pick_still_matches():
     assert rec.of("memo")[0]["plan_name"] == "Stock 2 weeks now and push marketing"
     system = prompts.analyst_messages(PROFILE, [], "", "", 1, 3, [])[0]["content"]
     assert "(<=32 chars)" in system
+
+
+def test_cash_not_given_is_not_shown_as_zero():
+    for msgs in (prompts.analyst_messages({**PROFILE, "cash_available": 0.0}, [], "", "", 1, 3, []),
+                 prompts.memo_messages({**PROFILE, "cash_available": 0.0}, "Do nothing", {}, {}, [])):
+        user = msgs[-1]["content"]
+        assert "cash_available: not given" in user and "cash_available: 0" not in user
+    user = prompts.analyst_messages({**PROFILE, "cash_available": 8000.0}, [], "", "", 1, 3, [])[-1]["content"]
+    assert "cash_available: 8000.0" in user

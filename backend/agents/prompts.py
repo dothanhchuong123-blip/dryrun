@@ -240,7 +240,14 @@ def _profile_block(profile: dict) -> str:
         "stock_weeks", "rival_name", "rival_price", "supplier_region", "customers", "country",
         "exposed_cost_share", "cash_available",
     )
-    return "\n".join(f"{k}: {profile.get(k, '?')}" for k in keys)
+    return "\n".join(f"{k}: {_profile_value(profile, k)}" for k in keys)
+
+
+def _profile_value(profile: dict, key: str) -> object:
+    value = profile.get(key, "?")
+    if key == "cash_available" and not value:  # 0 means "not given" (SPEC §15.3), not "no cash"
+        return "not given (no cash limit is known, so do not treat it as zero)"
+    return value
 
 
 def analyst_messages(
