@@ -596,6 +596,8 @@ def _simulate(
     pipe_total = pipe_q.sum(axis=1)
     extra_transit = np.zeros(S)
     extra_arrival = np.full(S, -1, dtype=np.int64)
+    extra_left = np.zeros(S)  # units of the one-off extra order not yet used in production
+    extra_cost = np.zeros(S)  # what each of those units cost when it was ordered
     ring = np.empty((8, S, 2))
     ring[:] = np.asarray(init["demand"], dtype=np.float64)
     above = np.zeros(S, dtype=np.int64)
@@ -607,7 +609,7 @@ def _simulate(
     if record:
         raw_old, fg_old, pipe_old = raw.copy(), inv.copy(), pipe_q.copy()
 
-    out = {k: np.empty((T, S)) for k in ("price", "sales", "cost", "marketing", "holding", "paid")}
+    out = {k: np.empty((T, S)) for k in ("price", "sales", "cost", "marketing", "holding", "paid", "extra_val")}
     trace: dict[str, list[Any]] = {}
 
     for t in range(T):
@@ -662,6 +664,9 @@ def _simulate(
             if record and pre_shock:
                 raw_old[:, 1] += need
         qty = np.maximum(np.minimum(plan_q, raw), 0.0)
+        # Once it has arrived, production draws on the extra stock first (cash tied up, §15.5.2).
+        landed = (extra_arrival >= 0) & (t >= extra_arrival)
+        extra_left = extra_left - np.where(landed, np.minimum(extra_left, qty[:, 0]), 0.0)
         wac_raw = np.where(raw > _EPS, raw_val / np.maximum(raw, _EPS), spot)
         if record:
             moved = qty * np.where(raw > _EPS, raw_old / np.maximum(raw, _EPS), 0.0)
@@ -724,6 +729,8 @@ def _simulate(
         orders[:, 0] += extra_now
         extra_transit = extra_transit + extra_now
         extra_arrival = np.where(extra_now > 0.0, t + lt_a, extra_arrival)
+        extra_cost = np.where(extra_now > 0.0, spot_a, extra_cost)
+        extra_left = extra_left + extra_now
         arr_a = np.minimum(t + lt_a, width - 1)
         arr_b = np.minimum(t + lt_b, width - 1)
         pipe_q[rows, arr_a, 0] += orders[:, 0]
@@ -735,6 +742,7 @@ def _simulate(
             pipe_old[rows, arr_b, 1] += orders[:, 1]
         pipe_total = pipe_total + orders
         out["paid"][t] = orders[:, 0] * spot_a
+        out["extra_val"][t] = extra_left * extra_cost
 
         if record:
             ma4_now = (ring[t % 8] + ring[(t - 1) % 8] + ring[(t - 2) % 8] + ring[(t - 3) % 8]) / 4.0
@@ -749,7 +757,6 @@ def _simulate(
                 "cover_weeks": (raw + inv) / np.maximum(ma4_now, _EPS),
                 "in_transit": pipe_total, "probs": probs, "exp_dem": exp_dem, "follow": follow,
                 "extra_now": extra_now, "extra_arrival": extra_arrival,
-                "cash_a": p_a * sales[:, 0] - out["paid"][t] - mkt[:, 0] - holding[:, 0],
                 "old_cost_share": np.clip((raw_old + fg_old) / np.maximum(raw + inv, _EPS), 0.0, 1.0)
                 * (raw + inv > _EPS),
                 "spot_cost": spot,
@@ -778,12 +785,15 @@ def _block(sim: Mapping[str, Any], key: str, v: int, p: int) -> np.ndarray:
 def _path_metrics(sim: Mapping[str, Any], p: int, steady: bool) -> dict[str, np.ndarray]:
     """Per-path pieces of the cell for plan p vs "Do nothing" (plan 0), in engine money."""
     blk = {k: (_block(sim, k, 0, p), _block(sim, k, 0, 0)) for k in ("price", "sales", "cost", "marketing",
-                                                                     "holding", "paid")}
+                                                                     "holding", "extra_val")}
     (pp, pb), (qp, qb), (cp, cb) = blk["price"], blk["sales"], blk["cost"]
-    (mp, mb), (hp, hb), (op, ob) = blk["marketing"], blk["holding"], blk["paid"]
-    profit_p = (pp * qp - cp * qp - mp - hp).sum(-1)
-    profit_b = (pb * qb - cb * qb - mb - hb).sum(-1)
-    cash_diff = (pp * qp - op - mp - hp) - (pb * qb - ob - mb - hb)
+    (mp, mb), (hp, hb), (xp, xb) = blk["marketing"], blk["holding"], blk["extra_val"]
+    weekly_p = pp * qp - cp * qp - mp - hp
+    weekly_b = pb * qb - cb * qb - mb - hb
+    profit_p, profit_b = weekly_p.sum(-1), weekly_b.sum(-1)
+    # Cash vs do nothing (§15.5.2): the profit gap so far, less the one-off extra stock still unused.
+    # Not raw-order payments: the (s,S) batches are weeks of stock each, so a plan that moves demand
+    # a few percent shifts a whole batch by a week and the cash gap swings by that batch.
     res = {
         "delta": profit_p - profit_b,
         "profit_p": profit_p,
@@ -793,7 +803,7 @@ def _path_metrics(sim: Mapping[str, Any], p: int, steady: bool) -> dict[str, np.
         "volume": ((pb - cb) * (qp - qb)).sum(-1),
         "marketing": (mb - mp).sum(-1),
         "holding": (hb - hp).sum(-1),
-        "cum_cash": np.cumsum(cash_diff, axis=-1),
+        "cum_cash": np.cumsum(weekly_p - weekly_b, axis=-1) - (xp - xb),
     }
     if steady:
         sp = (_block(sim, k, 1, p) for k in ("price", "sales", "cost", "marketing", "holding"))
@@ -1011,7 +1021,7 @@ def simulate_detail(
     tr = sim["trace"]
     k_p, k_q, usd = cal.k_p, cal.k_q, cal.usd
     cum_profit = np.cumsum(tr["profit"], axis=0)
-    cum_cash = np.cumsum(tr["cash_a"][:, 0] - tr["cash_a"][:, 1])
+    cum_cash = np.cumsum(tr["profit"][:, 0, 0] - tr["profit"][:, 1, 0]) - (sim["extra_val"][:, 0] - sim["extra_val"][:, 1])
     weeks: list[dict[str, Any]] = []
     for t in range(horizon):
         week: dict[str, Any] = {}

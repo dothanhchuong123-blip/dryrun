@@ -299,6 +299,21 @@ def test_cost_exposure_half_share_gives_half_rise(cal):
     assert rise["half"] == pytest.approx(rise["full"] / 2.0, abs=0.011)  # c_raw is rounded to cents
 
 
+def test_cash_tied_up_ignores_reorder_timing():
+    # Furniture reorders in batches of many weeks' stock. A plan that only moves demand shifts when a
+    # batch is placed; that is not cash the plan ties up (it used to read $88.7k for marketing +30%).
+    c = calibrate(FURNITURE)
+    timber = ShockCase(id="news", label="Timber +12%", delta_c_raw=0.12, delta_lead_time=4, onset_week=2,
+                       ramp_weeks=3)
+    market = PlanSpec(name="Marketing +30%", marketing_change_pct=30)
+    stock = PlanSpec(name="Stock up 4 weeks now", extra_stock_weeks=4, stock_week=0)
+    grid = evaluate_grid(c, [market, RAISE, stock], [timber], n_paths=N_TEST)
+    m, r, s = (_cell(grid, p.name, "news") for p in (market, RAISE, stock))
+    assert m["peak_cash_usd"] <= -m["bridge"]["marketing_usd"] + 1.0  # at most the extra marketing
+    assert r["peak_cash_usd"] >= -r["mean_delta_usd"] - 1.0  # no extra stock: cash ends where profit ends
+    assert s["peak_cash_usd"] == pytest.approx(4 * 40 * 605, rel=0.05)  # the extra stock itself
+
+
 def test_steady_rival_split(cal):
     # Deliveries slip 8 weeks: the rival, with less stock, runs short; extra stock serves its customers.
     late = ShockCase(id="late", label="Shipping +8 weeks", delta_lead_time=8, onset_week=1, ramp_weeks=1)
