@@ -1,0 +1,50 @@
+/* Analyst log (screen 3). Ported from docs/mockups/D7-pivot.html; class names are prefixed al- to stay local. */
+.al { min-width: 0; height: 100%; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.al-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 20px 12px; border-bottom: 1px solid var(--line); }
+.al-head p { margin: 4px 0 0; font-size: 13px; color: var(--ink-3); }
+.al-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.al-body { flex: 1; min-height: 0; overflow: auto; padding: 14px 12px 16px; scroll-padding: 14px; overscroll-behavior: contain; }
+
+.al-group { margin: 0 4px 10px; border-radius: 8px; background: var(--bg-sunk); border: 1px solid var(--line); animation: slidein 0.5s var(--ease) both; }
+.al-gh { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: none; padding: 11px 14px; cursor: pointer; border-radius: 8px; }
+.al-gh:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
+.al-gh b { font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.al-gh .al-meta { font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
+.al-gh .al-take { flex: 1; min-width: 0; font-size: 13px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.al-gh .al-car { margin-left: auto; color: var(--ink-3); font-size: 12px; transition: transform 0.25s var(--ease); }
+.al-group.open .al-car { transform: rotate(90deg); }
+.al-gb { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s var(--ease); }
+.al-group.open .al-gb { grid-template-rows: 1fr; }
+.al-gb > div { overflow: hidden; min-height: 0; }
+.al-rows { padding: 0 6px 6px; }
+
+.al-row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; padding: 9px 8px; align-items: start; border-radius: 6px; transition: background 0.2s; }
+.al-row.new { animation: slidein 0.5s var(--ease) both; }
+.al-row:hover { background: var(--bg-card); }
+.al-text { font-size: 14px; line-height: 1.5; min-width: 0; overflow-wrap: anywhere; }
+.al-m { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 5px; font-size: 12px; color: var(--ink-3); }
+.al-m .rchip { background: var(--bg-subtle); color: var(--ink-2); }
+.al-m .rchip.pos { background: var(--gain-soft); color: var(--gain); }
+.al-m .rchip.neg { background: var(--loss-soft); color: var(--loss); }
+.al-risks { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--ink-2); }
+
+.al-tbtn { border: 0; background: none; padding: 4px 14px 8px; color: var(--firm-a); font-size: 13px; font-weight: 600; cursor: pointer; }
+.al-tbtn:hover { text-decoration: underline; }
+.al-think { margin: 0 14px 12px; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--line); border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.6; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 200px; overflow: auto; }
+.al-live { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--nv-green); margin-right: 6px; animation: livedot 1.2s ease-in-out infinite; }
+
+.al-status { border-top: 1px solid var(--line); padding: 10px 20px; font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; min-height: 40px; }
+.al-status .al-dots { display: inline-flex; gap: 3px; }
+.al-status .al-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--firm-a); animation: livedot 1s ease-in-out infinite; }
+.al-status .al-dots i:nth-child(2) { animation-delay: 0.15s; }
+.al-status .al-dots i:nth-child(3) { animation-delay: 0.3s; }
+
+@media (max-width: 900px) {
+  .al { height: auto; overflow: visible; margin-bottom: 18px; }
+  .al-body { max-height: 56vh; }
+  .al-row { grid-template-columns: 64px minmax(0, 1fr); gap: 10px; }
+  .al-gh .al-take { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .al-group, .al-row.new { animation: none; }
+}
