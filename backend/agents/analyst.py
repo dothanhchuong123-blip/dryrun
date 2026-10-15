@@ -12,6 +12,7 @@ import argparse
 import asyncio
 import json
 import logging
+import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
@@ -177,14 +178,21 @@ def build_columns(
 
 def tidy(text: str, cap: int) -> str:
     """Strict json_schema hard-cuts a string at its maxLength, often mid-word (FEEDBACK_LOG 2026-10-15).
-    If `text` hit the cap without ending a sentence, cut back to the last full sentence, else the last word."""
+    If `text` hit the cap without ending a sentence, cut back to the last full sentence, else the last word.
+    A full stop right after a digit ("(-1.") is a cut number, not a sentence end."""
     text = text.strip()
-    if len(text) < cap - 2 or text.endswith((".", "!", "?", "”", ")", "\"")):
+
+    def ends_sentence(t: str) -> bool:
+        if t.endswith(("!", "?", "”", ")", "\"")):
+            return True
+        return t.endswith(".") and not (len(t) > 1 and t[-2].isdigit())
+
+    if len(text) < cap - 2 or ends_sentence(text):
         return text
-    end = max(text.rfind(c) for c in ".!?")
-    if end >= 20:
-        return text[: end + 1]
-    return text.rsplit(" ", 1)[0].rstrip(",;:-–— ") + "…"
+    ends = [m.end() for m in re.finditer(r"(?<!\d)[.!?](?=\s)", text)]
+    if ends and ends[-1] >= 20:
+        return text[: ends[-1]]
+    return text.rsplit(" ", 1)[0].rstrip(",;:-–—( ") + "…"
 
 
 def _slug_spec(spec: PlanSpec) -> tuple:

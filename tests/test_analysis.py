@@ -454,3 +454,11 @@ async def test_fresh_news_skips_the_cache_and_overwrites_it(tmp_path):
     assert Counting.n == 2 * first
     await nw.find(EXAMPLE["profile"], fallback_shock=fb, live=False, fresh=True)  # REPLAY never refreshes
     assert Counting.n == 2 * first
+
+
+def test_tidy_treats_a_number_cut_at_the_cap_as_unfinished():
+    from backend.agents.analyst import tidy
+
+    t = "Raise price 5% now gives solid gains in the likely news (+1.9k mean). Its worst case (-1."
+    assert tidy(t, len(t)) == "Raise price 5% now gives solid gains in the likely news (+1.9k mean)."
+    assert tidy("Short and done at 1.5k.", 300) == "Short and done at 1.5k."  # far from the cap: untouched
