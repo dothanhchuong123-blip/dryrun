@@ -100,6 +100,8 @@ export interface CreateAnalysisRequest {
   example_id?: string;
   profile?: BusinessProfile;
   mode: RunMode;
+  /** (review) the owner's gut call, tested with the seed plans as "Your gut call: {name}" */
+  gut_plan?: PlanSpec;
 }
 export interface CreateAnalysisResponse {
   analysis_id: string;
