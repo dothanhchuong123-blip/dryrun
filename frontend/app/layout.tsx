@@ -2,22 +2,28 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Market Digital Twin | Institutional Decision Intelligence Sandbox",
+  title: "Market Twin · Test your plans",
   description:
-    "Multi-agent market and supply-chain simulator powered by NVIDIA Nemotron on Nebius Token Factory, grounded in live news via Tavily.",
+    "Describe your business, see the news that hits it, and test plans against possible futures. Powered by NVIDIA Nemotron on Nebius, grounded with Tavily.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+// Applies the saved theme before first paint (no flash). Falls back to the system setting.
+const themeInit = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-[#07090e] text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
-        {children}
-      </body>
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap"
+        />
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
-

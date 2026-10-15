@@ -1,1243 +1,628 @@
-import {
-  BenchmarkExportFormat,
+/**
+ * Offline mock backend for the v2 contract (docs/EVENTS.md v2.1), for the coffee_hcmc example.
+ *
+ * All numbers come from the real planner via `scripts/make_mock_stream.py`
+ * (coffee_hcmc.json, coffee_hcmc_replays.json). Only the wording (headlines, agent text, crowd mood)
+ * is scripted here. Re-run the script after any engine change.
+ *
+ * The mock emits the same typed events the SSE client would, so the store cannot tell the difference.
+ */
+import type {
+  AcceptedResponse,
+  AgentStepData,
+  AnalysisEvent,
+  BusinessProfile,
+  CellBridge,
+  CreateAnalysisRequest,
+  CreateAnalysisResponse,
   CrowdArchetype,
-  DecisionEventData,
-  FirmPair,
-  GroundingEventData,
-  JobStatus,
-  MarketSSEEvent,
-  Matrix3x3,
-  ModelTier,
-  NashAction,
-  NashLabel,
-  ReplayLine,
-  RunMode,
-  ScenarioSummary,
-  SSE_EVENT_NAMES,
-  SSEEventName,
-  StatsEventData,
-  TelemetryEventData,
+  ExamplesResponse,
+  GridCellData,
+  GridSummaryData,
+  MarkerData,
+  MemoEventData,
+  NewsItem,
+  ParseProfileResponse,
+  PlanSpec,
+  ReplayEvent,
+  ShockCase,
+  TelemetryData,
   TickEventData,
-  encodeChoicesB64,
 } from "../lib/events";
-import { DEFAULT_SCENARIOS, useMarketStore } from "../lib/store";
+import { labels } from "../lib/labels";
+import { formatDelta, formatMoney } from "../lib/format";
+import data from "./coffee_hcmc.json";
 
-export interface MockStreamHandle {
-  stop: () => void;
-  injectShock: (text: string) => { accepted: boolean; reason?: string };
-  triggerNewsCheck: () => { accepted: boolean; reason?: string };
+// ---- typed view of the generated JSON ----------------------------------------------------------
+
+interface PlanRow {
+  name: string;
+  source: "seed" | "ai" | "user";
+  round: number;
+  spec: PlanSpec;
+}
+interface LibEntry {
+  extra_stock_weeks: number;
+  price_change_pct: number;
+  cells: Omit<GridCellData, "plan_name">[];
+}
+interface RecordedReplay {
+  plan_name: string;
+  shock_id: string;
+  shock_label: string;
+  weeks: { U1: TickEventData; U2: TickEventData }[];
+  markers: MarkerData[];
+  cum_profit_usd: { U1: number; U2: number };
+}
+interface MockData {
+  examples: (ExamplesResponse[number] & { profile: BusinessProfile })[];
+  profile: BusinessProfile;
+  news: NewsItem[];
+  shocks: ShockCase[];
+  plans: PlanRow[];
+  crowd: { plan_name: string; archetypes: CrowdArchetype[] }[];
+  cells: GridCellData[];
+  baseline_profit_usd: Record<string, number>;
+  baseline_no_change_usd: number;
+  best_today: string;
+  safest: string;
+  memo: { plan_name: string; numbers: MemoEventData["numbers"]; cost_line: string | null };
+  library: LibEntry[];
+  n_shoppers: number;
+}
+const D = data as unknown as MockData;
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+// ---- REST mocks --------------------------------------------------------------------------------
+
+export function mockExamples(): ExamplesResponse {
+  return D.examples.map(({ profile: _profile, ...rest }) => rest);
 }
 
-interface ScenarioConfig {
-  id: string;
-  title: string;
-  subtitle: string;
-  baseRawCost: number;
-  baseLeadTime: number;
-  deltaCRaw: number;
-  deltaLeadTime: number;
-  demandShock: number;
-  initialQuote: string;
-  initialUrl: string;
-  initialNewsTitle: string;
-  initialQuery: string;
-  deepScoutQuote: string;
-  deepScoutUrl: string;
-  deepScoutTitle: string;
-  deepScoutQuery: string;
+/** Returns the matching example's profile after 1.5 s; anything else gets the coffee profile. */
+export async function mockParseProfile(text: string): Promise<ParseProfileResponse> {
+  await sleep(1500);
+  const hit = D.examples.find((e) => e.text.trim() === text.trim());
+  return { profile: structuredClone(hit?.profile ?? D.profile), fallback_used: false };
 }
 
-const SCENARIO_CONFIGS: Record<string, ScenarioConfig> = {
-  semiconductor_tariff: {
-    id: "semiconductor_tariff",
-    title: "25% Semiconductor & Wafer Tariff Shock",
-    subtitle:
-      "US–Asia logic wafer duties hike raw material costs +25% and extend port customs lead time +3 ticks",
-    baseRawCost: 52.0,
-    baseLeadTime: 4,
-    deltaCRaw: 0.25,
-    deltaLeadTime: 3,
-    demandShock: -0.04,
-    initialQuery: "US semiconductor wafer tariff customs inspection delay 2026",
-    initialNewsTitle: "Reuters: 25% Section 301 Logic Wafer Tariff Takes Effect Midnight",
-    initialUrl: "https://www.reuters.com/technology/semiconductor-wafer-tariff-2026",
-    initialQuote:
-      "Customs authorities imposed an immediate 25% ad-valorem tariff on imported 300mm logic wafers, adding 72 hours to port clearance.",
-    deepScoutQuery: "Taiwan foundry wafer allocation surcharge freight congestion",
-    deepScoutTitle: "FT: Foundries Pass On Wafer Surcharges Amid Customs Backlog",
-    deepScoutUrl: "https://www.ft.com/content/foundry-wafer-surcharges-2026",
-    deepScoutQuote:
-      "Spot wafer logistics lead times lengthened by an additional 2 ticks as bonded warehouses hit 94% utilization.",
-  },
-  red_sea_blockade: {
-    id: "red_sea_blockade",
-    title: "Red Sea / Suez Maritime Route Closure",
-    subtitle:
-      "Cape of Good Hope rerouting spikes freight lead times +5 ticks and raises landed unit cost +18%",
-    baseRawCost: 48.0,
-    baseLeadTime: 4,
-    deltaCRaw: 0.18,
-    deltaLeadTime: 5,
-    demandShock: 0.03,
-    initialQuery: "Red Sea Suez container rerouting Cape of Good Hope freight rates",
-    initialNewsTitle: "Freightos Baltic Index: Asia-Europe Container Transit +14 Days",
-    initialUrl: "https://www.freightos.com/freight-resources/red-sea-rerouting-2026",
-    initialQuote:
-      "Major container alliances suspended Red Sea transits indefinitely, adding 5 ticks of transit lead time and an 18% bunker surcharge.",
-    deepScoutQuery: "Drewry container equipment shortage port congestion surcharge",
-    deepScoutTitle: "Drewry Maritime: Empty Container Imbalance Triggers Spot Spike",
-    deepScoutUrl: "https://www.drewry.co.uk/maritime-research-container-imbalance",
-    deepScoutQuote:
-      "Delayed vessel returns tightened Asia export capacity, lifting raw component landed cost by an extra +8%.",
-  },
-  lithium_spot_spike: {
-    id: "lithium_spot_spike",
-    title: "Lithium Carbonate Spot Price Surge & Demand Shift",
-    subtitle:
-      "Refinery outage triggers +35% raw input shock alongside +12% precautionary buyer demand surge",
-    baseRawCost: 55.0,
-    baseLeadTime: 3,
-    deltaCRaw: 0.35,
-    deltaLeadTime: 2,
-    demandShock: 0.12,
-    initialQuery: "battery grade lithium carbonate spot surge refinery outage",
-    initialNewsTitle: "Bloomberg: Lithium Carbonate Jumps 35% After Major Brine Outage",
-    initialUrl: "https://www.bloomberg.com/news/articles/lithium-carbonate-surge-2026",
-    initialQuote:
-      "Battery-grade lithium carbonate surged 35% this week while OEM buyers pulled forward orders by 12% to hedge stockout risk.",
-    deepScoutQuery: "cathode precursor inventory restocking lead time",
-    deepScoutTitle: "Reuters: Cathode Producers Ration Spot Allocations as Orders Swell",
-    deepScoutUrl: "https://www.reuters.com/markets/commodities/cathode-allocations-2026",
-    deepScoutQuote:
-      "Downstream buyers accelerated safety-stock replenishment, tightening supplier lead times by +2 ticks.",
-  },
-};
+export function mockCreateAnalysis(_req: CreateAnalysisRequest): CreateAnalysisResponse {
+  return { analysis_id: `mock-${Date.now().toString(36)}`, mode: "replay" };
+}
 
-const ARCHETYPE_DEFINITIONS: Array<{
-  id: number;
-  label: string;
-  baseMuA: number;
-  baseMuB: number;
-  bubbles: [string, string];
-}> = [
-  {
-    id: 1,
-    label: "Enterprise Procurement",
-    baseMuA: 0.32,
-    baseMuB: 0.18,
-    bubbles: ["Locking SLA volume with Firm A", "Auditing tariff pass-through clauses"],
-  },
-  {
-    id: 2,
-    label: "Price-Sensitive SMBs",
-    baseMuA: -0.08,
-    baseMuB: 0.28,
-    bubbles: ["Switching to Firm B if A hikes >5%", "Comparing unit landed cost"],
-  },
-  {
-    id: 3,
-    label: "Brand Loyalists (Firm A)",
-    baseMuA: 0.58,
-    baseMuB: -0.22,
-    bubbles: ["Staying with Firm A despite premium", "Prioritizing reliability over discount"],
-  },
-  {
-    id: 4,
-    label: "Brand Loyalists (Firm B)",
-    baseMuA: -0.24,
-    baseMuB: 0.54,
-    bubbles: ["Committed to Firm B ecosystem", "Renewing multi-quarter contract"],
-  },
-  {
-    id: 5,
-    label: "JIT Manufacturers",
-    baseMuA: 0.25,
-    baseMuB: 0.12,
-    bubbles: ["Penalizing any supplier stockout", "Watching port lead-time spike closely"],
-  },
-  {
-    id: 6,
-    label: "Spot Market Arbitrageurs",
-    baseMuA: 0.05,
-    baseMuB: 0.09,
-    bubbles: ["Buying lowest offer tick-by-tick", "Zero brand loyalty, pure spread play"],
-  },
-  {
-    id: 7,
-    label: "Public Sector Buyers",
-    baseMuA: 0.19,
-    baseMuB: 0.21,
-    bubbles: ["Fixed budget ceiling; deferring excess", "Requiring dual-source availability"],
-  },
-  {
-    id: 8,
-    label: "High-Margin Integrators",
-    baseMuA: 0.41,
-    baseMuB: 0.14,
-    bubbles: ["Paying premium for guaranteed stock", "Stockout costs us 5x unit price"],
-  },
-  {
-    id: 9,
-    label: "Distressed Retailers",
-    baseMuA: -0.18,
-    baseMuB: 0.04,
-    bubbles: ["Scaling back orders near reference price", "Moving to outside good if P > $105"],
-  },
-  {
-    id: 10,
-    label: "Safety-Stock Hoarders",
-    baseMuA: 0.36,
-    baseMuB: 0.31,
-    bubbles: ["Front-loading orders on tariff headline", "Will take spillover from rival if needed"],
-  },
-  {
-    id: 11,
-    label: "Tech-Spec Evaluators",
-    baseMuA: 0.29,
-    baseMuB: 0.22,
-    bubbles: ["Tracking marketing & quality signals", "Favoring Firm A buffered fulfillment"],
-  },
-  {
-    id: 12,
-    label: "Late-Cycle Followers",
-    baseMuA: 0.11,
-    baseMuB: 0.15,
-    bubbles: ["Following consensus market share", "Avoiding stockout-prone vendor"],
-  },
+// ---- helpers -----------------------------------------------------------------------------------
+
+const cellKey = (p: string, s: string) => `${p}|${s}`;
+const cellMap = new Map(D.cells.map((c) => [cellKey(c.plan_name, c.shock_id), c]));
+const planNames = D.plans.map((p) => p.name);
+const shockById = new Map(D.shocks.map((s) => [s.id, s]));
+
+function sumBridge(b: CellBridge): number {
+  return b.cost_usd + b.price_usd + b.volume_usd + b.marketing_usd + b.holding_usd;
+}
+const r2 = (x: number) => Math.round(x * 100) / 100;
+
+/** What "Do nothing" earns in a column, e.g. for the headline. */
+const baseline = D.baseline_profit_usd;
+
+// ---- the scripted analysis ---------------------------------------------------------------------
+
+type Timed = { t: number; ev: AnalysisEvent };
+
+function step(
+  round: number,
+  kind: AgentStepData["kind"],
+  text: string,
+  tier: AgentStepData["tier"],
+  plan: string | null = null,
+  latency: number | null = null,
+): AnalysisEvent {
+  return { event: "agent_step", data: { round, kind, text, plan_name: plan, tier, latency_ms: latency } };
+}
+
+const SCENARIO_THOUGHT =
+  "Beans +31% is the news column. Two bigger worries for a small roaster: the dry spell could push beans to +45% " +
+  "with slower shipping, and Highland has said it will protect its cafés, so a 5% price cut is realistic. " +
+  "A new chain with 40 outlets could pull 8% of cafés. One column for a bean price fall, marked unlikely.";
+
+const SCENARIO_REASONING = [
+  "news n1: robusta +31% in 4 wk. your beans = 85% of cost → cost +26%\n",
+  "6.50 × 0.85 × 0.31 = $1.71 a bag. margin 11.00 − 6.50 = $4.50 → 4.50 − 1.71 = $2.79\n",
+  "n2: dry spell, harvest −10% → could extend the spike. try +45%, shipping +2 wk\n",
+  "m2: Highland 'will not pass it all on' → rival price −5% is plausible\n",
+  "m1: 40-outlet chain, own roasting → share shift ~8% of cafés from wk 4\n",
+  "also one downside column: beans −12%, unlikely but plans must not rely on a spike\n",
 ];
 
-/**
- * Deterministic Mulberry32 PRNG so mock runs are reproducible and realistic.
- */
-function createRng(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+const UNMODELLED = [
+  { text: "A new tax on imported coffee equipment is being discussed", source_id: "m2" },
+  { text: "Your larger cafés may ask for credit terms when prices rise", source_id: null },
+];
+
+function roundReasoning(round: number): string[] {
+  if (round === 1)
+    return [
+      "seed results: stock 4 wk covers the spike but is tied to cash ($7.3k of $8,000)\n",
+      "price +4% alone: little cash, good in news column, loses in 'beans −12%'\n",
+      "try: stock 3 wk + raise 3% wk 3 → less cash, keeps the volume\n",
+      "try: stock 6 wk → big gain but cash > $8,000 → will show 'Over your cash'\n",
+    ];
+  return [
+    "best so far: stock 3 wk + raise 3% wk 3. more stock helps while cash allows\n",
+    "stock 4 wk fits the $8,000 (peak cash $7.3k) → combine with +3% wk 3\n",
+    "marketing +20% costs money now and brings little back → test it once\n",
+  ];
+}
+
+function cellEvent(plan: string, shock: string): AnalysisEvent {
+  const c = cellMap.get(cellKey(plan, shock));
+  if (!c) throw new Error(`mock: no cell ${plan}|${shock}`);
+  return { event: "grid_cell", data: c };
+}
+
+function bestIn(round: number): { best: string; safest: string } {
+  const names = D.plans.filter((p) => p.round <= round).map((p) => p.name);
+  const cells = D.cells.filter((c) => names.includes(c.plan_name));
+  const l = labels(cells, D.shocks, D.profile.cash_available);
+  return { best: l.bestToday, safest: l.safest };
+}
+
+function summaryEvent(round: number, verified = false): AnalysisEvent {
+  const { best, safest } = bestIn(round);
+  const data: GridSummaryData = { baseline_profit_usd: baseline, best_today: best, safest, verified };
+  return { event: "grid_summary", data };
+}
+
+function newsCardText(plan: string): string {
+  const c = cellMap.get(cellKey(plan, "news"))!;
+  return `${plan}: ${formatDelta(c.mean_delta_usd)} in today's news case, bad case ${formatDelta(c.p5_delta_usd)}.`;
+}
+
+function buildMemo(verified = false, cells: Map<string, GridCellData> = cellMap): MemoEventData {
+  const plan = D.memo.plan_name;
+  const c = cells.get(cellKey(plan, "news"))!;
+  const s2 = cells.get(cellKey(plan, "s2"))!;
+  const s4 = cells.get(cellKey(plan, "s4"))!;
+  const bridge = c.bridge;
+  return {
+    plan_name: plan,
+    headline: "Stock up 4 weeks now and raise your price 3% in week 3",
+    why:
+      `If beans keep their ${"+31%"} jump, this plan earns ${formatDelta(c.mean_delta_usd)} more than doing nothing. ` +
+      `Cheaper stock is worth ${formatDelta(bridge.cost_usd)} and the small rise adds ${formatDelta(bridge.price_usd)}, ` +
+      `less ${formatMoney(-bridge.volume_usd)} from customers who leave.`,
+    watch_out:
+      `It ties up about ${formatMoney(c.peak_cash_usd)} of your $8,000 and only loses if beans fall back (` +
+      `${formatDelta(s4.mean_delta_usd)}). If Highland cuts 5% it still earns ${formatDelta(s2.mean_delta_usd)}.`,
+    recheck_when: "Beans move more than 10% either way, or Highland changes its price.",
+    numbers: {
+      ...D.memo.numbers,
+      mean_delta_usd: c.mean_delta_usd,
+      p5_delta_usd: c.p5_delta_usd,
+      p_better: c.p_better,
+      n: c.n,
+      bridge,
+      steady_rival_delta_usd: c.steady_rival_delta_usd,
+      peak_cash_usd: c.peak_cash_usd,
+      payback_week: c.payback_week,
+      over_cash: c.over_cash,
+      verified,
+    },
+    cost_line: D.memo.cost_line,
+    sources: [
+      { title: D.news[0].title, url: D.news[0].url, quote: D.news[0].quote },
+      { title: D.news[1].title, url: D.news[1].url, quote: D.news[1].quote },
+    ],
+    not_modelled: {
+      fixed: [
+        "Fixed costs such as rent and salaries (profit here is gross profit)",
+        "Taxes",
+        "Payment terms: we assume you pay suppliers when you order and customers pay when they buy",
+        "Seasonality",
+        "Your other products",
+        "Warehouse space limits",
+        "How other rivals react (we model one main rival)",
+      ],
+      found: UNMODELLED,
+    },
+    fallback_used: false,
   };
 }
 
-function variance(arr: number[]): number {
-  if (arr.length < 2) return 0;
-  const mean = arr.reduce((s, x) => s + x, 0) / arr.length;
-  return arr.reduce((s, x) => s + (x - mean) * (x - mean), 0) / (arr.length - 1);
+/** Counts per tier at a point of the script; telemetry is computed from these, never typed in. */
+interface Calls {
+  ultra: number;
+  super: number;
+  fast: number;
+}
+function telemetry(calls: Calls, job: TelemetryData["job"]): AnalysisEvent {
+  const total = calls.ultra + calls.super + calls.fast || 1;
+  const perCall = {
+    ultra: { in: 3200, out: 1900, price: 0.0000028 },
+    super: { in: 900, out: 260, price: 0.0000006 },
+    fast: { in: 420, out: 90, price: 0.0000001 },
+  };
+  const tiers = {} as TelemetryData["tiers"];
+  const tokens = { ultra: 0, super: 0, fast: 0 };
+  let cost = 0;
+  let allUltra = 0;
+  (["ultra", "super", "fast"] as const).forEach((k) => {
+    const n = calls[k];
+    const t = perCall[k];
+    tokens[k] = n * (t.in + t.out);
+    cost += tokens[k] * t.price;
+    allUltra += tokens[k] * perCall.ultra.price;
+    tiers[k] = {
+      calls: n,
+      tokens_in: n * t.in,
+      tokens_out: n * t.out,
+      p50_ttft_ms: k === "ultra" ? 2100 : k === "super" ? 480 : 160,
+      tok_per_s: k === "ultra" ? 48 : k === "super" ? 120 : 310,
+      errors: 0,
+    };
+  });
+  const tokTotal = tokens.ultra + tokens.super + tokens.fast || 1;
+  const share = (k: "ultra" | "super" | "fast") => ({
+    call: calls[k] / total,
+    token: tokens[k] / tokTotal,
+  });
+  const data: TelemetryData = {
+    tiers,
+    call_share: { ultra: share("ultra").call, super: share("super").call, fast: share("fast").call },
+    token_share: { ultra: share("ultra").token, super: share("super").token, fast: share("fast").token },
+    cost_usd: r2(cost * 1000) / 1000,
+    cost_all_ultra_usd: r2(allUltra * 1000) / 1000,
+    savings_pct: allUltra > 0 ? Math.round((1 - cost / allUltra) * 1000) / 10 : 0,
+    job,
+  };
+  return { event: "telemetry", data };
 }
 
-/**
- * Try loading a recorded JSONL replay file from public/replays/<scenarioId>.jsonl
- * or public/fixtures/replays/<scenarioId>.jsonl.
- */
-async function tryLoadReplayJsonl(
-  scenarioId: string
-): Promise<ReplayLine[] | null> {
-  if (typeof globalThis.fetch !== "function") {
-    return null;
-  }
-  const candidatePaths = [
-    `/replays/${scenarioId}.jsonl`,
-    `/fixtures/replays/${scenarioId}.jsonl`,
+/** The whole ~25 s script as a list of timed events. */
+export function buildAnalysisScript(): Timed[] {
+  const out: Timed[] = [];
+  const calls: Calls = { ultra: 0, super: 0, fast: 0 };
+  const idle = { id: null, status: "idle" as const };
+  let t = 0;
+  const at = (dt: number, ev: AnalysisEvent) => {
+    t += dt;
+    out.push({ t, ev });
+  };
+  const tele = (dt = 0.05) => at(dt, telemetry(calls, idle));
+
+  at(0.1, {
+    event: "analysis",
+    data: {
+      analysis_id: "mock",
+      mode: "replay",
+      example_id: "coffee_hcmc",
+      profile: D.profile,
+      horizon_weeks: 24,
+      n_paths: 1000,
+    },
+  });
+  at(0.2, { event: "mode", data: { mode: "replay", reason: "Offline demo: the recorded coffee example is playing." } });
+  calls.super += 1;
+  tele(0.3);
+
+  // news
+  at(0.7, { event: "news", data: { items: D.news, used_for_grid: "n1" } });
+  calls.super += 1;
+  tele();
+
+  // 0b futures
+  at(0.8, step(0, "think", "Futures to test: reading the news and your market to pick the futures to run.", "ultra", null, 2100));
+  for (const chunk of SCENARIO_REASONING) at(0.25, { event: "reasoning", data: { role: "scenarios", round: 0, delta: chunk } });
+  at(0.2, { event: "reasoning_done", data: { role: "scenarios", round: 0 } });
+  calls.ultra += 1;
+  at(0.3, {
+    event: "scenarios",
+    data: { thought: SCENARIO_THOUGHT, unmodelled: UNMODELLED, fallback_used: false },
+  });
+  at(0.1, { event: "shocks", data: { cases: D.shocks } });
+  tele();
+
+  // rounds: 0 = seed plans, 1 and 2 = Ultra's
+  const rounds: { round: number; think: string; test: string; shoppers: string; resultFor: string[] }[] = [
+    {
+      round: 0,
+      think: "Starting with three simple plans: buy more stock, raise the price, or switch supplier.",
+      test: `Testing 3 starter plans against ${D.shocks.length} futures, 1,000 runs per cell.`,
+      shoppers: "Asked the shopper groups how each starter plan feels to them.",
+      resultFor: ["Stock up 4 weeks", "Raise price 4% from week 2"],
+    },
+    {
+      round: 1,
+      think: "Stock helps but cash is tight. Trying a smaller stock-up with a price rise, and a bigger one.",
+      test: "Testing 2 new plans against all futures.",
+      shoppers: "Shoppers: price-hunting cafés dislike a rise more than loyal regulars.",
+      resultFor: ["Stock 3 wk + raise 3% wk 3", "Stock up 6 weeks"],
+    },
+    {
+      round: 2,
+      think: "Combining what worked: 4 weeks of stock fits your cash, plus a small rise. One marketing test.",
+      test: "Testing the last 2 plans.",
+      shoppers: "Shoppers: a small rise after a stock-up reads as fair when everyone's costs jump.",
+      resultFor: ["Stock 4 wk + raise 3% wk 3"],
+    },
   ];
 
-  for (const url of candidatePaths) {
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) continue;
-      const text = await res.text();
-      const lines = text
-        .split(/\r?\n/)
-        .map((l) => l.trim())
-        .filter((l) => l.startsWith("{") && l.endsWith("}"));
-      if (lines.length === 0) continue;
-
-      const parsed: ReplayLine[] = [];
-      for (const line of lines) {
-        const obj = JSON.parse(line) as ReplayLine;
-        if (
-          obj &&
-          typeof obj.t === "number" &&
-          typeof obj.event === "string" &&
-          (SSE_EVENT_NAMES as readonly string[]).includes(obj.event)
-        ) {
-          parsed.push(obj);
-        }
-      }
-      if (parsed.length > 0) {
-        return parsed;
-      }
-    } catch {
-      // Continue to next path or synthetic fallback
+  for (const r of rounds) {
+    const roundPlans = D.plans.filter((p) => p.round === r.round);
+    at(0.7, step(r.round, "think", r.think, "ultra", null, 2400));
+    if (r.round > 0) {
+      for (const chunk of roundReasoning(r.round)) at(0.2, { event: "reasoning", data: { role: "analyst", round: r.round, delta: chunk } });
+      at(0.1, { event: "reasoning_done", data: { role: "analyst", round: r.round } });
     }
+    calls.ultra += 1;
+    for (const p of roundPlans) {
+      at(0.35, { event: "plan", data: { name: p.name, source: p.source, round: p.round, spec: p.spec } });
+    }
+    tele();
+    at(0.5, step(r.round, "test", r.test, "engine", null, 180));
+    for (const p of roundPlans) {
+      for (const s of D.shocks) at(0.16, cellEvent(p.name, s.id));
+    }
+    at(0.4, step(r.round, "shoppers", r.shoppers, "fast", null, 170));
+    for (const p of roundPlans) {
+      const crowd = D.crowd.find((c) => c.plan_name === p.name)!;
+      at(0.15, { event: "crowd", data: crowd });
+      calls.fast += 1;
+    }
+    tele();
+    at(0.3, step(r.round, "result", newsCardText(r.resultFor[0]), "engine", r.resultFor[0]));
+    at(0.1, summaryEvent(r.round));
   }
-  return null;
+
+  // the over-cash plan is called out in the last result
+  at(0.5, step(2, "result", `Stock up 6 weeks looks best on paper (${formatDelta(cellMap.get(cellKey("Stock up 6 weeks", "news"))!.mean_delta_usd)}) but needs ${formatMoney(cellMap.get(cellKey("Stock up 6 weeks", "news"))!.peak_cash_usd)} of cash, more than you have.`, "engine", "Stock up 6 weeks"));
+  const best = D.best_today;
+  at(0.5, step(2, "finish", `Recommending ${best}: ${newsCardText(best).split(": ")[1]}`, "ultra", best, 1900));
+  calls.ultra += 1;
+  calls.super += 1;
+  tele();
+  at(0.5, { event: "memo", data: buildMemo() });
+  tele();
+  at(0.4, { event: "done", data: { analysis_id: "mock", cost_usd: 0 } });
+  return out;
 }
 
-/**
- * Start a mock stream that either replays `public/replays/<scenarioId>.jsonl`
- * (if present) or generates a realistic multi-tier simulation run.
- */
-export function startMockStream(
-  scenarioId: string,
-  mode: RunMode,
-  onEvent: (event: MarketSSEEvent) => void
-): MockStreamHandle {
-  let stopped = false;
+export interface MockAnalysisHandle {
+  stop(): void;
+  addPlan(spec: PlanSpec): AcceptedResponse;
+  newsCheck(): AcceptedResponse;
+  verify(): { accepted: boolean; job_id?: string };
+}
+
+/** Stretch the script so that it lasts about 25 s. */
+const SCRIPT_SECONDS = 25;
+
+export function runMockAnalysis(emit: (ev: AnalysisEvent) => void): MockAnalysisHandle {
+  const script = buildAnalysisScript();
+  const scale = SCRIPT_SECONDS / script[script.length - 1].t;
   const timers = new Set<ReturnType<typeof setTimeout>>();
-  let intervalId: ReturnType<typeof setInterval> | null = null;
-
-  const cfg =
-    SCENARIO_CONFIGS[scenarioId] ?? SCENARIO_CONFIGS.semiconductor_tariff;
-  const rng = createRng(
-    scenarioId.split("").reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 1337)
-  );
-
-  const scheduleTimeout = (fn: () => void, ms: number) => {
-    if (stopped) return;
-    const id = setTimeout(() => {
-      timers.delete(id);
-      if (!stopped) fn();
+  let userPlans = 0;
+  let live = true;
+  const later = (ms: number, fn: () => void) => {
+    const h = setTimeout(() => {
+      timers.delete(h);
+      if (live) fn();
     }, ms);
-    timers.add(id);
+    timers.add(h);
   };
+  const calls: Calls = { ultra: 5, super: 4, fast: 8 };
 
-  // Mutable simulation parameters (can be perturbed by live custom shocks)
-  let activeDeltaCRaw = cfg.deltaCRaw;
-  let activeDeltaLeadTime = cfg.deltaLeadTime;
-  let activeDemandShock = cfg.demandShock;
-  let shockCounter = 1;
+  const known = new Map(cellMap);
 
-  // Token & call accounting for accurate telemetry (SPEC §3.3 & §8)
-  const tierStats: TelemetryEventData["tiers"] = {
-    ultra: {
-      calls: 0,
-      tokens_in: 0,
-      tokens_out: 0,
-      p50_ttft_ms: 980,
-      tok_per_s: 338,
-      errors: 0,
-    },
-    super: {
-      calls: 0,
-      tokens_in: 0,
-      tokens_out: 0,
-      p50_ttft_ms: 410,
-      tok_per_s: 215,
-      errors: 0,
-    },
-    fast: {
-      calls: 0,
-      tokens_in: 0,
-      tokens_out: 0,
-      p50_ttft_ms: 190,
-      tok_per_s: 485,
-      errors: 0,
-    },
-  };
-
-  const recordLlmCall = (
-    tier: ModelTier,
-    tokensIn: number,
-    tokensOut: number,
-    ttftMs: number,
-    tokPerS: number,
-    jobStatus: JobStatus
-  ): TelemetryEventData => {
-    const t = tierStats[tier];
-    t.calls += 1;
-    t.tokens_in += tokensIn;
-    t.tokens_out += tokensOut;
-    t.p50_ttft_ms = Math.round(t.p50_ttft_ms * 0.7 + ttftMs * 0.3);
-    t.tok_per_s = Math.round(t.tok_per_s * 0.7 + tokPerS * 0.3);
-
-    const totalCalls = Math.max(
-      1,
-      tierStats.ultra.calls + tierStats.super.calls + tierStats.fast.calls
-    );
-    const totalTokens = Math.max(
-      1,
-      tierStats.ultra.tokens_in +
-        tierStats.ultra.tokens_out +
-        tierStats.super.tokens_in +
-        tierStats.super.tokens_out +
-        tierStats.fast.tokens_in +
-        tierStats.fast.tokens_out
-    );
-
-    const call_share: Record<ModelTier, number> = {
-      ultra: +((tierStats.ultra.calls / totalCalls) * 100).toFixed(1),
-      super: +((tierStats.super.calls / totalCalls) * 100).toFixed(1),
-      fast: +((tierStats.fast.calls / totalCalls) * 100).toFixed(1),
-    };
-
-    const ultraTok = tierStats.ultra.tokens_in + tierStats.ultra.tokens_out;
-    const superTok = tierStats.super.tokens_in + tierStats.super.tokens_out;
-    const fastTok = tierStats.fast.tokens_in + tierStats.fast.tokens_out;
-
-    const token_share: Record<ModelTier, number> = {
-      ultra: +((ultraTok / totalTokens) * 100).toFixed(1),
-      super: +((superTok / totalTokens) * 100).toFixed(1),
-      fast: +((fastTok / totalTokens) * 100).toFixed(1),
-    };
-
-    // Token Factory verified prices (USD per 1M tokens: input / output)
-    // Ultra: 1.00 / 3.00, Super: 0.30 / 0.90, Fast (Lightning): 0.06 / 0.24
-    const costUltra =
-      (tierStats.ultra.tokens_in * 1.0 + tierStats.ultra.tokens_out * 3.0) /
-      1_000_000;
-    const costSuper =
-      (tierStats.super.tokens_in * 0.3 + tierStats.super.tokens_out * 0.9) /
-      1_000_000;
-    const costFast =
-      (tierStats.fast.tokens_in * 0.06 + tierStats.fast.tokens_out * 0.24) /
-      1_000_000;
-    const cost_usd = +(costUltra + costSuper + costFast).toFixed(4);
-
-    // Counterfactual: every call routed to Ultra (including ~2,100 reasoning tokens per call)
-    const nonUltraCalls = tierStats.super.calls + tierStats.fast.calls;
-    const allUltraIn =
-      tierStats.ultra.tokens_in +
-      tierStats.super.tokens_in +
-      tierStats.fast.tokens_in;
-    const allUltraOut =
-      tierStats.ultra.tokens_out +
-      tierStats.super.tokens_out +
-      tierStats.fast.tokens_out +
-      nonUltraCalls * 2100;
-    const cost_all_ultra_usd = +(
-      (allUltraIn * 1.0 + allUltraOut * 3.0) /
-      1_000_000
-    ).toFixed(4);
-
-    const savings_pct =
-      cost_all_ultra_usd > 0
-        ? +(
-            Math.max(
-              0,
-              ((cost_all_ultra_usd - cost_usd) / cost_all_ultra_usd) * 100
-            )
-          ).toFixed(1)
-        : 0;
-
-    return {
-      tiers: {
-        ultra: { ...tierStats.ultra },
-        super: { ...tierStats.super },
-        fast: { ...tierStats.fast },
-      },
-      call_share,
-      token_share,
-      cost_usd,
-      cost_all_ultra_usd,
-      savings_pct,
-      job: {
-        id: "mc-10k-nebius-job",
-        status: jobStatus,
-      },
-    };
-  };
-
-  let currentTick = 0;
-
-  const emitGroundingAndShockDecision = (
-    grounding: GroundingEventData,
-    tickNum: number,
-    jobStatus: JobStatus
-  ) => {
-    onEvent({ event: "grounding", data: grounding });
-    const shockDecision: DecisionEventData<"shock_parser"> = {
-      tick: tickNum,
-      role: "shock_parser",
-      tier: "super",
-      model: "nvidia/nemotron-3-super-120b-a12b",
-      decision: {
-        delta_c_raw: activeDeltaCRaw,
-        delta_lead_time: activeDeltaLeadTime,
-        demand_shock: activeDemandShock,
-        severity: +Math.min(
-          1,
-          Math.abs(activeDeltaCRaw) * 1.6 + activeDeltaLeadTime * 0.08
-        ).toFixed(2),
-        evidence: [
-          {
-            quote: grounding.quote,
-            url: grounding.url,
-          },
-        ],
-      },
-      fallback_used: false,
-      latency_ms: 420 + Math.round(rng() * 90),
-    };
-    onEvent({ event: "decision", data: shockDecision });
-    const telem = recordLlmCall("super", 2850, 390, 415, 220, jobStatus);
-    onEvent({ event: "telemetry", data: telem });
-  };
-
-  // Start async check for recorded JSONL replay first; fallback to synthetic generator
-  void (async () => {
-    const replayLines = await tryLoadReplayJsonl(cfg.id);
-    if (stopped) return;
-
-    if (replayLines && replayLines.length > 0) {
-      for (const line of replayLines) {
-        scheduleTimeout(() => {
-          onEvent({
-            event: line.event as SSEEventName,
-            data: line.data as never,
-          } as MarketSSEEvent);
-        }, Math.max(0, Math.round(line.t * 1000)));
-      }
-      return;
-    }
-
-    // Synthetic run generator (faithful to SPEC.md §4–§8)
-    const runId = `run-${cfg.id.slice(0, 6)}-${Date.now().toString(36)}`;
-    const nConsumers = 200;
-    const epochTicks = 8;
-    const tickSeconds = 1.5;
-
-    onEvent({
-      event: "scenario",
-      data: {
-        run_id: runId,
-        scenario_id: cfg.id,
-        title: cfg.title,
-        mode,
-        n_consumers: nConsumers,
-        tick_seconds: tickSeconds,
-        epoch_ticks: epochTicks,
-      },
-    });
-
-    // Seed initial Tavily Grounding card & Super shock_parser decision
-    emitGroundingAndShockDecision(
-      {
-        id: `grd-init-${cfg.id}`,
-        query: cfg.initialQuery,
-        url: cfg.initialUrl,
-        title: cfg.initialNewsTitle,
-        quote: cfg.initialQuote,
-        param: "delta_c_raw",
-        value: cfg.deltaCRaw,
-        ts: new Date().toISOString(),
-        live: mode === "live",
-        applied: true,
-      },
-      0,
-      "queued"
-    );
-
-    // State variables across ticks for U1 (AI) and U2 (Cost-plus Baseline)
-    let cumProfitU1: FirmPair<number> = [0, 0];
-    let cumProfitU2: FirmPair<number> = [0, 0];
-    let invU1: FirmPair<number> = [240, 220];
-    let rawInvU1: FirmPair<number> = [340, 320];
-    let invU2: FirmPair<number> = [210, 220];
-    let rawInvU2: FirmPair<number> = [280, 320];
-
-    let priceU1: FirmPair<number> = [94.0, 91.5];
-    let qtyPlanU1: FirmPair<number> = [215, 195];
-    let mktU1: FirmPair<number> = [420, 360];
-    let omegaA = 0.65;
-
-    const demandHistoryA: number[] = [];
-    const demandHistoryB: number[] = [];
-    const ordersHistoryA: number[] = [];
-    const ordersHistoryB: number[] = [];
-
-    const streamEpochReasoningAndDecisions = (
-      tickStart: number,
-      epochIdx: number,
-      cRawNow: number,
-      leadTimeNow: number,
-      jobStatus: JobStatus
-    ) => {
-      const targetPriceA = +(
-        cRawNow * 1.48 +
-        (epochIdx % 2 === 0 ? 2.4 : 1.1) +
-        (rng() - 0.5) * 1.5
-      ).toFixed(2);
-      const targetPriceB = +(
-        cRawNow * 1.44 +
-        (epochIdx % 2 === 0 ? 0.8 : 2.1) +
-        (rng() - 0.5) * 1.5
-      ).toFixed(2);
-      const targetQtyA = Math.round(215 + activeDemandShock * 90 + (rng() - 0.5) * 14);
-      const targetQtyB = Math.round(195 + activeDemandShock * 75 + (rng() - 0.5) * 14);
-      const targetMktA = Math.round(440 + epochIdx * 15);
-      const targetMktB = Math.round(370 + epochIdx * 10);
-      omegaA = +Math.min(
-        1.8,
-        Math.max(0.2, 0.45 + activeDeltaLeadTime * 0.14 + (rng() - 0.5) * 0.1)
-      ).toFixed(2);
-
-      const ceoAChunks = [
-        `[Epoch ${epochIdx} · Tick ${tickStart}] Evaluating landed raw cost c_raw=$${cRawNow.toFixed(2)} (+${(activeDeltaCRaw * 100).toFixed(0)}% shock) and pipeline lead time L=${leadTimeNow} ticks.\n`,
-        `Cross-price elasticity E_AB=+0.74 indicates moderate substitution if we hike >8% above Firm B ($${priceU1[1].toFixed(2)}). `,
-        `However, Firm B's unbuffered ROP leaves it exposed to stockout spillover (θ=0.65) when pipeline orders lag by ${leadTimeNow} ticks.\n`,
-        `Best-response on the 3×3 Bertrand matrix favors setting P_A=$${targetPriceA.toFixed(2)}, expanding production plan Q_A=${targetQtyA} units, `,
-        `and lifting safety stock multiplier ω=${omegaA.toFixed(2)} to capture spilled high-margin enterprise demand while avoiding goodwill erosion.`,
-      ];
-
-      const ceoBChunks = [
-        `[Epoch ${epochIdx} · Tick ${tickStart}] Assessing margin compression under c_raw=$${cRawNow.toFixed(2)} and L=${leadTimeNow}t.\n`,
-        `Own-price elasticity E_d=-1.68 penalizes aggressive hikes among SMB archetypes. `,
-        `Targeting P_B=$${targetPriceB.toFixed(2)} with Q_B=${targetQtyB} and M_B=$${targetMktB} to defend core share without triggering a destructive Prisoner's Dilemma price cut.`,
-      ];
-
-      ceoAChunks.forEach((delta, idx) => {
-        scheduleTimeout(() => {
-          onEvent({
-            event: "reasoning",
-            data: { role: "ceo_A", delta, tick: tickStart },
-          });
-        }, idx * 160);
-      });
-
-      ceoBChunks.forEach((delta, idx) => {
-        scheduleTimeout(() => {
-          onEvent({
-            event: "reasoning",
-            data: { role: "ceo_B", delta, tick: tickStart },
-          });
-        }, 80 + idx * 180);
-      });
-
-      scheduleTimeout(() => {
-        onEvent({
-          event: "reasoning_done",
-          data: { role: "ceo_A", tick: tickStart },
-        });
-        onEvent({
-          event: "reasoning_done",
-          data: { role: "ceo_B", tick: tickStart },
-        });
-
-        priceU1 = [targetPriceA, targetPriceB];
-        qtyPlanU1 = [targetQtyA, targetQtyB];
-        mktU1 = [targetMktA, targetMktB];
-
-        const decA: DecisionEventData<"ceo_A"> = {
-          tick: tickStart,
-          role: "ceo_A",
-          tier: "ultra",
-          model: "nvidia/Nemotron-3-Ultra-550b-a55b",
-          decision: {
-            price: targetPriceA,
-            production_qty: targetQtyA,
-            marketing_budget: targetMktA,
-            expected_rival_action: "hold",
-            rationale: `Hold premium P=$${targetPriceA.toFixed(2)} with Q=${targetQtyA} to absorb rival stockout spillover under L=${leadTimeNow}t.`,
-          },
-          fallback_used: false,
-          latency_ms: 1120 + Math.round(rng() * 180),
-        };
-
-        const decB: DecisionEventData<"ceo_B"> = {
-          tick: tickStart,
-          role: "ceo_B",
-          tier: "ultra",
-          model: "nvidia/Nemotron-3-Ultra-550b-a55b",
-          decision: {
-            price: targetPriceB,
-            production_qty: targetQtyB,
-            marketing_budget: targetMktB,
-            expected_rival_action: "hold",
-            rationale: `Stabilize price at $${targetPriceB.toFixed(2)} (Q=${targetQtyB}) to preserve margin against +${(activeDeltaCRaw * 100).toFixed(0)}% input cost.`,
-          },
-          fallback_used: false,
-          latency_ms: 1080 + Math.round(rng() * 170),
-        };
-
-        const decInv: DecisionEventData<"inventory"> = {
-          tick: tickStart,
-          role: "inventory",
-          tier: "super",
-          model: "nvidia/nemotron-3-super-120b-a12b",
-          decision: {
-            omega: omegaA,
-            rationale: `Raise reorder buffer ω=${omegaA.toFixed(2)} to hedge L=${leadTimeNow} tick lead time and prevent stockout penalty.`,
-          },
-          fallback_used: false,
-          latency_ms: 390 + Math.round(rng() * 60),
-        };
-
-        onEvent({ event: "decision", data: decA });
-        onEvent({ event: "decision", data: decB });
-        onEvent({ event: "decision", data: decInv });
-
-        recordLlmCall("ultra", 2950, 2380, 960, 342, jobStatus);
-        recordLlmCall("ultra", 2910, 2240, 990, 335, jobStatus);
-        const telem = recordLlmCall("super", 2600, 360, 405, 218, jobStatus);
-        onEvent({ event: "telemetry", data: telem });
-
-        // Emit 3x3 Nash equilibrium matrix for this decision epoch
-        const baseA = 1480 + epochIdx * 22;
-        const baseB = 1120 + epochIdx * 14;
-        const payoff_A: Matrix3x3 = [
-          [
-            Math.round(baseA * 0.78),
-            Math.round(baseA * 1.06),
-            Math.round(baseA * 1.14),
-          ],
-          [
-            Math.round(baseA * 0.71),
-            Math.round(baseA * 1.0),
-            Math.round(baseA * 1.09),
-          ],
-          [
-            Math.round(baseA * 0.62),
-            Math.round(baseA * 0.93),
-            Math.round(baseA * 1.05),
-          ],
-        ];
-        const payoff_B: Matrix3x3 = [
-          [
-            Math.round(baseB * 0.76),
-            Math.round(baseB * 0.7),
-            Math.round(baseB * 0.64),
-          ],
-          [
-            Math.round(baseB * 1.05),
-            Math.round(baseB * 1.0),
-            Math.round(baseB * 0.92),
-          ],
-          [
-            Math.round(baseB * 1.12),
-            Math.round(baseB * 1.07),
-            Math.round(baseB * 1.04),
-          ],
-        ];
-        const labels: NashLabel[] = ["nash", "collusion", "nash", "price_war"];
-        const chosenLabel = labels[epochIdx % labels.length];
-        const chosenCell: [number, number] =
-          chosenLabel === "collusion"
-            ? [2, 2]
-            : chosenLabel === "price_war"
-            ? [0, 0]
-            : [1, 1];
-
-        onEvent({
-          event: "nash",
-          data: {
-            tick: tickStart,
-            actions: ["cut", "hold", "raise"] as [
-              NashAction,
-              NashAction,
-              NashAction
-            ],
-            payoff_A,
-            payoff_B,
-            pure_ne: [[1, 1]],
-            mixed_ne: null,
-            chosen: chosenCell,
-            label: chosenLabel,
-          },
-        });
-      }, 860);
-    };
-
-    const emitCrowdUpdate = (tickNum: number, jobStatus: JobStatus) => {
-      const archetypes: CrowdArchetype[] = ARCHETYPE_DEFINITIONS.map((def) => {
-        const muA = +Math.max(
-          -1,
-          Math.min(1, def.baseMuA + (rng() - 0.48) * 0.14)
-        ).toFixed(2);
-        const muB = +Math.max(
-          -1,
-          Math.min(1, def.baseMuB + (rng() - 0.5) * 0.14)
-        ).toFixed(2);
-        const sigA = +(0.12 + rng() * 0.1).toFixed(2);
-        const sigB = +(0.13 + rng() * 0.1).toFixed(2);
-        const bubble = def.bubbles[tickNum % 2];
-        return {
-          id: def.id,
-          label: def.label,
-          mu: [muA, muB],
-          sigma: [sigA, sigB],
-          bubble,
-        };
-      });
-
-      const crowdDec: DecisionEventData<"crowd"> = {
-        tick: tickNum,
-        role: "crowd",
-        tier: "fast",
-        model: "nvidia/Nemotron-3_5-Lightning",
-        decision: {
-          archetypes: archetypes.map((a) => ({
-            id: a.id,
-            mu: a.mu,
-            sigma: a.sigma,
-            bubble: a.bubble,
-          })),
-        },
-        fallback_used: false,
-        latency_ms: 195 + Math.round(rng() * 45),
-      };
-
-      onEvent({ event: "decision", data: crowdDec });
-      onEvent({
-        event: "crowd",
-        data: {
-          tick: tickNum,
-          archetypes,
-        },
-      });
-      // 2 parallel calls of 6 archetypes each per crowd update (SPEC §3.2)
-      recordLlmCall("fast", 1420, 580, 185, 490, jobStatus);
-      const telem = recordLlmCall("fast", 1450, 610, 195, 480, jobStatus);
-      onEvent({ event: "telemetry", data: telem });
-    };
-
-    const runSingleTick = () => {
-      if (stopped) return;
-      currentTick += 1;
-      const t = currentTick;
-      const epochIdx = Math.floor((t - 1) / epochTicks);
-      const jobStatus: JobStatus =
-        t < 6 ? "queued" : t < 18 ? "running" : "verified";
-
-      const cRawNow = +(cfg.baseRawCost * (1 + activeDeltaCRaw)).toFixed(2);
-      const leadTimeNow = Math.max(1, cfg.baseLeadTime + activeDeltaLeadTime);
-
-      // Autonomous Deep-Scout trigger on tick 16
-      if (t === 16) {
-        activeDeltaLeadTime += 1;
-        emitGroundingAndShockDecision(
-          {
-            id: `grd-scout-${cfg.id}-${t}`,
-            query: cfg.deepScoutQuery,
-            url: cfg.deepScoutUrl,
-            title: cfg.deepScoutTitle,
-            quote: cfg.deepScoutQuote,
-            param: "delta_lead_time",
-            value: activeDeltaLeadTime,
-            ts: new Date().toISOString(),
-            live: mode === "live",
-            applied: true,
-          },
-          t,
-          jobStatus
-        );
-      }
-
-      // Start of decision epoch: stream Ultra reasoning + decisions + Nash
-      if ((t - 1) % epochTicks === 0) {
-        streamEpochReasoningAndDecisions(
-          t,
-          epochIdx,
-          cRawNow,
-          leadTimeNow,
-          jobStatus
-        );
-      }
-
-      // Every 3 ticks: update 12 consumer crowd archetypes
-      if ((t - 1) % 3 === 0) {
-        emitCrowdUpdate(t, jobStatus);
-      }
-
-      // Compute U1 (Ultra AI CEOs) vs U2 (Cost-plus baseline) tick outcomes
-      const shareOut = +(0.15 + (rng() - 0.5) * 0.02).toFixed(3);
-      const shareA = +(0.47 + (rng() - 0.48) * 0.03).toFixed(3);
-      const shareB = +Math.max(0.05, 1 - shareOut - shareA).toFixed(3);
-
-      const totalMarket = nConsumers * (1 + activeDemandShock);
-      const demandA = +(totalMarket * shareA).toFixed(1);
-      const demandB = +(totalMarket * shareB).toFixed(1);
-
-      demandHistoryA.push(demandA);
-      demandHistoryB.push(demandB);
-      if (demandHistoryA.length > 16) demandHistoryA.shift();
-      if (demandHistoryB.length > 16) demandHistoryB.shift();
-
-      const prodA = Math.min(qtyPlanU1[0], 250, Math.floor(rawInvU1[0] / 1.0));
-      const prodB = Math.min(qtyPlanU1[1], 240, Math.floor(rawInvU1[1] / 1.0));
-      invU1 = [invU1[0] + prodA, invU1[1] + prodB];
-      rawInvU1 = [
-        Math.max(40, rawInvU1[0] - prodA),
-        Math.max(30, rawInvU1[1] - prodB),
-      ];
-
-      const ownSalesA = +Math.min(demandA, invU1[0]).toFixed(1);
-      const ownSalesB = +Math.min(demandB, invU1[1]).toFixed(1);
-      const unmetA = +(demandA - ownSalesA).toFixed(1);
-      const unmetB = +(demandB - ownSalesB).toFixed(1);
-
-      const theta = 0.65;
-      const spillToA = +Math.min(theta * unmetB, invU1[0] - ownSalesA).toFixed(1);
-      const spillToB = +Math.min(theta * unmetA, invU1[1] - ownSalesB).toFixed(1);
-
-      const salesA = +(ownSalesA + spillToA).toFixed(1);
-      const salesB = +(ownSalesB + spillToB).toFixed(1);
-      const lost = +Math.max(0, demandA + demandB - (salesA + salesB)).toFixed(1);
-
-      invU1 = [
-        +Math.max(0, invU1[0] - salesA).toFixed(1),
-        +Math.max(0, invU1[1] - salesB).toFixed(1),
-      ];
-
-      const ropA = Math.round(92 * leadTimeNow * (1 + 0.18 * omegaA));
-      const ropB = Math.round(84 * leadTimeNow * 1.05);
-      const orderA = rawInvU1[0] <= ropA ? Math.round(ropA + 180 - rawInvU1[0]) : 0;
-      const orderB = rawInvU1[1] <= ropB ? Math.round(ropB + 150 - rawInvU1[1]) : 0;
-      if (orderA > 0) rawInvU1[0] += Math.round(orderA * 0.85);
-      if (orderB > 0) rawInvU1[1] += Math.round(orderB * 0.78);
-
-      ordersHistoryA.push(orderA > 0 ? orderA : demandA * (0.92 + rng() * 0.18));
-      ordersHistoryB.push(orderB > 0 ? orderB : demandB * (0.88 + rng() * 0.25));
-      if (ordersHistoryA.length > 16) ordersHistoryA.shift();
-      if (ordersHistoryB.length > 16) ordersHistoryB.shift();
-
-      const eta = 0.018;
-      const fc = 1100;
-      const mcA = +(cRawNow + 2 * eta * prodA).toFixed(2);
-      const mcB = +(cRawNow + 2 * eta * prodB).toFixed(2);
-      const atcA = +(fc / Math.max(prodA, 1) + cRawNow + eta * prodA).toFixed(2);
-      const atcB = +(fc / Math.max(prodB, 1) + cRawNow + eta * prodB).toFixed(2);
-
-      const tcA = fc + cRawNow * prodA + eta * prodA * prodA;
-      const tcB = fc + cRawNow * prodB + eta * prodB * prodB;
-      const holdCost = 0.35;
-
-      const profitA = +(
-        priceU1[0] * salesA -
-        tcA -
-        mktU1[0] -
-        holdCost * (invU1[0] + rawInvU1[0])
-      ).toFixed(1);
-      const profitB = +(
-        priceU1[1] * salesB -
-        tcB -
-        mktU1[1] -
-        holdCost * (invU1[1] + rawInvU1[1])
-      ).toFixed(1);
-
-      cumProfitU1 = [
-        +(cumProfitU1[0] + profitA).toFixed(1),
-        +(cumProfitU1[1] + profitB).toFixed(1),
-      ];
-
-      // Bullwhip is null until 8 ticks have passed (docs/EVENTS.md)
-      let bullwhip: FirmPair<number | null> | null = null;
-      if (t >= 8) {
-        const varDA = Math.max(4.0, variance(demandHistoryA));
-        const varDB = Math.max(4.0, variance(demandHistoryB));
-        const varOA = variance(ordersHistoryA);
-        const varOB = variance(ordersHistoryB);
-        bullwhip = [
-          +Math.min(3.4, Math.max(1.05, varOA / varDA + 0.45 * omegaA)).toFixed(2),
-          +Math.min(3.8, Math.max(1.12, varOB / varDB + 0.65)).toFixed(2),
-        ];
-      }
-
-      // Generate choices_b64 (N int8: 0=outside, 1=A, 2=B) for U1
-      const choicesArr = new Int8Array(nConsumers);
-      const cutOut = shareOut;
-      const cutA = shareOut + shareA;
-      for (let i = 0; i < nConsumers; i++) {
-        const u = rng();
-        choicesArr[i] = u < cutOut ? 0 : u < cutA ? 1 : 2;
-      }
-      const choices_b64 = encodeChoicesB64(choicesArr);
-
-      // U2 Counterfactual (Firm A = Cost-plus baseline with ω=0, rival B held fixed)
-      const basePriceA = +(atcA * 1.16).toFixed(2);
-      const baseDemandA = +(demandA * 0.93).toFixed(1);
-      const baseSalesA = +Math.min(baseDemandA, invU2[0] + prodA * 0.88).toFixed(1);
-      const baseUnmetA = +Math.max(0, baseDemandA - baseSalesA).toFixed(1);
-      const baseSpillToB = +Math.min(theta * baseUnmetA, 18).toFixed(1);
-      const baseProfitA = +(
-        profitA -
-        (210 + activeDeltaLeadTime * 38 + (rng() - 0.3) * 45)
-      ).toFixed(1);
-      const baseProfitB = +(profitB + baseSpillToB * 14).toFixed(1);
-
-      cumProfitU2 = [
-        +(cumProfitU2[0] + baseProfitA).toFixed(1),
-        +(cumProfitU2[1] + baseProfitB).toFixed(1),
-      ];
-      invU2 = [
-        +Math.max(0, invU1[0] * 0.65).toFixed(1),
-        invU1[1],
-      ];
-      rawInvU2 = [
-        +Math.max(20, rawInvU1[0] * 0.72).toFixed(1),
-        rawInvU1[1],
-      ];
-
-      // Econometric paired t-test & chi2 statistics
-      const deltaMean = +(cumProfitU1[0] - cumProfitU2[0]).toFixed(1);
-      const isCloud = jobStatus === "verified";
-      const sampleN = isCloud ? 10000 : 100;
-      const stdErr = isCloud
-        ? Math.max(12, Math.abs(deltaMean) * 0.045)
-        : Math.max(35, Math.abs(deltaMean) * 0.16);
-      const halfWidth = +(1.96 * stdErr).toFixed(1);
-      const statsPayload: StatsEventData = {
-        tick: t,
-        source: isCloud ? "cloud" : "live",
-        n: sampleN,
-        delta_mean: deltaMean,
-        ci95: [+(deltaMean - halfWidth).toFixed(1), +(deltaMean + halfWidth).toFixed(1)],
-        cohens_d: +(0.82 + Math.min(1.4, t * 0.025)).toFixed(2),
-        cohens_dz: +(1.14 + Math.min(1.8, t * 0.032)).toFixed(2),
-        p_value: isCloud ? 0.0001 : +(Math.max(0.0004, 0.018 * Math.exp(-t * 0.08))).toFixed(4),
-        chi2: t >= 4 ? +(14.2 + t * 0.65).toFixed(2) : null,
-        chi2_p: t >= 4 ? 0.0008 : null,
-      };
-
-      const tickU1: TickEventData = {
-        tick: t,
-        universe: "U1",
-        price: [priceU1[0], priceU1[1]],
-        qty: [prodA, prodB],
-        demand: [demandA, demandB],
-        sales: [salesA, salesB],
-        unmet: [unmetA, unmetB],
-        spill_in: [spillToA, spillToB],
-        lost,
-        inventory: [invU1[0], invU1[1]],
-        raw_inv: [rawInvU1[0], rawInvU1[1]],
-        rop: [ropA, ropB],
-        orders: [orderA, orderB],
-        profit: [profitA, profitB],
-        cum_profit: [cumProfitU1[0], cumProfitU1[1]],
-        shares: [shareOut, shareA, shareB],
-        c_raw: cRawNow,
-        lead_time: leadTimeNow,
-        mc: [mcA, mcB],
-        atc: [atcA, atcB],
-        bullwhip,
-        choices_b64,
-      };
-
-      // U2 omits choices_b64 per docs/EVENTS.md
-      const tickU2: TickEventData = {
-        tick: t,
-        universe: "U2",
-        price: [basePriceA, priceU1[1]],
-        qty: [Math.round(prodA * 0.9), prodB],
-        demand: [baseDemandA, demandB],
-        sales: [baseSalesA, +(salesB + baseSpillToB).toFixed(1)],
-        unmet: [baseUnmetA, unmetB],
-        spill_in: [0, baseSpillToB],
-        lost: +Math.max(0, lost + baseUnmetA * 0.35).toFixed(1),
-        inventory: [invU2[0], invU2[1]],
-        raw_inv: [rawInvU2[0], rawInvU2[1]],
-        rop: [Math.round(ropA * 0.78), ropB],
-        orders: [Math.round(orderA * 0.8), orderB],
-        profit: [baseProfitA, baseProfitB],
-        cum_profit: [cumProfitU2[0], cumProfitU2[1]],
-        shares: [
-          +(shareOut + 0.03).toFixed(3),
-          +(shareA - 0.05).toFixed(3),
-          +(shareB + 0.02).toFixed(3),
-        ],
-        c_raw: cRawNow,
-        lead_time: leadTimeNow,
-        mc: [mcA, mcB],
-        atc: [atcA, atcB],
-        bullwhip: bullwhip
-          ? [+(bullwhip[0]! * 0.78).toFixed(2), bullwhip[1]]
-          : null,
-      };
-
-      onEvent({ event: "stats", data: statsPayload });
-      // Emit U2 then U1 so when U1 triggers the rAF flush, both U1 and U2 are already in the buffer
-      onEvent({ event: "tick", data: tickU2 });
-      onEvent({ event: "tick", data: tickU1 });
-    };
-
-    // Run first tick rapidly so UI populates immediately, then every 1.5s
-    scheduleTimeout(runSingleTick, 120);
-    intervalId = setInterval(runSingleTick, 1500);
-  })();
+  for (const { t, ev } of script) later(t * scale * 1000, () => emit(ev));
 
   return {
-    stop: () => {
-      stopped = true;
-      if (intervalId !== null) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-      for (const timer of timers) {
-        clearTimeout(timer);
-      }
+    stop() {
+      live = false;
+      timers.forEach(clearTimeout);
       timers.clear();
     },
 
-    injectShock: (text: string) => {
-      const currentMode = useMarketStore.getState().mode;
-      if (currentMode !== "live") {
-        return {
-          accepted: false,
-          reason: "Custom shocks require LIVE mode (switch from REPLAY to LIVE).",
+    addPlan(spec) {
+      if (userPlans >= 4) return { accepted: false, reason: "You can add up to 4 plans." };
+      userPlans += 1;
+      const entry = nearestLibrary(spec);
+      const name = spec.name || `Your plan ${userPlans}`;
+      const full: PlanSpec = { ...spec, name };
+      later(120, () => emit({ event: "plan", data: { name, source: "user", round: 3, spec: full } }));
+      D.shocks.forEach((s, i) => {
+        const base = entry.cells[i];
+        const cell: GridCellData = { ...base, plan_name: name, shock_id: s.id, source: "local" };
+        known.set(cellKey(name, s.id), cell);
+        later(350 + i * 220, () => emit({ event: "grid_cell", data: cell }));
+      });
+      later(350 + D.shocks.length * 220 + 100, () => {
+        const names = new Set([...planNames, ...[...known.keys()].map((k) => k.split("|")[0])]);
+        const cells = [...known.values()].filter((c) => names.has(c.plan_name));
+        const l = labels(cells, D.shocks, D.profile.cash_available);
+        emit({
+          event: "grid_summary",
+          data: { baseline_profit_usd: baseline, best_today: l.bestToday, safest: l.safest, verified: false },
+        });
+      });
+      return { accepted: true };
+    },
+
+    newsCheck() {
+      const item: NewsItem = {
+        id: `n${Date.now() % 1000}`,
+        kind: "supply",
+        title: "Vietnamese exporters report robusta stocks at a three-year low",
+        url: "https://example.com/news/live-robusta-stocks",
+        source: "Nikkei Asia",
+        published: "2026-10-15",
+        quote: "exporters' robusta stocks are the lowest in three years heading into the new crop",
+        shock: { delta_c_raw: 0.12, delta_lead_time: 0, demand_shock: 0 },
+        cost_line: "Beans +12% × 85% of your cost is beans = your cost +10% (+$0.66 a bag)",
+        impact_usd: null,
+        impact_p5_usd: null,
+        live: true,
+        applied: false,
+      };
+      later(900, () => emit({ event: "news", data: { items: [item], used_for_grid: null } }));
+      return { accepted: true };
+    },
+
+    verify() {
+      const job = (status: TelemetryData["job"]["status"]) =>
+        telemetry(calls, { id: "mock-job", status });
+      later(200, () => emit(job("queued")));
+      later(1500, () => emit(job("running")));
+      // cloud cells: same engine, 10,000 runs: the numbers move a little and the lines still add up
+      let i = 0;
+      const verified = new Map<string, GridCellData>();
+      for (const c of cellMap.values()) {
+        const wiggle = 1 + (((i * 37) % 11) - 5) / 400;
+        i += 1;
+        const bridge: CellBridge = {
+          cost_usd: r2(c.bridge.cost_usd * wiggle),
+          price_usd: c.bridge.price_usd,
+          volume_usd: r2(c.bridge.volume_usd * (2 - wiggle)),
+          marketing_usd: c.bridge.marketing_usd,
+          holding_usd: c.bridge.holding_usd,
         };
+        const cell: GridCellData = { ...c, n: 10000, source: "cloud", bridge, mean_delta_usd: r2(sumBridge(bridge)) };
+        verified.set(cellKey(c.plan_name, c.shock_id), cell);
+        later(2600 + i * 70, () => emit({ event: "grid_cell", data: cell }));
       }
-      const trimmed = text.trim();
-      if (!trimmed) {
-        return { accepted: false, reason: "Shock description cannot be empty." };
-      }
-      shockCounter += 1;
-      const lower = trimmed.toLowerCase();
-      let param: GroundingEventData["param"] = "delta_c_raw";
-      let value = 0.2;
-      if (
-        lower.includes("port") ||
-        lower.includes("route") ||
-        lower.includes("lead") ||
-        lower.includes("delay") ||
-        lower.includes("blockade")
-      ) {
-        param = "delta_lead_time";
-        activeDeltaLeadTime = Math.min(10, activeDeltaLeadTime + 2);
-        value = activeDeltaLeadTime;
-      } else if (
-        lower.includes("demand") ||
-        lower.includes("boycott") ||
-        lower.includes("surge")
-      ) {
-        param = "demand_shock";
-        activeDemandShock = +(Math.min(0.5, activeDemandShock + 0.12)).toFixed(2);
-        value = activeDemandShock;
-      } else {
-        param = "delta_c_raw";
-        activeDeltaCRaw = +(Math.min(1.0, activeDeltaCRaw + 0.15)).toFixed(2);
-        value = activeDeltaCRaw;
-      }
-
-      const jobStatus = useMarketStore.getState().telemetry.job.status;
-      emitGroundingAndShockDecision(
-        {
-          id: `grd-custom-${Date.now()}-${shockCounter}`,
-          query: trimmed,
-          url: "https://www.reuters.com/markets/custom-shock-dispatch",
-          title: `Live Operator Shock: ${trimmed.slice(0, 64)}`,
-          quote: `"${trimmed}" — parsed by Nemotron-3-Super into ${param} = ${value >= 0 ? "+" : ""}${value}.`,
-          param,
-          value,
-          ts: new Date().toISOString(),
-          live: true,
-          applied: true,
-        },
-        Math.max(1, currentTick),
-        jobStatus
-      );
-      return { accepted: true };
-    },
-
-    triggerNewsCheck: () => {
-      shockCounter += 1;
-      const state = useMarketStore.getState();
-      const isLive = state.mode === "live";
-      const jobStatus = state.telemetry.job.status;
-      if (isLive) {
-        activeDeltaCRaw = +(Math.min(1.0, activeDeltaCRaw + 0.08)).toFixed(2);
-      }
-      const previewVal = isLive
-        ? activeDeltaCRaw
-        : +(activeDeltaCRaw + 0.08).toFixed(2);
-
-      emitGroundingAndShockDecision(
-        {
-          id: `grd-livecheck-${Date.now()}-${shockCounter}`,
-          query: `${cfg.initialQuery} live update`,
-          url: cfg.deepScoutUrl,
-          title: `Tavily Live News Check: ${cfg.deepScoutTitle}`,
-          quote: `${cfg.deepScoutQuote} (${isLive ? "Applied to active LIVE engine" : "REPLAY counterfactual preview — recorded run untouched"})`,
-          param: "delta_c_raw",
-          value: previewVal,
-          ts: new Date().toISOString(),
-          live: true,
-          applied: isLive,
-        },
-        Math.max(1, currentTick),
-        jobStatus
-      );
-      return { accepted: true };
+      const end = 2600 + i * 70 + 200;
+      later(end, () => {
+        const l = labels([...verified.values()], D.shocks, D.profile.cash_available);
+        emit({
+          event: "grid_summary",
+          data: { baseline_profit_usd: baseline, best_today: l.bestToday, safest: l.safest, verified: true },
+        });
+        emit({ event: "memo", data: buildMemo(true, verified) });
+        emit(job("verified"));
+      });
+      return { accepted: true, job_id: "mock-job" };
     },
   };
 }
 
-/**
- * Generate a downloadable Benchmark Report (JSON or Markdown) from the current
- * store telemetry & econometric stats when offline / in mock mode.
- */
-export function buildLocalBenchmarkExport(
-  format: BenchmarkExportFormat
-): { content: string; mime: string; filename: string } {
-  const state = useMarketStore.getState();
-  const { telemetry, stats, scenario, selectedScenarioId, currentTick, latestU1, latestU2 } =
-    state;
-  const ts = new Date().toISOString();
-
-  const payload = {
-    generated_at: ts,
-    scenario_id: scenario?.scenario_id ?? selectedScenarioId,
-    scenario_title: scenario?.title ?? "Market Digital Twin Benchmark",
-    mode: state.mode,
-    ticks_completed: currentTick,
-    models: {
-      ultra: "nvidia/Nemotron-3-Ultra-550b-a55b",
-      super: "nvidia/nemotron-3-super-120b-a12b",
-      fast: "nvidia/Nemotron-3_5-Lightning",
-      fast_fallback: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
-    },
-    telemetry,
-    econometrics: stats,
-    cumulative_profit_usd: {
-      ai_ceo_u1: latestU1?.cum_profit ?? [0, 0],
-      baseline_u2: latestU2?.cum_profit ?? [0, 0],
-    },
-  };
-
-  if (format === "json") {
-    return {
-      content: JSON.stringify(payload, null, 2),
-      mime: "application/json",
-      filename: `market-digital-twin-benchmark-${selectedScenarioId}.json`,
-    };
+/** The recorded library plan closest to the user's stock and price sliders. */
+function nearestLibrary(spec: PlanSpec): LibEntry {
+  const stock = spec.switch_supplier ? 0 : spec.extra_stock_weeks;
+  let best = D.library[0];
+  let bestD = Infinity;
+  for (const e of D.library) {
+    const d = Math.abs(e.extra_stock_weeks - stock) * 2 + Math.abs(e.price_change_pct - spec.price_change_pct);
+    if (d < bestD) {
+      bestD = d;
+      best = e;
+    }
   }
+  return best;
+}
 
-  const md = [
-    `# Market Digital Twin — Nebius Token Factory & Nemotron Benchmark`,
-    ``,
-    `- **Generated:** ${ts}`,
-    `- **Scenario:** ${payload.scenario_title} (\`${payload.scenario_id}\`)`,
-    `- **Mode:** ${state.mode.toUpperCase()} · **Ticks:** ${currentTick} · **MC Job:** \`${telemetry.job.status.toUpperCase()}\``,
-    ``,
-    `## 1. Per-Tier Inference Telemetry (Nebius Token Factory)`,
-    ``,
-    `| Tier | Model ID | Calls | Call Share | Token Share | p50 TTFT (ms) | Throughput (tok/s) | Errors |`,
-    `|---|---|---:|---:|---:|---:|---:|---:|`,
-    `| **Ultra** | \`nvidia/Nemotron-3-Ultra-550b-a55b\` | ${telemetry.tiers.ultra.calls} | ${telemetry.call_share.ultra.toFixed(1)}% | ${telemetry.token_share.ultra.toFixed(1)}% | ${telemetry.tiers.ultra.p50_ttft_ms} ms | ${telemetry.tiers.ultra.tok_per_s} tok/s | ${telemetry.tiers.ultra.errors} |`,
-    `| **Super** | \`nvidia/nemotron-3-super-120b-a12b\` | ${telemetry.tiers.super.calls} | ${telemetry.call_share.super.toFixed(1)}% | ${telemetry.token_share.super.toFixed(1)}% | ${telemetry.tiers.super.p50_ttft_ms} ms | ${telemetry.tiers.super.tok_per_s} tok/s | ${telemetry.tiers.super.errors} |`,
-    `| **Fast** | \`nvidia/Nemotron-3_5-Lightning\` | ${telemetry.tiers.fast.calls} | ${telemetry.call_share.fast.toFixed(1)}% | ${telemetry.token_share.fast.toFixed(1)}% | ${telemetry.tiers.fast.p50_ttft_ms} ms | ${telemetry.tiers.fast.tok_per_s} tok/s | ${telemetry.tiers.fast.errors} |`,
-    ``,
-    `## 2. Routing Cost & Counterfactual Savings`,
-    ``,
-    `- **Actual Multi-Tier Cost:** $${telemetry.cost_usd.toFixed(4)} USD`,
-    `- **Counterfactual All-Ultra Cost:** $${telemetry.cost_all_ultra_usd.toFixed(4)} USD`,
-    `- **Cost Saved via Tiered Routing:** **${telemetry.savings_pct.toFixed(1)}%**`,
-    ``,
-    `## 3. Econometric Proof (AI Strategic Alpha Δπ)`,
-    ``,
-    `- **Evaluation Source:** ${stats?.source === "cloud" ? "Cloud-Verified (n=10,000)" : `Live Preview (n=${stats?.n ?? 100})`}`,
-    `- **Mean Δπ (AI vs Cost-Plus Baseline):** $${(stats?.delta_mean ?? 0).toFixed(2)} (95% CI: [$${(stats?.ci95?.[0] ?? 0).toFixed(2)}, $${(stats?.ci95?.[1] ?? 0).toFixed(2)}])`,
-    `- **Effect Size (Cohen's d):** ${(stats?.cohens_d ?? 0).toFixed(2)} · **p-value:** ${stats?.p_value ?? "—"}`,
-    `- **Brand Switching χ²:** ${stats?.chi2 ?? "—"} (p = ${stats?.chi2_p ?? "—"})`,
-    ``,
-  ].join("\n");
+// ---- replay ------------------------------------------------------------------------------------
 
-  return {
-    content: md,
-    mime: "text/markdown",
-    filename: `market-digital-twin-benchmark-${selectedScenarioId}.md`,
+type ReplayFile = Record<string, RecordedReplay>;
+let replayFile: Promise<ReplayFile> | null = null;
+function loadReplays(): Promise<ReplayFile> {
+  replayFile ??= import("./coffee_hcmc_replays.json").then((m) => (m.default ?? m) as unknown as ReplayFile);
+  return replayFile;
+}
+
+/** Streams one recorded cell (the nearest recorded plan for user-added ones) in about a second. */
+export function runMockReplay(
+  planName: string,
+  shockId: string,
+  emit: (ev: ReplayEvent) => void,
+  spec?: PlanSpec,
+): () => void {
+  let live = true;
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  void loadReplays().then((file) => {
+    if (!live) return;
+    let rec = file[cellKey(planName, shockId)];
+    if (!rec) {
+      // a user plan: use the recorded plan with the closest stock and price settings
+      const guess = spec ?? { extra_stock_weeks: 0, price_change_pct: 0 };
+      let bestD = Infinity;
+      for (const p of D.plans) {
+        const d =
+          Math.abs(p.spec.extra_stock_weeks - (guess.extra_stock_weeks ?? 0)) * 2 +
+          Math.abs(p.spec.price_change_pct - (guess.price_change_pct ?? 0));
+        if (d < bestD && file[cellKey(p.name, shockId)]) {
+          bestD = d;
+          rec = file[cellKey(p.name, shockId)];
+        }
+      }
+    }
+    const label = shockById.get(shockId)?.label ?? rec.shock_label;
+    const at = (ms: number, ev: ReplayEvent) => timers.push(setTimeout(() => live && emit(ev), ms));
+    at(0, {
+      event: "replay_start",
+      data: {
+        replay_id: "mock-replay",
+        plan_name: planName,
+        shock_id: shockId,
+        shock_label: label,
+        weeks: rec.weeks.length,
+        n_consumers: D.n_shoppers,
+        week_seconds: 0.9,
+      },
+    });
+    rec.markers.forEach((m) => at(10, { event: "marker", data: m }));
+    rec.weeks.forEach((w, i) => {
+      at(30 + i * 25, { event: "tick", data: w.U1 });
+      at(31 + i * 25, { event: "tick", data: w.U2 });
+    });
+    at(40 + rec.weeks.length * 25, {
+      event: "replay_done",
+      data: { replay_id: "mock-replay", cum_profit_usd: rec.cum_profit_usd },
+    });
+  });
+  return () => {
+    live = false;
+    timers.forEach(clearTimeout);
   };
 }
 
-export { DEFAULT_SCENARIOS };
-export type { ScenarioSummary };
-
+/** Markdown for "Download .md" when offline. */
+export function memoMarkdown(m: MemoEventData): string {
+  const n = m.numbers;
+  const b = n.bridge;
+  const line = (label: string, v: number) => `- ${label}: ${formatDelta(v)}`;
+  return [
+    `# ${m.headline}`,
+    "",
+    `**Plan:** ${m.plan_name}`,
+    "",
+    `- Average gain vs doing nothing: ${formatDelta(n.mean_delta_usd)}`,
+    `- Bad case (1 run in 20): ${formatDelta(n.p5_delta_usd)}`,
+    `- Runs: ${n.n.toLocaleString("en-US")}${n.verified ? " (Nebius-verified)" : ""}`,
+    "",
+    "## Where the money comes from",
+    line("Cheaper stock", b.cost_usd),
+    line("Your price change", b.price_usd),
+    line("Customers won/lost", b.volume_usd),
+    line("Marketing", b.marketing_usd),
+    line("Storage & money tied up", b.holding_usd),
+    `- Total: ${formatDelta(n.mean_delta_usd)}`,
+    "",
+    "## Why",
+    m.why,
+    "",
+    "## Watch out for",
+    m.watch_out,
+    "",
+    "## Recheck when",
+    m.recheck_when,
+    "",
+    "## Sources",
+    ...m.sources.map((s) => `- [${s.title}](${s.url}): "${s.quote}"`),
+    "",
+    "## Not in these numbers",
+    ...m.not_modelled.fixed.map((f) => `- ${f}`),
+    ...m.not_modelled.found.map((f) => `- ${f.text}`),
+    "",
+  ].join("\n");
+}

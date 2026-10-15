@@ -30,3 +30,4 @@ dist/
 # frontend build output
 frontend/out/
 frontend/public/replays/
+*.tsbuildinfo

@@ -1,390 +1,328 @@
-import {
-  BenchmarkExportFormat,
-  MarketSSEEvent,
+/**
+ * Network layer: REST helpers and the two EventSource clients (analysis stream, replay stream).
+ *
+ * `NEXT_PUBLIC_API_BASE` unset, or the backend unreachable on the first call → everything falls back to
+ * the in-browser mock (frontend/mock) and `backendKind()` returns "mock" so the mode chip can say so.
+ * Both transports feed the same typed events into the store's `applyAnalysisEvent` / `applyReplayEvent`.
+ */
+import type {
+  AcceptedResponse,
+  AddPlanResponse,
+  AnalysisEvent,
+  AnalysisEventName,
+  BusinessProfile,
+  CreateAnalysisRequest,
+  CreateAnalysisResponse,
+  ExamplesResponse,
+  MemoEventData,
   NewsCheckResponse,
-  RunMode,
-  ScenarioSummary,
-  ShockResponse,
-  SSE_EVENT_NAMES,
-  SSEEventName,
-  StartRunResponse,
+  ParseProfileResponse,
+  PlanSpec,
+  ReplayEvent,
+  ReplayEventName,
+  StartReplayResponse,
+  VerifyResponse,
 } from "./events";
-import {
-  DEFAULT_SCENARIOS,
-  registerStreamActionDelegates,
-  useMarketStore,
-} from "./store";
-import {
-  buildLocalBenchmarkExport,
-  MockStreamHandle,
-  startMockStream,
-} from "../mock";
+import { ANALYSIS_EVENT_NAMES, REPLAY_EVENT_NAMES } from "./events";
+import type { MockAnalysisHandle } from "../mock";
+
+export type BackendKind = "api" | "mock";
 
 export function getApiBase(): string {
-  const raw =
-    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_BASE) || "";
-  return raw.replace(/\/+$/, "");
+  return (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/+$/, "");
 }
 
-export interface StreamClientOptions {
-  apiBase?: string;
-  maxReconnectAttempts?: number;
-  initialBackoffMs?: number;
-  maxBackoffMs?: number;
-  forceMock?: boolean;
+let kind: BackendKind = getApiBase() ? "api" : "mock";
+const kindListeners = new Set<(k: BackendKind) => void>();
+
+export function backendKind(): BackendKind {
+  return kind;
+}
+export function onBackendKind(fn: (k: BackendKind) => void): () => void {
+  kindListeners.add(fn);
+  return () => kindListeners.delete(fn);
+}
+function setKind(k: BackendKind) {
+  if (k === kind) return;
+  kind = k;
+  kindListeners.forEach((fn) => fn(k));
 }
 
-/**
- * Reconnecting EventSource client using NEXT_PUBLIC_API_BASE.
- * Automatically falls back to the mock/replay stream when NEXT_PUBLIC_API_BASE
- * is not configured or the backend is offline during frontend development.
- */
-export class MarketStreamClient {
-  private apiBase: string;
-  private maxReconnectAttempts: number;
-  private initialBackoffMs: number;
-  private maxBackoffMs: number;
-  private forceMock: boolean;
+const mockModule = () => import("../mock");
 
-  private eventSource: EventSource | null = null;
-  private mockHandle: MockStreamHandle | null = null;
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private reconnectAttempts = 0;
-  private activeRunId: string | null = null;
-  private activeScenarioId: string = DEFAULT_SCENARIOS[0].id;
-  private activeMode: RunMode = "replay";
-  private closedExplicitly = false;
-
-  constructor(opts?: StreamClientOptions) {
-    this.apiBase = (opts?.apiBase ?? getApiBase()).replace(/\/+$/, "");
-    this.maxReconnectAttempts = opts?.maxReconnectAttempts ?? 5;
-    this.initialBackoffMs = opts?.initialBackoffMs ?? 1000;
-    this.maxBackoffMs = opts?.maxBackoffMs ?? 10000;
-    this.forceMock =
-      opts?.forceMock ??
-      (typeof process !== "undefined" &&
-        process.env?.NEXT_PUBLIC_USE_MOCK === "1");
+/** HTTP error with the parsed JSON body (e.g. `{reason}` on 429). */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public body: unknown,
+    message: string,
+  ) {
+    super(message);
   }
+}
 
-  public async fetchScenarios(): Promise<ScenarioSummary[]> {
-    if (this.forceMock || !this.apiBase) {
-      useMarketStore.getState().setScenarios(DEFAULT_SCENARIOS);
-      return DEFAULT_SCENARIOS;
-    }
-
+async function http<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${getApiBase()}${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+  });
+  if (!res.ok) {
+    let body: unknown = null;
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 2500);
-      const res = await fetch(`${this.apiBase}/api/scenarios`, {
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = (await res.json()) as ScenarioSummary[];
-      if (Array.isArray(data) && data.length > 0) {
-        useMarketStore.getState().setScenarios(data);
-        return data;
-      }
+      body = await res.json();
     } catch {
-      // Backend unavailable; fall back to built-in scenarios
+      /* not JSON */
     }
-    useMarketStore.getState().setScenarios(DEFAULT_SCENARIOS);
-    return DEFAULT_SCENARIOS;
+    throw new ApiError(res.status, body, `HTTP ${res.status} ${path}`);
   }
+  return (await res.json()) as T;
+}
 
-  public async startRun(
-    scenarioId: string,
-    mode: RunMode
-  ): Promise<{ runId: string; mode: RunMode; usingMock: boolean }> {
-    this.stop();
-    this.closedExplicitly = false;
-    this.reconnectAttempts = 0;
-    this.activeScenarioId = scenarioId;
-    this.activeMode = mode;
+/** True when the failure means "no backend there" (network error, 404/5xx) rather than a real answer. */
+function isOffline(e: unknown): boolean {
+  return !(e instanceof ApiError) || e.status >= 500 || e.status === 404;
+}
 
-    const store = useMarketStore.getState();
-    store.resetRunState({ keepScenarioSelection: true });
-    store.setSelectedScenarioId(scenarioId);
-    store.setMode(mode, null);
-
-    if (this.forceMock || !this.apiBase) {
-      return this.startFallbackMock(scenarioId, mode);
-    }
-
-    store.setConnectionStatus("connecting", false);
-
+let probed: Promise<void> | null = null;
+/** One health check; a failure flips the whole session to the mock. */
+async function probe(): Promise<void> {
+  if (kind === "mock") return;
+  probed ??= (async () => {
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3500);
-      const res = await fetch(`${this.apiBase}/api/runs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenario_id: scenarioId, mode }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-
-      if (!res.ok) {
-        throw new Error(`POST /api/runs returned ${res.status}`);
-      }
-
-      const payload = (await res.json()) as StartRunResponse;
-      this.activeRunId = payload.run_id;
-      this.activeMode = payload.mode;
-
-      if (payload.mode !== mode) {
-        store.setMode(
-          payload.mode,
-          "Mode downgraded to REPLAY by daily spend guard."
-        );
-      }
-
-      this.openEventSource(payload.run_id);
-      return {
-        runId: payload.run_id,
-        mode: payload.mode,
-        usingMock: false,
-      };
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 3000);
+      const res = await fetch(`${getApiBase()}/health`, { signal: ctl.signal });
+      clearTimeout(t);
+      if (!res.ok) throw new Error("unhealthy");
     } catch {
-      // Seamlessly switch to mock/replay stream when backend is unreachable
-      return this.startFallbackMock(scenarioId, mode);
+      setKind("mock");
     }
-  }
+  })();
+  await probed;
+}
 
-  private startFallbackMock(
-    scenarioId: string,
-    mode: RunMode
-  ): { runId: string; mode: RunMode; usingMock: boolean } {
-    const store = useMarketStore.getState();
-    const mockRunId = `mock-${scenarioId}-${Date.now().toString(36)}`;
-    this.activeRunId = mockRunId;
-    store.setConnectionStatus("mock", true);
+// ---- the mock session (one analysis at a time) -------------------------------------------------
 
-    this.mockHandle = startMockStream(scenarioId, mode, (ev: MarketSSEEvent) => {
-      useMarketStore.getState().enqueueEvent(ev);
-    });
+let mockHandle: MockAnalysisHandle | null = null;
+let analysisSink: ((ev: AnalysisEvent) => void) | null = null;
+let currentAnalysisId: string | null = null;
 
-    return {
-      runId: mockRunId,
-      mode,
-      usingMock: true,
-    };
-  }
+// ---- REST --------------------------------------------------------------------------------------
 
-  private openEventSource(runId: string): void {
-    if (this.closedExplicitly || typeof EventSource === "undefined") {
+export const api = {
+  async examples(): Promise<ExamplesResponse> {
+    await probe();
+    if (kind === "api") {
+      try {
+        return await http<ExamplesResponse>("/api/examples");
+      } catch (e) {
+        if (!isOffline(e)) throw e;
+        setKind("mock");
+      }
+    }
+    return (await mockModule()).mockExamples();
+  },
+
+  async parseProfile(text: string): Promise<ParseProfileResponse> {
+    await probe();
+    if (kind === "api") {
+      try {
+        return await http<ParseProfileResponse>("/api/profile/parse", {
+          method: "POST",
+          body: JSON.stringify({ text }),
+        });
+      } catch (e) {
+        if (!isOffline(e)) throw e;
+        setKind("mock");
+      }
+    }
+    return (await mockModule()).mockParseProfile(text);
+  },
+
+  async createAnalysis(req: CreateAnalysisRequest): Promise<CreateAnalysisResponse> {
+    await probe();
+    if (kind === "api") {
+      try {
+        const r = await http<CreateAnalysisResponse>("/api/analyses", { method: "POST", body: JSON.stringify(req) });
+        currentAnalysisId = r.analysis_id;
+        return r;
+      } catch (e) {
+        if (!isOffline(e)) throw e;
+        setKind("mock");
+      }
+    }
+    const r = (await mockModule()).mockCreateAnalysis(req);
+    currentAnalysisId = r.analysis_id;
+    return r;
+  },
+
+  async addPlan(id: string, plan: PlanSpec): Promise<AddPlanResponse> {
+    if (kind === "mock") return mockHandle?.addPlan(plan) ?? { accepted: false, reason: "No analysis running." };
+    return http<AddPlanResponse>(`/api/analyses/${id}/plans`, { method: "POST", body: JSON.stringify({ plan }) });
+  },
+
+  async newsCheck(id: string): Promise<NewsCheckResponse> {
+    if (kind === "mock") return mockHandle?.newsCheck() ?? { accepted: false, reason: "No analysis running." };
+    return http<NewsCheckResponse>(`/api/analyses/${id}/news-check`, { method: "POST" });
+  },
+
+  async verify(id: string): Promise<VerifyResponse> {
+    if (kind === "mock") return mockHandle?.verify() ?? { accepted: false };
+    return http<VerifyResponse>(`/api/analyses/${id}/verify`, { method: "POST" });
+  },
+
+  async stop(id: string): Promise<void> {
+    if (kind === "mock") {
+      mockHandle?.stop();
       return;
     }
+    await http(`/api/analyses/${id}/stop`, { method: "POST" }).catch(() => undefined);
+  },
 
-    this.closeEventSourceOnly();
-    const url = `${this.apiBase}/api/runs/${encodeURIComponent(runId)}/events`;
-    const es = new EventSource(url);
-    this.eventSource = es;
+  async startReplay(
+    id: string,
+    planName: string,
+    shockId: string,
+    spec?: PlanSpec,
+  ): Promise<StartReplayResponse> {
+    void spec; // only the mock needs the plan's settings, and it gets them in connectReplayStream
+    if (kind === "mock") return { replay_id: `mock:${planName}|${shockId}` };
+    const r = await http<StartReplayResponse>(`/api/analyses/${id}/replay`, {
+      method: "POST",
+      body: JSON.stringify({ plan_name: planName, shock_id: shockId }),
+    });
+    return r;
+  },
 
-    es.onopen = () => {
-      this.reconnectAttempts = 0;
-      useMarketStore.getState().setConnectionStatus("connected", false);
-    };
+  /** Markdown download of the memo. */
+  async memoMarkdown(id: string, memo: MemoEventData | null): Promise<string> {
+    if (kind === "mock" || !memo) {
+      if (!memo) throw new Error("No memo yet.");
+      return (await mockModule()).memoMarkdown(memo);
+    }
+    const res = await fetch(`${getApiBase()}/api/analyses/${id}/memo?format=md`);
+    if (!res.ok) throw new ApiError(res.status, null, "memo download failed");
+    return res.text();
+  },
+};
 
-    const bindEvent = (eventName: SSEEventName) => {
-      es.addEventListener(eventName, (evt: MessageEvent) => {
+export type { AcceptedResponse, BusinessProfile };
+
+// ---- EventSource clients -----------------------------------------------------------------------
+
+const BACKOFF_MS = [500, 1000, 2000, 4000, 8000];
+
+function openEventSource(
+  url: string,
+  names: readonly string[],
+  onEvent: (name: string, data: unknown) => void,
+  onGiveUp: (reason: string) => void,
+  isFinished: () => boolean,
+): () => void {
+  let es: EventSource | null = null;
+  let closed = false;
+  let attempt = 0;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const connect = () => {
+    if (closed) return;
+    es = new EventSource(url);
+    for (const name of names) {
+      es.addEventListener(name, (e) => {
+        attempt = 0;
         try {
-          const parsedData = JSON.parse(evt.data);
-          useMarketStore.getState().enqueueEvent({
-            event: eventName,
-            data: parsedData,
-          } as MarketSSEEvent);
+          onEvent(name, JSON.parse((e as MessageEvent).data));
         } catch {
-          // Ignore malformed JSON frames
+          /* ignore malformed event */
         }
       });
-    };
-
-    for (const name of SSE_EVENT_NAMES) {
-      bindEvent(name);
     }
-
     es.onerror = () => {
-      if (this.closedExplicitly) return;
-      this.closeEventSourceOnly();
-
-      if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        const delay = Math.min(
-          this.maxBackoffMs,
-          this.initialBackoffMs * Math.pow(2, this.reconnectAttempts)
-        );
-        this.reconnectAttempts += 1;
-        useMarketStore.getState().setConnectionStatus("reconnecting", false);
-
-        this.reconnectTimer = setTimeout(() => {
-          this.reconnectTimer = null;
-          if (!this.closedExplicitly && this.activeRunId) {
-            this.openEventSource(this.activeRunId);
-          }
-        }, delay);
-      } else {
-        // After max reconnect attempts, transition smoothly to mock stream
-        this.startFallbackMock(this.activeScenarioId, this.activeMode);
+      es?.close();
+      es = null;
+      if (closed || isFinished()) return;
+      if (attempt >= BACKOFF_MS.length) {
+        onGiveUp("Lost the connection to the server.");
+        return;
       }
+      timer = setTimeout(connect, BACKOFF_MS[attempt++]);
+    };
+  };
+  connect();
+  return () => {
+    closed = true;
+    if (timer) clearTimeout(timer);
+    es?.close();
+  };
+}
+
+/** Analysis stream client. Returns a close function. */
+export function connectAnalysisStream(
+  analysisId: string,
+  onEvent: (ev: AnalysisEvent) => void,
+  onGiveUp: (reason: string) => void,
+): () => void {
+  if (kind === "mock") {
+    analysisSink = onEvent;
+    let stopped = false;
+    void mockModule().then((m) => {
+      if (stopped) return;
+      mockHandle?.stop();
+      mockHandle = m.runMockAnalysis((ev) => analysisSink?.(ev));
+    });
+    return () => {
+      stopped = true;
+      mockHandle?.stop();
+      mockHandle = null;
+      analysisSink = null;
     };
   }
-
-  private closeEventSourceOnly(): void {
-    if (this.reconnectTimer !== null) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    if (this.eventSource !== null) {
-      this.eventSource.close();
-      this.eventSource = null;
-    }
-  }
-
-  public stop(): void {
-    this.closedExplicitly = true;
-    this.closeEventSourceOnly();
-    if (this.mockHandle !== null) {
-      this.mockHandle.stop();
-      this.mockHandle = null;
-    }
-    const runId = this.activeRunId;
-    this.activeRunId = null;
-
-    if (runId && this.apiBase && !runId.startsWith("mock-")) {
-      void fetch(`${this.apiBase}/api/runs/${encodeURIComponent(runId)}/stop`, {
-        method: "POST",
-      }).catch(() => {});
-    }
-  }
-
-  public async submitShock(text: string): Promise<ShockResponse> {
-    if (this.mockHandle) {
-      return this.mockHandle.injectShock(text);
-    }
-    const runId = this.activeRunId ?? useMarketStore.getState().runId;
-    if (!runId || !this.apiBase) {
-      return { accepted: false, reason: "No active run." };
-    }
-    try {
-      const res = await fetch(
-        `${this.apiBase}/api/runs/${encodeURIComponent(runId)}/shock`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
-        }
-      );
-      if (!res.ok) {
-        return { accepted: false, reason: `HTTP ${res.status}` };
-      }
-      return (await res.json()) as ShockResponse;
-    } catch {
-      return { accepted: false, reason: "Failed to reach shock endpoint." };
-    }
-  }
-
-  public async triggerNewsCheck(): Promise<NewsCheckResponse> {
-    if (this.mockHandle) {
-      return this.mockHandle.triggerNewsCheck();
-    }
-    const runId = this.activeRunId ?? useMarketStore.getState().runId;
-    if (!runId || !this.apiBase) {
-      return { accepted: false, reason: "No active run." };
-    }
-    try {
-      const res = await fetch(
-        `${this.apiBase}/api/runs/${encodeURIComponent(runId)}/news-check`,
-        {
-          method: "POST",
-        }
-      );
-      if (!res.ok) {
-        return { accepted: false, reason: `HTTP ${res.status}` };
-      }
-      return (await res.json()) as NewsCheckResponse;
-    } catch {
-      return { accepted: false, reason: "Failed to reach news-check endpoint." };
-    }
-  }
-
-  public async exportBenchmark(format: BenchmarkExportFormat): Promise<void> {
-    if (this.apiBase && !this.mockHandle) {
-      try {
-        const res = await fetch(
-          `${this.apiBase}/api/benchmark/export?format=${encodeURIComponent(
-            format
-          )}`
-        );
-        if (res.ok) {
-          const blob = await res.blob();
-          this.triggerBrowserDownload(
-            blob,
-            `market-digital-twin-benchmark.${format}`
-          );
-          return;
-        }
-      } catch {
-        // Fall through to local benchmark generation
-      }
-    }
-
-    const { content, mime, filename } = buildLocalBenchmarkExport(format);
-    if (typeof Blob !== "undefined") {
-      const blob = new Blob([content], { type: mime });
-      this.triggerBrowserDownload(blob, filename);
-    }
-  }
-
-  private triggerBrowserDownload(blob: Blob, filename: string): void {
-    if (typeof document === "undefined" || typeof URL === "undefined") return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
+  let finished = false;
+  const close = openEventSource(
+    `${getApiBase()}/api/analyses/${analysisId}/events`,
+    ANALYSIS_EVENT_NAMES,
+    (name, data) => {
+      if (name === "done") finished = true;
+      onEvent({ event: name as AnalysisEventName, data } as AnalysisEvent);
+    },
+    onGiveUp,
+    () => finished,
+  );
+  return close;
 }
 
-let sharedClient: MarketStreamClient | null = null;
-
-export function getStreamClient(): MarketStreamClient {
-  if (!sharedClient) {
-    sharedClient = new MarketStreamClient();
-    registerStreamActionDelegates({
-      submitShock: (text) => sharedClient!.submitShock(text),
-      triggerNewsCheck: () => sharedClient!.triggerNewsCheck(),
+/** Replay stream client. `spec` only matters to the mock, for plans the user added. */
+export function connectReplayStream(
+  replayId: string,
+  onEvent: (ev: ReplayEvent) => void,
+  onGiveUp: (reason: string) => void,
+  mockArgs?: { planName: string; shockId: string; spec?: PlanSpec },
+): () => void {
+  if (kind === "mock") {
+    let stop: (() => void) | null = null;
+    let closed = false;
+    void mockModule().then((m) => {
+      if (closed || !mockArgs) return;
+      stop = m.runMockReplay(mockArgs.planName, mockArgs.shockId, onEvent, mockArgs.spec);
     });
+    return () => {
+      closed = true;
+      stop?.();
+    };
   }
-  return sharedClient;
+  let finished = false;
+  return openEventSource(
+    `${getApiBase()}/api/replays/${replayId}/events`,
+    REPLAY_EVENT_NAMES,
+    (name, data) => {
+      if (name === "replay_done") finished = true;
+      onEvent({ event: name as ReplayEventName, data } as ReplayEvent);
+    },
+    onGiveUp,
+    () => finished,
+  );
 }
 
-export async function connectRunStream(
-  scenarioId: string,
-  mode: RunMode
-): Promise<{ runId: string; mode: RunMode; usingMock: boolean }> {
-  return getStreamClient().startRun(scenarioId, mode);
+export function getCurrentAnalysisId(): string | null {
+  return currentAnalysisId;
 }
-
-export function disconnectRunStream(): void {
-  getStreamClient().stop();
-}
-
-export async function submitShock(text: string): Promise<ShockResponse> {
-  return getStreamClient().submitShock(text);
-}
-
-export async function triggerNewsCheck(): Promise<NewsCheckResponse> {
-  return getStreamClient().triggerNewsCheck();
-}
-
-export async function exportBenchmark(
-  format: BenchmarkExportFormat = "md"
-): Promise<void> {
-  return getStreamClient().exportBenchmark(format);
-}
-
