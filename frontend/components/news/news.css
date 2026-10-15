@@ -1,0 +1,40 @@
+/* Screen 2 (F1). Uses the tokens in app/globals.css; every class is prefixed "nw-". */
+.nw-intro { margin: 0 0 6px; color: var(--ink-2); font-size: 14.5px; max-width: 760px; }
+.nw-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0 18px; }
+.nw-credit { font-size: 12px; color: var(--ink-3); }
+.nw-group { display: grid; gap: 12px; margin-bottom: 24px; }
+.nw-group h2 { font-size: 16px; }
+.nw-cap { margin: -6px 0 0; font-size: 12px; color: var(--ink-3); }
+.nw-card { padding: 18px 22px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 24px; align-items: start; transition: border-color 0.2s, box-shadow 0.2s; }
+.nw-card:hover { border-color: var(--line-strong); }
+.nw-card.picked { border-color: var(--picked); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08); }
+.nw-src { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-3); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.nw-hl { font-size: 16.5px; font-weight: 600; line-height: 1.35; letter-spacing: -0.012em; color: var(--ink); text-decoration: none; }
+.nw-hl:hover { text-decoration: underline; }
+.nw-hl:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); border-radius: 4px; }
+.nw-impact { font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 600; padding: 8px 12px; border-radius: 6px; white-space: nowrap; text-align: right; }
+.nw-impact small { display: block; font-size: 12px; font-weight: 500; opacity: 0.85; }
+.nw-impact.bad { background: var(--loss-soft); color: var(--loss); }
+.nw-impact.ok { background: var(--bg-subtle); color: var(--ink-2); }
+.nw-chain { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13.5px; }
+.nw-chain q { color: var(--ink-2); font-style: italic; border-left: 2px solid var(--line-strong); padding-left: 10px; background: var(--bg-sunk); border-radius: 0 4px 4px 0; padding-block: 3px; padding-right: 8px; quotes: none; }
+.nw-chain .arr { color: var(--ink-3); }
+.nw-dchip { font-variant-numeric: tabular-nums; font-size: 12.5px; font-weight: 500; padding: 3px 10px; border-radius: 6px; background: var(--bg-subtle); color: var(--ink); white-space: nowrap; }
+.nw-cost { grid-column: 1 / -1; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.nw-tag { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 6px; white-space: nowrap; }
+.nw-tag.used { color: var(--firm-a-ink); background: var(--firm-a-soft); }
+.nw-tag.fresh { color: var(--nv-ink); background: var(--nv-soft); }
+.nw-tag.skip { color: var(--guess-ink); background: var(--firm-b-soft); }
+.nw-tag.mkt { color: var(--ink-2); background: var(--bg-subtle); }
+.nw-skel { padding: 20px 22px; display: grid; gap: 12px; }
+.nw-skel i { display: block; height: 12px; border-radius: 6px; background: var(--bg-subtle); animation: nw-breathe 1.2s ease-in-out infinite; }
+@keyframes nw-breathe { 50% { opacity: 0.4; } }
+.nw-load { color: var(--ink-3); font-size: 14px; margin: 0 0 4px; }
+.nw-acts { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+.nw-acts .msg { font-size: 13px; color: var(--ink-2); }
+.nw-acts .msg.err { color: var(--loss); }
+@media (max-width: 900px) {
+  .nw-card { grid-template-columns: 1fr; padding: 16px; }
+  .nw-impact { text-align: left; }
+  .nw-acts .btn { width: 100%; justify-content: center; }
+}
