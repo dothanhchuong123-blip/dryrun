@@ -54,6 +54,8 @@ function ModeChip() {
 
 function CredChip() {
   const t = useMarketStore((s) => s.telemetry);
+  // the savings share swings while calls stream in; show it once the run is finished
+  const done = useMarketStore((s) => s.analysis.status === "done");
   const calls = t ? t.tiers.ultra.calls + t.tiers.super.calls + t.tiers.fast.calls : 0;
   return (
     <span className="chip cred" title="Counted from this run's call log">
@@ -62,7 +64,7 @@ function CredChip() {
         <>
           <span>·</span>
           <span className="num">${t.cost_usd.toFixed(2)}</span>
-          {t.savings_pct > 0 && <span className="x">· <span className="num">{Math.round(t.savings_pct)}%</span> cheaper than all-Ultra</span>}
+          {done && t.savings_pct > 0 && <span className="x">· <span className="num">{Math.round(t.savings_pct)}%</span> cheaper than all-Ultra</span>}
         </>
       )}
     </span>

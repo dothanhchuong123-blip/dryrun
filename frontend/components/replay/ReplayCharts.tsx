@@ -14,7 +14,7 @@ function niceRange(lo: number, hi: number): [number, number] {
   return [lo - pad, hi + pad];
 }
 
-/** "Your plan pulls ahead from week 7 (+$7.4k)" — states the finding, from the loaded ticks. */
+/** "Your plan pulls ahead from week 7 (+$7.4k in this run)" — states the finding, from the loaded ticks. */
 export function chartTitle(u1: TickEventData[], u2: TickEventData[], done: boolean): string {
   const n = Math.min(u1.length, u2.length);
   if (n === 0) return "Simulating this plan…";
@@ -22,9 +22,9 @@ export function chartTitle(u1: TickEventData[], u2: TickEventData[], done: boole
   const end = diffs[n - 1];
   let behind = -1;
   for (let i = 0; i < n; i++) if (diffs[i] <= 0) behind = i;
-  if (end <= 0) return `Your plan ends ${formatDelta(end) === "$0" ? "level with" : "behind"} doing nothing (${formatDelta(end)})${done ? "" : " so far"}`;
-  if (behind < 0) return `Your plan is ahead from the start (${formatDelta(end)})`;
-  return `Your plan pulls ahead from week ${behind + 2} (${formatDelta(end)})`;
+  if (end <= 0) return `Your plan ends ${formatDelta(end) === "$0" ? "level with" : "behind"} doing nothing (${formatDelta(end)} in this run)${done ? "" : " so far"}`;
+  if (behind < 0) return `Your plan is ahead from the start (${formatDelta(end)} in this run)`;
+  return `Your plan pulls ahead from week ${behind + 2} (${formatDelta(end)} in this run)`;
 }
 
 export interface ProfitChartProps {

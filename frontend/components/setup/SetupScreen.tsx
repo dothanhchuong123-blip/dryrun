@@ -64,7 +64,8 @@ function NumRow({ f, profile, guessed, locked, onBad }: { f: NumField; profile: 
   useEffect(() => {
     if (!editing) setDraft(shown);
   }, [shown, editing]);
-  const hint = checkNum(f, draft, profile);
+  // no profile yet (locked): the empty form is a placeholder, not a mistake to flag
+  const hint = locked ? null : checkNum(f, draft, profile);
   useEffect(() => {
     onBad(f.key, !!hint);
     return () => onBad(f.key, false);
@@ -111,7 +112,7 @@ function NumRow({ f, profile, guessed, locked, onBad }: { f: NumField; profile: 
 function TextRow({ k, label, profile, guessed, locked }: { k: TextKey; label: string; profile: BusinessProfile; guessed: boolean; locked: boolean }) {
   const set = useMarketStore((s) => s.setProfileField);
   const id = `su-${k}`;
-  const empty = k !== "country" && profile[k].trim() === "";
+  const empty = !locked && k !== "country" && profile[k].trim() === "";
   return (
     <div className="su-f">
       <label htmlFor={id}>{label}</label>

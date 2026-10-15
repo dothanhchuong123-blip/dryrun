@@ -20,6 +20,10 @@
 .pg-t td.today, .pg-t th.today { background: var(--wait-today); }
 .pg-t td.today { box-shadow: none; }
 .pg-t tr.pick .pg-first .nm { color: var(--firm-a-ink); }
+/* Nemotron's pick: tinted row label with an accent bar (layered so the sticky column stays opaque) */
+.pg-t tr.pick .pg-first { background: linear-gradient(var(--firm-a-soft), var(--firm-a-soft)), var(--bg-card); box-shadow: inset 3px 0 0 var(--firm-a); border-radius: 6px 0 0 6px; }
+.pg-t tr.pick td { background: linear-gradient(var(--firm-a-soft), var(--firm-a-soft)); }
+.pg-t tr.pick td.today { background: linear-gradient(var(--firm-a-soft), var(--firm-a-soft)), var(--wait-today); }
 
 .pg-pl { padding: 2px 6px 2px 2px; font-weight: 600; font-size: 13.5px; line-height: 1.3; animation: slidein 0.5s var(--ease) both; }
 .pg-pl small { display: block; font-weight: 500; font-size: 11.5px; }
@@ -31,6 +35,7 @@
 .pg-badge { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 4px; animation: pgpop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
 .pg-badge.best { background: var(--gain); color: var(--on-ink); }
 .pg-badge.safe { background: var(--ink); color: var(--on-ink); }
+.pg-badge.pick { background: var(--firm-a); color: #fff; }
 @keyframes pgpop { from { opacity: 0; transform: scale(0.5); } }
 
 /* cells: two lines only */
@@ -38,6 +43,14 @@
 .pg-cell:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.35); }
 .pg-cell .v { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
 .pg-cell .p { font-size: 11.5px; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* narrow cells: short labels instead of clipped ones */
+.pg-cell { container-type: inline-size; }
+.pg-sh { display: none; }
+@container (max-width: 124px) {
+  .pg-cell .pg-lg { display: none; }
+  .pg-cell .pg-sh { display: inline; }
+  .pg-cell .pg-ovtag { padding: 2px 3px; }
+}
 .pg-cell.g3 { background: var(--g3); color: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gain) 55%, transparent); }
 .pg-cell.g2 { background: var(--g2); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gain) 40%, transparent); }
 .pg-cell.g1 { background: var(--g1); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gain) 28%, transparent); }
@@ -60,6 +73,9 @@ td.today .pg-cell.wait { background: linear-gradient(100deg, var(--wait-today) 3
 
 .pg-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--ink-3); padding: 9px 20px 4px; }
 .pg-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: -2px; margin-right: 6px; }
+.pg-reco-nm { all: unset; cursor: pointer; font-weight: 700; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); text-underline-offset: 3px; }
+.pg-reco-nm:hover { text-decoration-color: currentColor; }
+.pg-reco-nm:focus-visible { outline: 2px solid var(--firm-a); outline-offset: 2px; border-radius: 3px; }
 .pg-reco { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 14px 0; padding: 9px 14px; border-radius: 8px; background: var(--firm-a-soft); color: var(--firm-a-ink); font-size: 14px; position: sticky; bottom: 0; animation: slidein 0.5s var(--ease) both; }
 .pg-acts { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 20px 14px; border-top: 1px solid var(--line); margin-top: 8px; flex-wrap: wrap; }
 .pg-ver { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }

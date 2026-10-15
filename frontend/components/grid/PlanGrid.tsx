@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { GridCellData, PlanSource, ShockCase } from "../../lib/events";
 import { formatDelta, formatMoney } from "../../lib/format";
 import { DO_NOTHING, labels, overCash } from "../../lib/labels";
@@ -101,6 +101,24 @@ export function PlanGrid() {
   );
 
   const bestName = memo?.plan_name;
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  /** Bring Nemotron's pick into view inside the grid box, below the sticky header. */
+  const showPick = (smooth = true) => {
+    const box = boxRef.current;
+    const row = box?.querySelector<HTMLTableRowElement>("tr.pick");
+    if (!box || !row || box.scrollHeight <= box.clientHeight) return;
+    const head = box.querySelector("thead")?.getBoundingClientRect().height ?? 0;
+    const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+    const fullyVisible = top - head >= box.scrollTop && top + row.offsetHeight <= box.scrollTop + box.clientHeight;
+    if (!fullyVisible) box.scrollTo({ top: Math.max(0, top - head - 8), behavior: smooth ? "smooth" : "auto" });
+  };
+  useEffect(() => {
+    if (!bestName) return;
+    const id = requestAnimationFrame(() => showPick());
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bestName]);
   const verifying = job === "queued" || job === "running";
   const verifyDisabled = plans.length === 0 || verifying || summary?.verified === true || !(analysis.status === "done" || memo);
   const allCellsIn = plans.length > 0 && shocks.length > 0;
@@ -132,7 +150,7 @@ export function PlanGrid() {
         )}
       </div>
 
-      <div className="pg-box">
+      <div className="pg-box" ref={boxRef}>
         {shocks.length === 0 ? (
           <div className="empty">Nemotron will test plans here. Each cell = 1,000 simulated runs.</div>
         ) : (
@@ -208,6 +226,7 @@ export function PlanGrid() {
                         <span className="nm">{p.name}</span>
                         <div className="bd">
                           <span className={`pg-src ${p.source}`}>{SOURCE_TAG[p.source]}</span>
+                          {p.name === bestName && <span className="pg-badge pick">Nemotron&apos;s pick</span>}
                           {bestToday === p.name && <span className="pg-badge best">Best today</span>}
                           {safest === p.name && <span className="pg-badge safe">Safest</span>}
                         </div>
@@ -245,12 +264,19 @@ export function PlanGrid() {
                                       ✓<span className="pg-ckn"> {c.n.toLocaleString("en-US")} runs</span>
                                     </span>
                                   )}
-                                  {over && <span className="pg-ovtag">Over cash</span>}
+                                  {over && (
+                                    <span className="pg-ovtag" title="Needs more cash up front than you have">
+                                      <span className="pg-lg">Over cash</span>
+                                      <span className="pg-sh" aria-hidden>⚠</span>
+                                    </span>
+                                  )}
                                 </span>
                               )}
                             </span>
                             <span className="p">
-                              bad case <span className="num">{formatDelta(c.p5_delta_usd)}</span>
+                              <span className="pg-lg">bad case </span>
+                              <span className="pg-sh">bad </span>
+                              <span className="num">{formatDelta(c.p5_delta_usd)}</span>
                             </span>
                           </button>
                         </td>
@@ -275,7 +301,10 @@ export function PlanGrid() {
       {memo && (
         <div className="pg-reco" role="status">
           <span>
-            Nemotron recommends: <b>{memo.plan_name}</b>
+            Nemotron recommends:{" "}
+            <button className="pg-reco-nm" onClick={() => showPick()} title="Show this plan in the grid">
+              {memo.plan_name}
+            </button>
           </span>
           <button className="btn sm" onClick={() => withTransition(() => setStep("memo"))}>
             See the memo →

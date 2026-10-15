@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatDelta, formatMoney, formatWeek } from "../../lib/format";
-import { useMarketStore } from "../../lib/store";
+import { cellKey, useMarketStore } from "../../lib/store";
 import { MarketScene } from "./MarketScene";
 import { AnalystCharts, ProfitChart, chartTitle } from "./ReplayCharts";
 import "./replay.css";
@@ -25,6 +25,8 @@ const KIND_COLOR: Record<string, string> = {
 export function ReplayDrawer() {
   const r = useMarketStore((s) => s.replay);
   const profile = useMarketStore((s) => s.profile);
+  // the grid cell this replay came from: its average is what the grid and memo quote
+  const cell = useMarketStore((s) => (s.replay.planName && s.replay.shockId ? s.cells[cellKey(s.replay.planName, s.replay.shockId)] : undefined));
   const close = useMarketStore((s) => s.closeReplay);
   const toggle = useMarketStore((s) => s.toggleReplay);
   const step = useMarketStore((s) => s.stepReplay);
@@ -84,6 +86,11 @@ export function ReplayDrawer() {
                 {" · "}
                 <b className={delta >= 0 ? "pos" : "neg"}>{formatDelta(delta)}</b> vs doing nothing
               </>
+            )}
+            {cell && (
+              <span className="rp-avg" title="The grid and the memo quote the average over every run; this replay is one of them.">
+                {" · "}one sample run · average of {cell.n.toLocaleString("en-US")}: <b>{formatDelta(cell.mean_delta_usd)}</b>
+              </span>
             )}
           </div>
         </div>

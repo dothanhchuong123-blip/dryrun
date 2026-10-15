@@ -102,6 +102,7 @@ export function NewsScreen() {
   const profile = useMarketStore((s) => s.profile);
   const setStep = useMarketStore((s) => s.setStep);
   const newsCheck = useMarketStore((s) => s.newsCheck);
+  const planCount = useMarketStore((s) => s.plans.length);
   const [checking, setChecking] = useState(false);
   const [msg, setMsg] = useState<{ text: string; err: boolean } | null>(null);
 
@@ -179,9 +180,18 @@ export function NewsScreen() {
               </span>
             )}
           </div>
-          <button className="btn" disabled={news.length === 0} onClick={() => withTransition(() => setStep("analyst"))}>
-            Find the best plan for this →
-          </button>
+          <div className="nw-go">
+            {status === "running" && news.length > 0 && (
+              <span className="nw-ahead" role="status">
+                <span className="nw-spin" />
+                {planCount > 0 ? `Nemotron is already testing plans (${planCount} so far)` : "Nemotron has already started on your plans"}
+              </span>
+            )}
+            {status === "done" && planCount > 0 && <span className="nw-ahead done">✓ {planCount} plans tested and ready</span>}
+            <button className="btn" disabled={news.length === 0} onClick={() => withTransition(() => setStep("analyst"))}>
+              Find the best plan for this →
+            </button>
+          </div>
         </div>
       </div>
     </section>
