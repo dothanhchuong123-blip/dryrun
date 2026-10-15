@@ -36,6 +36,14 @@
       "hardwood timber price Vietnam",
       "Vietnam to Europe sea freight rates"
     ],
-    "guessed_fields": []
+    "country": "germany",
+    "market_terms": [
+      "Möbelhandel Nachfrage Deutschland"
+    ],
+    "exposed_cost_share": 0.6,
+    "cash_available": 0.0,
+    "guessed_fields": [
+      "exposed_cost_share"
+    ]
   }
 }

@@ -124,7 +124,7 @@ def shock_to_engine(s: ShockVector) -> Shock:
 # --- Pivot v3 contracts (SPEC §15.3-15.6) ---------------------------------------------------
 
 ProfileNumericField = Literal[
-    "price", "unit_cost", "weekly_sales", "lead_time_weeks", "stock_weeks", "rival_price"
+    "price", "unit_cost", "weekly_sales", "lead_time_weeks", "stock_weeks", "rival_price", "exposed_cost_share"
 ]
 
 
@@ -141,7 +141,16 @@ class BusinessProfile(BaseModel):
     supplier_region: str = Field(max_length=60)
     customers: str = Field(max_length=80, description='Who buys, e.g. "independent cafés"')
     search_terms: list[str] = Field(min_length=1, max_length=3, description="News queries, each <= 80 chars")
-    guessed_fields: list[ProfileNumericField] = Field(max_length=6, description="Numeric fields that were guessed")
+    # v3.1 realism fields (SPEC §15.3)
+    country: str = Field(max_length=40, description='Where the business sells, lowercase English name ("vietnam"); "" if unknown')
+    market_terms: list[str] = Field(
+        max_length=2, description="0-2 local-market news queries (competitors, demand), may be in the local language"
+    )
+    exposed_cost_share: float = Field(
+        ge=0.05, le=1.0, description="Share of unit_cost that moves with the news input; 1.0 if all of it"
+    )
+    cash_available: float = Field(ge=0, description="Cash the owner could put into extra stock, USD; 0 = not given")
+    guessed_fields: list[ProfileNumericField] = Field(max_length=7, description="Numeric fields that were guessed")
 
     @model_validator(mode="after")
     def _clamp(self) -> BusinessProfile:
@@ -149,6 +158,8 @@ class BusinessProfile(BaseModel):
         cap = round(0.95 * self.price, 6)
         self.unit_cost = min(cap, self.unit_cost)
         self.search_terms = [t[:80] for t in self.search_terms]
+        self.market_terms = [t[:80] for t in self.market_terms]
+        self.country = self.country.strip().lower()
         # A rival price copied from our own price is a guess; make sure the UI marks it.
         if self.rival_price == self.price and "rival_price" not in self.guessed_fields:
             self.guessed_fields = [*self.guessed_fields, "rival_price"]
@@ -185,3 +196,30 @@ class MemoDraft(BaseModel):
     why: str = Field(max_length=400)
     watch_out: str = Field(max_length=300)
     recheck_when: str = Field(max_length=150)
+
+
+class ScenarioCaseModel(BaseModel):
+    """One future Ultra proposes in step 0b (SPEC §15.5, §15.6). Code assigns id and origin."""
+
+    label: str = Field(max_length=40, description='Plain words, e.g. "Beans +31% and Highland cuts 5%"')
+    delta_c_raw: float = Field(ge=-0.5, le=1.0, description="Change in the news input's price (not your whole cost)")
+    delta_lead_time: int = Field(ge=-2, le=10, description="Supplier lead-time change, weeks")
+    demand_shock: float = Field(ge=-0.5, le=0.5, description="Change in the whole market's demand")
+    rival_price_change_pct: float = Field(ge=-20, le=20, description="Rival's price move on top of its normal rule")
+    share_shift_pct: float = Field(ge=0, le=30, description="Percent of your demand lost to a new or bigger player")
+    onset_week: int = Field(ge=0, le=12)
+    ramp_weeks: int = Field(ge=1, le=8)
+    likelihood: Literal["likely", "possible", "unlikely"]
+    why: str = Field(max_length=120)
+    source_ids: list[str] = Field(max_length=3, description="ids of the news items this case is based on")
+
+
+class UnmodelledRisk(BaseModel):
+    text: str = Field(max_length=100)
+    source_id: str = Field(max_length=12, description='News item id, or "" if none')
+
+
+class ScenarioSet(BaseModel):
+    thought: str = Field(max_length=300, description="Short plain-words note shown to the user")
+    cases: list[ScenarioCaseModel] = Field(min_length=2, max_length=5)
+    unmodelled: list[UnmodelledRisk] = Field(max_length=4, description="Real risks the knobs cannot express")

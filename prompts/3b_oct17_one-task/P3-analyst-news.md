@@ -5,10 +5,10 @@
 | Builder | **Claude Code**: **Sonnet 5.5**, effort high |
 | Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/3b_oct17_one-task/P3-analyst-news.md` |
 | Parallel with | F0 (Argon, frontend shell). No shared files. |
-| Time | ~4 h |
+| Time | ~5 h (v3.1 adds ~1 h) |
 | Depends on | P1 and P2 committed |
 | Target date | Oct 17 |
-| Live spend | ≤ $0.20. Ask me before the live part. |
+| Live spend | ≤ $0.25. Ask me before the live part. |
 
 ---
 You are building the agent half of the pivot: Nemotron Ultra working as an analyst, using the engine planner as its tool (SPEC §15.6), plus the news search for one business (SPEC §15.7).
@@ -81,3 +81,33 @@ You are building the agent half of the pivot: Nemotron Ultra working as an analy
 - Add anything surprising to `docs/FEEDBACK_LOG.md`.
 
 **Done when** pytest and ruff pass. Commit only your files as `P3: analyst loop, shopper reactions, news watch`.
+
+## v3.1 realism update (2026-10-15): also build this
+
+SPEC §15 v3.1 and EVENTS v2.1 win over anything above that conflicts.
+
+- **News (§15.7):**
+  - Run up to 2 `market_terms` searches with `topic: "general"`, `country=profile["country"]` (skip the boost if it's `""`), `time_range: "month"` and `basic`, all cached.
+  - Add `country` as an optional parameter to `TavilyScout.search`. It's only sent with `topic: "general"`; Tavily ignores it for news.
+  - Market items get `kind: "market"`, ids `m1…`, a ≤ 200-char snippet in `quote`, and `shock`/`cost_line`/impact set to `null`. Supply items get `kind: "supply"`, ids `n1…`, and a `cost_line`.
+  - ≤ 5 credits per analysis. Report the credits used.
+- **Step 0b, futures (§15.6):** `Analyst.scenarios()` runs before the seed plans.
+  - Call Ultra with `prompts.scenario_messages` (thinking ON, reasoning as `role: "scenarios"`, round 0) and validate a `ScenarioSet`.
+  - Apply the code rules: clamp, drop all-zero cases, drop near-duplicates (all knobs within 2 points), drop unknown `source_ids`, assign ids `s1…`, keep ≤ 5.
+  - The `news` case comes first. If fewer than 2 cases survive, fall back to `default_shock_cases` and emit an `agent_step` `fallback`.
+  - Emit `scenarios` and then `shocks`. Note: P4's orchestrator now gets the shocks from here instead of calling `default_shock_cases` itself.
+- **`wording.py`:**
+  - `cost_line(profile, case)` → "Beans +31% × 85% of your cost is beans = your cost +26% (+$1.71 a bag)", using `planner.cost_change`. Name the input from `product_unit` with a short word ("beans", "cards", "timber"), falling back to "the main input".
+  - `bridge_lines(bridge)` → the five plain labels from DESIGN.md §12.3a, plus the total.
+  - `results_table` adds `steady`, `cash` and `OVER CASH` for the `news` column.
+  - `futures_block(shocks)` lists the columns for `analyst_messages(futures_block=...)`.
+- **Memo event (EVENTS v2.1):**
+  - `numbers` gains `bridge`, `steady_rival_delta_usd`, `peak_cash_usd`, `payback_week`, `over_cash` and `cash_available`; the memo also carries `cost_line`.
+  - `not_modelled = {fixed: SPEC §15.11's list (a constant in wording.py), found: the ScenarioSet's unmodelled}`, with `source_id` `""` → `null`.
+  - The `numbers` passed to `memo_messages` include the bridge, so Ultra may cite those figures.
+- **Extra tests:**
+  - The scenario step's code rules (duplicates, zero cases, bad source ids, too few → fallback).
+  - A market search sends `country` + `topic: general`.
+  - The `cost_line` arithmetic matches `planner.cost_change`.
+  - The memo has `not_modelled.fixed` and the bridge.
+- **Live run** now also prints the futures Ultra picked and its `unmodelled` list.

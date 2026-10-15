@@ -50,3 +50,14 @@ You are building the heart of the pivot UI: the screen where judges watch Nemotr
 **Layout:** this screen must fit 1440×900 and 1280×800 with no page scroll. At 390 px, the log stacks above the grid and the grid scrolls sideways inside its own box with a sticky first column.
 
 **Done when** `npm run build` passes and the full mock run fills the log and grid exactly as in D7, including adding a user plan. Commit as `F2: analyst log and plans grid`.
+
+## v3.1 realism update (2026-10-15)
+
+DESIGN.md §12.3a and EVENTS v2.1 win over anything above that conflicts.
+
+- AnalystLog: a first group, **"Futures to test"**, from the `scenarios` thought and the `scenarios` reasoning.
+- PlanGrid:
+  - 2–6 columns from `shocks.cases`, each header with the label + a likelihood tag; `why` and the cost line go in the header tooltip. Below 1024 px the grid scrolls sideways inside its card.
+  - **The cell tooltip is the P&L breakdown:** the five lines + total; the two rival lines ("With a rival who never runs out" / "Extra if {rival} runs short"); then "Cash tied up $Z · back by week W".
+  - An "Over your cash" badge on `over_cash` cells.
+  - In "+ Add your own plan", show upfront cash live (extra stock weeks × weekly sales × unit cost), with the badge when it's over `cash_available`.

@@ -15,7 +15,7 @@ You are wiring the pivot together: one "analysis" from business profile to memo,
 
 **Read only these:**
 - `SPEC.md` §15, §7, §7.1
-- `docs/EVENTS.md` v2 (the whole contract)
+- `docs/EVENTS.md` v2.1 (the whole contract)
 - the public APIs of `backend/engine/planner.py`, `backend/agents/*`, `backend/services/*`
 - `fixtures/examples/*.json`
 
@@ -24,14 +24,13 @@ You are wiring the pivot together: one "analysis" from business profile to memo,
   1. emit `analysis`;
   2. `planner.calibrate`;
   3. `NewsWatch.find`, then emit `news`;
-  4. `default_shock_cases`, then emit `shocks`;
-  5. run `Analyst`;
-  6. emit `telemetry` after every LLM call (throttled to ≥ 1 s apart) and at the end;
-  7. emit `done` with the cost.
-- `async add_user_plan(spec, emit)`: clamp, evaluate all 4 columns with the same seed and the plan's crowd. Crowd is neutral in REPLAY, so it stays free; in LIVE there's one Lightning pair. Emit `plan` (source `user`) + `grid_cell`s + `grid_summary`. At most 4.
+  4. run `Analyst`. It runs step 0b (futures) first and emits `scenarios` + `shocks` itself (SPEC §15.6 v3.1), falling back to `default_shock_cases`;
+  5. emit `telemetry` after every LLM call (throttled to ≥ 1 s apart) and at the end;
+  6. emit `done` with the cost.
+- `async add_user_plan(spec, emit)`: clamp, evaluate every column (2–6) with the same seed and the plan's crowd. Crowd is neutral in REPLAY, so it stays free; in LIVE there's one Lightning pair. Emit `plan` (source `user`) + `grid_cell`s + `grid_summary`. At most 4.
 - `async news_check(emit)`: delegates to `NewsWatch.check`, then emits `news`.
 - `job_payload() -> dict`: the `planner.run_job` input for the 10,000-per-cell Serverless Job (T09). Contents: the profile, every plan, the shocks, each plan's crowd, and the seed.
-- `memo_markdown() -> str`: the memo as Markdown, with the grid row of the picked plan and the sources.
+- `memo_markdown() -> str`: the memo as Markdown, with the grid row of the picked plan, the cost line, the P&L breakdown, the cash line, the "Not in these numbers" box and the sources.
 - Keep the state needed for these: profile, calibration, shocks, plans, crowd per plan, cells, summary, memo.
 
 **`backend/sim/replay_cell.py`: `async play_cell(analysis_state, plan_name, shock_id, emit, *, week_seconds=0.75)`**
@@ -57,8 +56,8 @@ You are wiring the pivot together: one "analysis" from business profile to memo,
 
 **Milestone A.** Ask me before each live step; give the estimated cost each time.
 1. `--example coffee_hcmc --cheap` (≈ $0.02).
-2. `--example coffee_hcmc` at full cost (≈ $0.06–0.10).
-3. Then `--record` for all three examples at full cost (≈ $0.25) **only after I've looked at step 2's memo.**
+2. `--example coffee_hcmc` at full cost (≈ $0.08–0.12).
+3. Then `--record` for all three examples at full cost (≈ $0.30) **only after I've looked at step 2's memo.**
 
 Report the spend from telemetry, the final grid and the memo for step 2. Add any quirks to `docs/FEEDBACK_LOG.md`.
 

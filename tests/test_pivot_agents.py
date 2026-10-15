@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from backend.agents import prompts
-from backend.agents.schemas import AnalystStep, BusinessProfile, MemoDraft, PlanSpecModel
+from backend.agents.schemas import AnalystStep, BusinessProfile, MemoDraft, PlanSpecModel, ScenarioSet
 from backend.services.router import to_strict_schema
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -33,7 +33,7 @@ def _profile() -> dict:
     return EXAMPLES["coffee_hcmc"]["profile"]
 
 
-@pytest.mark.parametrize("model", [BusinessProfile, PlanSpecModel, AnalystStep, MemoDraft])
+@pytest.mark.parametrize("model", [BusinessProfile, PlanSpecModel, AnalystStep, MemoDraft, ScenarioSet])
 def test_strict_schema_is_flat(model):
     s = to_strict_schema(model)
     text = json.dumps(s)
@@ -160,3 +160,58 @@ def test_rival_price_copied_from_price_is_marked_guessed():
     assert p.guessed_fields == ["rival_price"]
     q = BusinessProfile(**{**_profile(), "rival_price": _profile()["price"], "guessed_fields": ["rival_price"]})
     assert q.guessed_fields == ["rival_price"]
+
+
+# --- v3.1 realism update (SPEC §15 v3.1) ---
+
+
+def _case(**kw) -> dict:
+    base = {
+        "label": "Beans +15%", "delta_c_raw": 0.15, "delta_lead_time": 0, "demand_shock": 0.0,
+        "rival_price_change_pct": 0, "share_shift_pct": 0, "onset_week": 2, "ramp_weeks": 3,
+        "likelihood": "likely", "why": "Milder than the headline", "source_ids": ["n1"],
+    }
+    return {**base, **kw}
+
+
+def test_profile_v31_fields():
+    p = BusinessProfile(**{**_profile(), "country": "  Vietnam ", "market_terms": ["x" * 90]})
+    assert p.country == "vietnam" and len(p.market_terms[0]) == 80
+    with pytest.raises(ValidationError):
+        BusinessProfile(**{**_profile(), "exposed_cost_share": 0.0})
+    with pytest.raises(ValidationError):
+        BusinessProfile(**{**_profile(), "cash_available": -1})
+    with pytest.raises(ValidationError):
+        BusinessProfile(**{**_profile(), "market_terms": ["a", "b", "c"]})
+
+
+@pytest.mark.parametrize("ex_id", sorted(EXAMPLES))
+def test_examples_have_v31_fields(ex_id):
+    p = BusinessProfile(**EXAMPLES[ex_id]["profile"])
+    assert p.country and p.market_terms and 0.05 <= p.exposed_cost_share <= 1
+    assert "exposed_cost_share" in p.guessed_fields  # none of the texts split the cost
+
+
+def test_scenario_set_bounds():
+    ScenarioSet(thought="ok", cases=[_case(), _case(label="Highland cuts 5%", rival_price_change_pct=-5)], unmodelled=[])
+    with pytest.raises(ValidationError):
+        ScenarioSet(thought="ok", cases=[_case()], unmodelled=[])  # at least 2
+    with pytest.raises(ValidationError):
+        ScenarioSet(thought="ok", cases=[_case(), _case(share_shift_pct=31)], unmodelled=[])
+    with pytest.raises(ValidationError):
+        ScenarioSet(thought="ok", cases=[_case(), _case(likelihood="certain")], unmodelled=[])
+
+
+def test_scenario_messages_carry_news_and_cost_line():
+    prof = _profile()
+    msgs = prompts.scenario_messages(
+        prof,
+        {"label": "Beans +31% (today's news)", "delta_c_raw": 0.31, "delta_lead_time": 1, "demand_shock": 0.0},
+        "Beans +31% × 85% of your cost is beans = your cost +26% (+$1.71 a bag)",
+        [{"id": "n1", "title": "Robusta hits record", "source": "Reuters", "quote": "rose 31%"}],
+        [{"id": "m1", "title": "New chain opens in District 1", "source": "VnExpress", "quote": "40 stores"}],
+    )
+    user = msgs[1]["content"]
+    for needle in ("[n1]", "[m1]", "+$1.71 a bag", "vietnam", "share_shift_pct"):
+        assert needle in user or needle in msgs[0]["content"]
+

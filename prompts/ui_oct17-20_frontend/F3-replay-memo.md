@@ -46,3 +46,16 @@ You are building the replay view, which reuses the pixel arena, and the decision
 **Quality bar:** the arena stays ≥ 50% of the drawer's height on desktop; 60 FPS with 200 shoppers. At 390 px, the drawer is full-screen and the chart sits under the arena.
 
 **Done when** `npm run build` passes, any mock cell replays with captions and the chart in sync, and the memo renders all its parts from the mock. Commit as `F3: replay drawer and decision memo`.
+
+## v3.1 realism update (2026-10-15)
+
+DESIGN.md §12.3a and EVENTS v2.1 win over anything above that conflicts.
+
+- Replay scene: small mono labels on the shop nodes from each tick's `unit_cost`, `cover_weeks` and `in_transit`. Keep the shoppers. Markers `rival_price` and `new_player` get captions and pins. (The cash chart toggle is P1: build it last, only if there's time.)
+- Memo:
+  - the `cost_line` under the headline;
+  - a small 5-bar waterfall of `numbers.bridge` + total;
+  - the rival split line;
+  - the cash line when `peak_cash_usd > 0` ("Needs about $Z up front · pays back by week W", or "Over the $C you said you have");
+  - a closing **"Not in these numbers"** box with `not_modelled.fixed` and `not_modelled.found` (with source links).
+  - All of these go into `memo_markdown` too, which is P4's job; here they only need to render.

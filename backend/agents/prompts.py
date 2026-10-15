@@ -162,14 +162,18 @@ Return JSON with exactly these fields:
 business_name (<=60 chars), product_unit (<=40 chars, e.g. "bag of roasted coffee"), price (your price per unit, USD), unit_cost (raw or variable cost per unit, USD, always BELOW price),
 weekly_sales (units per week), lead_time_weeks (integer 1-16, supplier lead time), stock_weeks (0-16, stock on hand in weeks of sales),
 rival_name (<=60 chars), rival_price (USD; copy price if the text gives no rival price), supplier_region (<=60 chars), customers (<=80 chars, who buys, e.g. "independent cafés"),
-search_terms (1-3 news queries, each <=80 chars), guessed_fields.
+search_terms (1-3 news queries, each <=80 chars), country, market_terms (0-2 queries), exposed_cost_share (0.05-1), cash_available (USD), guessed_fields.
 
 Rules:
 - Convert every currency to USD with these fixed rough rates: 25,000 VND = $1, 1 EUR = $1.08, $1 = $1. Use plain numbers in fields. NEVER put notes, units or currency symbols inside fields.
 - Convert other time units to weeks (1 month = 4 weeks) and other sales periods to units per week.
-- If a value is not in the text, infer a sensible one and add its field name to guessed_fields. Allowed names: price, unit_cost, weekly_sales, lead_time_weeks, stock_weeks, rival_price. A rival_price copied from price because the text gives none counts as inferred. List EVERY numeric value you had to infer, and leave out the ones the text states.
+- If a value is not in the text, infer a sensible one and add its field name to guessed_fields. Allowed names: price, unit_cost, weekly_sales, lead_time_weeks, stock_weeks, rival_price, exposed_cost_share. A rival_price copied from price because the text gives none counts as inferred. List EVERY numeric value you had to infer, and leave out the ones the text states.
 - If no rival is named, invent a short generic name such as "Main competitor". If no supplier region is given, name the most likely one.
 - search_terms are NEWS queries about the product's INPUT COSTS and its SUPPLY ROUTE (raw material prices, tariffs, shipping routes, the supplier region), not about the business itself. Write 2 queries (a third only if it covers a clearly different risk). Each must name the product or commodity plus the country, region or route that the text itself mentions, e.g. "robusta coffee price Vietnam". Only when the text says the goods are shipped overseas to customers, add that route (e.g. "Asia to Europe sea freight rates"). Otherwise stay with the input's source region. Do not bring in places the text does not suggest.
+- country: the country where the business SELLS, as a lowercase English name (e.g. "vietnam", "germany", "united states"). If it sells to several countries, pick the main one. Use "" only if the text gives no hint at all.
+- market_terms: 0-2 news queries about the business's LOCAL MARKET in that country: competitors opening or cutting prices, new chains, customer demand. Write them in the main language of that country (e.g. Vietnamese for Vietnam, German for Germany). Use [] if country is "".
+- exposed_cost_share: the share of unit_cost that is the main traded input the news would move (e.g. green beans inside a roasted bag, the card itself for an import shop, timber for furniture). 1.0 if unit_cost is only that input. If the text does not split the cost, infer it and add exposed_cost_share to guessed_fields.
+- cash_available: cash the owner says they could put into extra stock, in USD. 0 if the text does not say (never guess it).
 Reply with JSON only."""
 
 
@@ -187,6 +191,8 @@ Each plan is a few knobs: price_change_pct (-20..20) from price_change_week (0..
 How to work:
 - Propose AT MOST 3 NEW, DIFFERENT plans per round. Never re-test a name that is already in the tested list. Try a different idea each time (price, stock timing, supplier, marketing, or a mix).
 - Prefer plans that are still OK in the bad case. A small business cannot afford to gamble: look at the "bad case" column (the 1-in-20 outcome), not only the average.
+- Prefer plans whose gain does NOT depend on the rival running short: compare "steady" (rival never runs out) with the mean. A gain that exists only because the rival runs short is luck, not a plan.
+- Look at cash: "cash" is the most extra cash a plan ties up. Never pick a plan marked OVER CASH without saying so in why.
 - Output decisions only. Never invent numbers. Every number you mention must come from the results table below.
 - Set action to "finish" when you are happy with your pick or no new idea is worth testing; otherwise "test" with 1-3 new plans. With "finish", plans may be empty.
 - thought: <=300 chars, plain words for the business owner. pick: the name of the plan you prefer so far (<=40 chars; use "Do nothing" if nothing beats it). why: <=300 chars.
@@ -208,7 +214,8 @@ def _news_block(news_items: list[dict], limit: int = 3) -> str:
 def _profile_block(profile: dict) -> str:
     keys = (
         "business_name", "product_unit", "price", "unit_cost", "weekly_sales", "lead_time_weeks",
-        "stock_weeks", "rival_name", "rival_price", "supplier_region", "customers",
+        "stock_weeks", "rival_name", "rival_price", "supplier_region", "customers", "country",
+        "exposed_cost_share", "cash_available",
     )
     return "\n".join(f"{k}: {profile.get(k, '?')}" for k in keys)
 
@@ -221,17 +228,74 @@ def analyst_messages(
     round: int,
     max_rounds: int,
     tested_names: list[str],
+    futures_block: str = "",
 ) -> list[dict]:
     parts = [
         f"Round {round} of {max_rounds}.",
         "Business (money in USD, profit = gross profit over 24 weeks):\n" + _profile_block(profile),
         "News that hit this business:\n" + _news_block(news_items),
-        "Results so far, in $k vs Do nothing (mean / bad case = 1-in-20 / % of runs better):\n" + results_table,
+        "Futures being tested (grid columns):\n" + (futures_block.strip() or "(only today's news)"),
+        "Results so far, in $k vs Do nothing (mean / bad case = 1-in-20 / % of runs better; "
+        "for today's news also steady = rival never runs out, cash = most extra cash tied up):\n" + results_table,
         "How shoppers reacted:\n" + (crowd_notes.strip() or "(no notes yet)"),
         "Already tested (do not repeat these names): " + (", ".join(tested_names) or "none"),
         "Decide now.",
     ]
     return [{"role": "system", "content": _ANALYST_SYSTEM}, {"role": "user", "content": "\n\n".join(parts)}]
+
+
+_SCENARIO_SYSTEM = """You are a careful analyst helping a small business prepare for what could happen next. A simulator will test the owner's plans against every future you list, so each future must be expressed ONLY with these knobs:
+- delta_c_raw (-0.5..1.0): change in the price of the main input the news is about (NOT the owner's whole cost; the program applies the exposed share). Currency moves, tariffs and freight all go here as a change in the input's landed price.
+- delta_lead_time (-2..10): supplier delay change in weeks.
+- demand_shock (-0.5..0.5): change in the whole market's demand.
+- rival_price_change_pct (-20..20): the main rival moves its price this much (a price war, or a rival who raises more).
+- share_shift_pct (0..30): percent of the owner's customers lost to a new or bigger player (e.g. a chain opening nearby).
+- onset_week (0..12) and ramp_weeks (1..8): when it starts and how fast cost and share changes build up.
+
+Today's headline future is already in the grid. Add 2-5 OTHER futures that a sensible owner should prepare for:
+- at least one milder than the headline and one worse;
+- at least one that is not about cost (rival, new player, demand or delays) when the local market news gives any reason;
+- each different from the others; never all knobs zero.
+For each: label (<=40 chars, plain words, e.g. "Beans +31% and Highland cuts 5%"), likelihood ("likely"|"possible"|"unlikely"), why (<=120 chars), source_ids (ids of the news items it rests on, or [] for a standard stress test, then say so in why).
+Risks you found that these knobs cannot express (a new law, a strike, a quality problem): put them in unmodelled (0-4, text <=100 chars, source_id or ""). Never squeeze them into a made-up number.
+thought: <=300 chars, plain words for the owner.
+Keep your reasoning SHORT: at most about 8 steps, then answer.
+Reply with JSON only: thought, cases, unmodelled."""
+
+
+def _market_block(market_items: list[dict], limit: int = 3) -> str:
+    if not market_items:
+        return "(no local market news found)"
+    return "\n".join(
+        f'- [{m.get("id", "")}] {m.get("title", "")} ({m.get("source", "")}): "{str(m.get("quote", ""))[:200]}"'
+        for m in market_items[:limit]
+    )
+
+
+def scenario_messages(
+    profile: dict,
+    headline_case: dict,
+    cost_line: str,
+    supply_items: list[dict],
+    market_items: list[dict],
+) -> list[dict]:
+    """Step 0b (SPEC §15.6): Ultra proposes the grid's other futures. Returns a ScenarioSet."""
+    supply = "\n".join(
+        f'- [{n.get("id", "")}] {n.get("title", "")} ({n.get("source", "")}): "{str(n.get("quote", ""))[:200]}"'
+        for n in supply_items[:3]
+    ) or "(no supply news found)"
+    headline = {k: headline_case.get(k) for k in ("label", "delta_c_raw", "delta_lead_time", "demand_shock")}
+    user = "\n\n".join(
+        [
+            "Business (money in USD):\n" + _profile_block(profile),
+            "Today's headline future (already in the grid): " + json.dumps(headline, ensure_ascii=False)
+            + "\nWhat it does to their cost: " + cost_line,
+            "Supply news:\n" + supply,
+            f'Local market news ({profile.get("country") or "country unknown"}):\n' + _market_block(market_items),
+            "List the futures now.",
+        ]
+    )
+    return [{"role": "system", "content": _SCENARIO_SYSTEM}, {"role": "user", "content": user}]
 
 
 _MEMO_SYSTEM = """You write a short decision memo for a busy small-business owner, in plain words, no jargon.

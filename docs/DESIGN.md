@@ -280,7 +280,7 @@ One page, five steps, with a thin step bar at the top: `Your business · News ·
 |---|---|---|---|
 | 1 | **Your business** | Left: a free-text box ("Describe it like you would to a friend") and 3 example chips. Right: the parsed fields, editable; guessed fields carry a small "guessed" tag. | "Read my business →", then "Looks right → find news" |
 | 2 | **News that affects you** | 3–5 headline cards: source · date, headline, a coloured impact chip ("−$6.4k over 6 months if you do nothing"), the verbatim quote → the number it changed. The card used for the grid is marked. "Check live news" button. | "Find the best plan for this →" |
-| 3+4 | **Analyst + plans** | Left (≈ 38%): the analyst log, one row per `agent_step` with a type tag (Think / Test / Result / Shoppers), and "Show full Nemotron thinking ▾" per round. Right (≈ 62%): the **plans × shocks grid**, which fills in cell by cell. Row label = plan name, plus small text badges "Best today" (`best_today`) and "Safest" (`safest`). Columns = the 4 shock cases, with today's news highlighted. Each cell: the big `mean_delta_usd` plus a small "bad case −$1.8k". Colour scale: green = better than doing nothing, grey ≈ same, red = worse, always with a +/− sign. A "Do nothing" reference row shows baseline profit. "+ Add your own plan" opens 4 sliders (price %, from week, extra stock weeks, switch supplier). Clicking a cell opens screen 5. | "See the memo →" once `memo` arrives |
+| 3+4 | **Analyst + plans** | Left (≈ 38%): the analyst log, one row per `agent_step` with a type tag (Think / Test / Result / Shoppers), and "Show full Nemotron thinking ▾" per round. Right (≈ 62%): the **plans × shocks grid**, which fills in cell by cell. Row label = plan name, plus small text badges "Best today" (`best_today`) and "Safest" (`safest`). Columns = the 2–6 futures (§12.3a), with today's news highlighted. Each cell: the big `mean_delta_usd` plus a small "bad case −$1.8k". Colour scale: green = better than doing nothing, grey ≈ same, red = worse, always with a +/− sign. A "Do nothing" reference row shows baseline profit. "+ Add your own plan" opens 4 sliders (price %, from week, extra stock weeks, switch supplier). Clicking a cell opens screen 5. | "See the memo →" once `memo` arrives |
 | 5 | **Replay one plan** (drawer or full view over the grid) | The market scene (§12.5) at the top, captions from `marker` events; **one** chart below: cumulative gross profit, plan vs do nothing (dashed), with the 95% band; timeline pins from markers. Price/stock charts and the Nash matrix live in the Analyst tab. | Play / pause, step weeks, back to grid |
 | 6 | **Decision memo** | Recommendation headline; 3 numbers (+$ vs do nothing · bad case · runs, with a "Nebius-verified" badge when `verified`); Why; Watch out for; Recheck when; Sources with quotes and links. | "Copy" · "Download .md" · "Try another business" |
 
@@ -295,6 +295,27 @@ One page, five steps, with a thin step bar at the top: `Your business · News ·
 - Grid cells: numbers only; the explanation goes in a hover/tap tooltip ("Average over 1,000 runs; in 1 run out of 20 it's worse than −$1.8k").
 - Memo: headline ≤ 12 words; each section ≤ 2 sentences.
 - Empty states say what will appear and why ("Nemotron will test plans here. Each cell = 1,000 simulated runs.").
+
+### 12.3a Realism update (v3.1, 2026-10-15; SPEC §15 v3.1, EVENTS v2.1). Wins over 12.1 where they conflict
+
+Goal: every number can be checked with a calculator, and every assumption is visible. More screens aren't the goal; showing *where numbers come from* is.
+
+- **Screen 1:** add the fields **Country**, **Share of your cost that is {input}** (e.g. "85% of your cost is beans", tagged "guessed" when it is) and **Cash you could put into stock** (optional, empty = "not given").
+- **Screen 2:**
+  - Each supply card shows the **cost line** verbatim: "Beans +31% × 85% of your cost is beans = your cost +26% (+$1.71 a bag)".
+  - Local-market cards (`kind: "market"`) sit below them under the label "In your market ({country})". They have no impact chip; their chip says "Used to pick futures".
+- **Screens 3+4:**
+  - The analyst log gets a first row group, **"Futures to test"** (Ultra's step 0b `thought`), before the plan rounds.
+  - **Grid columns = 2–6 futures**, not 4. Each column header has the label, a likelihood tag (Likely / Possible / Unlikely), and its `why` in the tooltip. Today's news stays highlighted. Below 1024 px the grid scrolls sideways inside its card; the page never does.
+  - **Cell tooltip = the P&L breakdown**, five lines that add up (plain labels: "Cheaper stock", "Your price change", "Customers won/lost", "Marketing", "Storage & money tied up"), then a total line. Under it, two lines: "With a rival who never runs out: +$X" and "Extra if {rival} runs short: +$Y". Then "Cash tied up: $Z, back by week W".
+  - An **"Over your cash"** badge appears on cells with `over_cash`, in the warning colour, never red fill.
+  - "+ Add your own plan" shows the plan's upfront cash live as the extra-stock slider moves, and the badge when it exceeds the cash given.
+- **Screen 5:** scene nodes carry small mono labels from the tick: cost per unit, weeks of stock, units on the way. Keep the shoppers; they're the demo's hook. The cumulative-cash chart toggle is P1.
+- **Screen 6:**
+  - Under the 3 numbers, add the **P&L breakdown** as a small waterfall (five bars + total) and the rival split.
+  - Add a cash line when the plan buys stock: "Needs about $Z of cash up front · pays back by week W" (or "Over the $C you said you have").
+  - End with the **"Not in these numbers"** box: SPEC §15.11's fixed list, plus Ultra's found risks with their source links.
+- **Copy:** never "psychic" upside. A gain that depends on the rival running short is always labelled that way.
 
 ### 12.4 Mobbin references (what to borrow; links in `docs/PIVOT-PLAN.html`)
 

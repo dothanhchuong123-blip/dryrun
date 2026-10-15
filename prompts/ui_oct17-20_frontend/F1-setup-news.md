@@ -45,3 +45,14 @@ You are building the first two screens of the pivot UI.
 **Quality bar:** DESIGN.md §12.3 copy rules. Keyboard reachable with visible focus. Works at 390 px wide (the two columns stack). No new dependencies.
 
 **Done when** `npm run build` passes and both screens work end to end on F0's mock. Commit as `F1: setup and news screens`.
+
+## v3.1 realism update (2026-10-15)
+
+DESIGN.md §12.3a and EVENTS v2.1 win over anything above that conflicts.
+
+- Screen 1:
+  - the fields Country, "Share of your cost that is {input}" (shown as %, with the guessed tag) and "Cash you could put into stock" (empty = "not given").
+- Screen 2:
+  - supply cards show `cost_line` verbatim under the quote;
+  - market cards (`kind: "market"`) go in a lower group, "In your market ({country})", with the chip "Used to pick futures" and no impact chip;
+  - the loading text mentions the country.

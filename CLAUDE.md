@@ -3,7 +3,12 @@
 **Read this first, then follow `SPEC.md`. SPEC.md is the source of truth and replaces the original v1 research prompt.** Every Claude session working on this project should read both files.
 
 ## Snapshot
-- **What (pivot v3, 2026-10-14):** "Test your plans." A user describes their business, Tavily finds the news that hits it, and a **Nemotron Ultra analyst** proposes plans that a deterministic NumPy engine tests against 4 shock levels (plans × shocks grid, scored against "Do nothing"). The result is a decision memo. Nemotron makes the *decisions* (plans, shopper reactions, shock numbers); the engine computes every *outcome*. **SPEC §15 is the spec for this; read it first.** Screens: `docs/DESIGN.md` §12. Wireframes: `docs/PIVOT-PLAN.html`.
+- **What (pivot v3, 2026-10-14):** "Test your plans." A user describes their business, Tavily finds the news that hits it, and a **Nemotron Ultra analyst** proposes plans that a deterministic NumPy engine tests against 4 shock levels (plans × shocks grid, scored against "Do nothing"). The result is a decision memo. Nemotron makes the *decisions* (plans, shopper reactions, shock numbers); the engine computes every *outcome*. **SPEC §15 is the spec for this; read it first.** **v3.1 realism update (2026-10-15):**
+  - Ultra picks the grid's futures (2–6 columns), including rival price moves and new players.
+  - The news moves only the exposed share of the user's cost.
+  - Search knows the user's country (local-language market queries).
+  - Every cell carries a P&L breakdown, a "rival never runs out" split and the cash a plan ties up.
+  - Every memo lists what isn't modelled. Screens: `docs/DESIGN.md` §12. Wireframes: `docs/PIVOT-PLAN.html`.
 - **Track:** Best Apps and Agents. **Also aiming for:** Best Use of Tavily ($3k) and Most Valuable Feedback.
 - **Hard deadline:** Fri **Oct 30 2026, 10:00 PDT** = **Sat Oct 31, 00:00 GMT+7**. **We submit by Fri Oct 30, 12:00 GMT+7.**
 - **Judging:** Dec 1–15, 2026. **The live demo must stay up, free and working until Dec 15.**

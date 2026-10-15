@@ -2,7 +2,7 @@
   "id": "pc_parts",
   "title": "Online PC-parts shop",
   "subtitle": "Imports graphics cards; new tariffs are in the news",
-  "text": "I run a small online shop in Hanoi that imports graphics cards from Taiwan for gamers and small studios. A mid-range card sells for $420 and costs me about $330 landed, and I sell around 90 a week. Orders from my distributor take about 4 weeks to arrive and I keep roughly 3 weeks of stock. My main rival, TechNova, sells the same card for $415.",
+  "text": "I run a small online shop in Hanoi that imports graphics cards from Taiwan for gamers and small studios. A mid-range card sells for $420 and costs me about $330 landed, and I sell around 90 a week. Orders from my distributor take about 4 weeks to arrive and I keep roughly 3 weeks of stock, with about $40,000 spare for more. My main rival, TechNova, sells the same card for $415.",
   "scenario_id": "gpu_tariff",
   "seed_queries": [
     "semiconductor tariff GPU prices supply chain",
@@ -36,6 +36,14 @@
       "graphics card price Taiwan",
       "semiconductor supply chain Taiwan"
     ],
-    "guessed_fields": []
+    "country": "vietnam",
+    "market_terms": [
+      "giá card đồ họa Hà Nội"
+    ],
+    "exposed_cost_share": 0.9,
+    "cash_available": 40000.0,
+    "guessed_fields": [
+      "exposed_cost_share"
+    ]
   }
 }

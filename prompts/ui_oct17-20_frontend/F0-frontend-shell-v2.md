@@ -60,3 +60,18 @@ You are rebuilding the frontend's foundation for the pivot ("Test your plans", S
 **Remove** the v1-only UI from the page (the scenario picker, GroundingCards, Terminal). Leave those component files in place.
 
 **Done when** `npm run build` passes with no type errors, and `npm run dev` with no API base plays the full mock analysis from step 1 to the memo, with the stubs in place. Commit as `F0: frontend shell v2 (types, store, stream, mock)`.
+
+## v3.1 realism update (2026-10-15)
+
+DESIGN.md §12.3a and EVENTS v2.1 win over anything above that conflicts.
+
+- `events.ts`:
+  - add every v2.1 field: profile `country`, `market_terms`, `exposed_cost_share`, `cash_available`; ShockCase `rival_price_change_pct`, `share_shift_pct`, `likelihood`, `why`, `source_ids`, `origin`, `cost_line`; news `kind`; `grid_cell` `bridge`, `steady_rival_delta_usd`, `peak_cash_usd`, `payback_week`, `over_cash`; memo `cost_line`, `not_modelled`; tick `unit_cost`, `cover_weeks`, `in_transit`, `cum_cash_delta`;
+  - add the `scenarios` event and the `scenarios` reasoning role.
+- Store: add `scenarios` (thought + unmodelled).
+- **Mock stream:**
+  - 5 columns for coffee_hcmc: `news` plus 4 AI futures, including one rival price cut and one new chain (`share_shift_pct`);
+  - one plan marked `over_cash`;
+  - bridges that really sum to the cell mean;
+  - a "Futures to test" `agent_step` before the seed plans.
+  - Use the coffee_hcmc profile numbers ($11 price, $6.50 cost, 280 bags/week, cash $8,000), not D7's $38/$21. Every mock number must check out with a calculator.

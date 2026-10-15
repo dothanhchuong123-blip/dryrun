@@ -1,6 +1,6 @@
 # Backend ↔ Frontend contract (SSE + REST), v2
 
-**v2, 2026-10-14: the "Test your plans" pivot (SPEC §15).** v1's run/CEO events are gone. `tick`, `crowd`, `reasoning`, `telemetry`, `mode` and `error` keep their v1 shape, with small additions marked **(v2)**.
+**v2, 2026-10-14: the "Test your plans" pivot (SPEC §15).** **v2.1, 2026-10-15:** the realism update (SPEC §15 v3.1). It adds fields only; nothing was removed or renamed. v1's run/CEO events are gone. `tick`, `crowd`, `reasoning`, `telemetry`, `mode` and `error` keep their v1 shape, with small additions marked **(v2)**.
 
 The backend (T08) and the frontend (F0–F3) are built in parallel against this file. **If you change it, update both sides in the same commit.**
 
@@ -11,18 +11,28 @@ All arrays indexed by firm are `[A, B]`: A = the user's business, B = the rival.
 ```jsonc
 // BusinessProfile (SPEC §15.3)
 { "business_name": "Saigon Roasters", "product_unit": "bag of roasted coffee",
-  "price": 38.0, "unit_cost": 21.0, "weekly_sales": 280, "lead_time_weeks": 3, "stock_weeks": 2,
-  "rival_name": "Highland Supply", "rival_price": 37.0, "supplier_region": "Central Highlands, Vietnam",
-  "customers": "independent cafés", "search_terms": ["robusta coffee price Vietnam"], "guessed_fields": ["lead_time_weeks", "stock_weeks"] }
+  "price": 11.0, "unit_cost": 6.5, "weekly_sales": 280, "lead_time_weeks": 3, "stock_weeks": 2,
+  "rival_name": "Highland Supply", "rival_price": 10.5, "supplier_region": "Central Highlands, Vietnam",
+  "customers": "independent cafés", "search_terms": ["robusta coffee price Vietnam"],
+  "country": "vietnam", "market_terms": ["chuỗi cà phê mới TP.HCM"],          // (v2.1)
+  "exposed_cost_share": 0.85, "cash_available": 8000,                          // (v2.1) 0 = not given
+  "guessed_fields": ["lead_time_weeks", "stock_weeks", "exposed_cost_share"] }
 
 // PlanSpec (SPEC §15.4)
 { "name": "Stock up 4 wk + raise 3% wk 3", "price_change_pct": 3, "price_change_week": 3,
   "extra_stock_weeks": 4, "stock_week": 0, "marketing_change_pct": 0,
   "switch_supplier": false, "alt_cost_change_pct": 0, "alt_lead_time_weeks": 3, "alt_shock_exposure": 0.3 }
 
-// ShockCase (SPEC §15.5)
-{ "id": "news", "label": "Beans +31% (today's news)", "delta_c_raw": 0.31, "delta_lead_time": 1,
-  "demand_shock": 0.0, "onset_week": 2, "ramp_weeks": 3 }
+// ShockCase (SPEC §15.5). delta_c_raw = change in the news INPUT's price, not in your unit cost (§15.5.1)
+{ "id": "s2", "label": "Beans +31% and Highland cuts 5%", "delta_c_raw": 0.31, "delta_lead_time": 1,
+  "demand_shock": 0.0, "onset_week": 2, "ramp_weeks": 3,
+  "rival_price_change_pct": -5, "share_shift_pct": 0,                              // (v2.1)
+  "likelihood": "possible", "why": "Highland is bigger and may defend its cafés",   // (v2.1)
+  "source_ids": ["n1", "m1"], "origin": "ai",                                       // (v2.1) origin: news|ai|default
+  "cost_line": "Beans +31% × 85% of your cost is beans = your cost +26% (+$1.71 a bag)" } // (v2.1) built by wording.cost_line
+
+// CellBridge (SPEC §15.5.2): the five lines sum to mean_delta_usd
+{ "cost_usd": 2100, "price_usd": 1500, "volume_usd": -700, "marketing_usd": 0, "holding_usd": -200 }  // = +2,700
 ```
 
 ## REST
@@ -50,16 +60,17 @@ Each event is sent as `event: <name>` followed by `data: <json>`, in roughly thi
 | event | data |
 |---|---|
 | `analysis` | `{analysis_id, mode, example_id\|null, profile, horizon_weeks: 24, n_paths: 1000}` |
-| `news` | `{items: [{id, title, url, source, published, quote, shock: {delta_c_raw, delta_lead_time, demand_shock}, impact_usd, impact_p5_usd, live, applied}], used_for_grid: id\|null}`. Sent once after the search; sent again (one item) for each "Check live news". |
-| `shocks` | `{cases: [ShockCase × 4]}`: the grid's columns |
+| `news` | `{items: [{id, kind, title, url, source, published, quote, shock: {delta_c_raw, delta_lead_time, demand_shock}\|null, cost_line\|null, impact_usd\|null, impact_p5_usd\|null, live, applied}], used_for_grid: id\|null}`. Sent once after the search; sent again (one item) for each "Check live news". **(v2.1)** `kind: "supply"\|"market"`. Supply items have ids `n1…` and carry `shock`, `cost_line` and impact. Market items (ids `m1…`, local-market search) have those fields `null` and `quote` holds a ≤ 200-char snippet. |
+| `scenarios` **(v2.1)** | `{thought, unmodelled: [{text, source_id\|null}], fallback_used}`: Ultra's step 0b note and the risks it couldn't put numbers on. Sent just before `shocks`. |
+| `shocks` | `{cases: [ShockCase × 2–6]}`: the grid's columns. `news` is first; then Ultra's `s1…s5`, or the 4 default columns if Ultra failed. **(v2.1: was × 4)** |
 | `plan` | `{name, source: "seed"\|"ai"\|"user", round, spec: PlanSpec}` |
 | `crowd` | `{plan_name, archetypes: [{id, label, mu: [a, b], sigma: [a, b], bubble}]}` **(v2: `plan_name` replaces `tick`)** |
-| `grid_cell` | `{plan_name, shock_id, n, mean_delta_usd, p5_delta_usd, p_better, mean_profit_usd, source: "local"\|"cloud"}` |
+| `grid_cell` | `{plan_name, shock_id, n, mean_delta_usd, p5_delta_usd, p_better, mean_profit_usd, source: "local"\|"cloud", bridge: CellBridge, steady_rival_delta_usd, peak_cash_usd, payback_week\|null, over_cash}` **(v2.1: everything after `source`)** |
 | `grid_summary` | `{baseline_profit_usd: {shock_id: usd}, best_today: plan_name, safest: plan_name, verified: bool}`. Sent after each round, and again when the cloud job finishes. |
 | `agent_step` | `{round, kind: "think"\|"test"\|"result"\|"shoppers"\|"finish"\|"fallback", text, plan_name\|null, tier: "ultra"\|"super"\|"fast"\|"engine", latency_ms\|null}`. `text` ≤ 300 characters, plain words. |
-| `reasoning` | `{role: "analyst", round, delta}`: a streamed chunk of Ultra's raw thinking (behind "Show full Nemotron thinking") |
-| `reasoning_done` | `{role: "analyst", round}` |
-| `memo` | `{plan_name, headline, why, watch_out, recheck_when, numbers: {shock_id: "news", mean_delta_usd, p5_delta_usd, p_better, n, verified}, sources: [{title, url, quote}], fallback_used}` |
+| `reasoning` | `{role: "analyst"\|"scenarios", round, delta}` (v2.1: `scenarios` is step 0b, round 0): a streamed chunk of Ultra's raw thinking (behind "Show full Nemotron thinking") |
+| `reasoning_done` | `{role: "analyst"\|"scenarios", round}` |
+| `memo` | `{plan_name, headline, why, watch_out, recheck_when, numbers: {shock_id: "news", mean_delta_usd, p5_delta_usd, p_better, n, verified, bridge, steady_rival_delta_usd, peak_cash_usd, payback_week, over_cash, cash_available}, cost_line, sources: [{title, url, quote}], not_modelled: {fixed: [str], found: [{text, source_id\|null}]}, fallback_used}` **(v2.1: `bridge` … `cash_available`, `cost_line`, `not_modelled`)** |
 | `telemetry` | as v1: `{tiers: {ultra\|super\|fast: {calls, tokens_in, tokens_out, p50_ttft_ms, tok_per_s, errors}}, call_share, token_share, cost_usd, cost_all_ultra_usd, savings_pct, job: {id, status: "idle"\|"queued"\|"running"\|"verified"\|"failed"}}` |
 | `mode` | `{mode: "live"\|"replay", reason}` |
 | `error` | `{message, recoverable}` |
@@ -71,7 +82,7 @@ Each event is sent as `event: <name>` followed by `data: <json>`, in roughly thi
 |---|---|
 | `replay_start` | `{replay_id, plan_name, shock_id, shock_label, weeks: 24, n_consumers, week_seconds}` |
 | `tick` | the v1 payload below. `universe: "U1"` = the plan, `"U2"` = do nothing. |
-| `marker` | `{week, kind: "shock"\|"price_change"\|"stock_ordered"\|"stock_arrives"\|"sold_out"\|"rival_move", firm: "A"\|"B"\|null, text}`. `text` ≤ 14 words; it drives the arena caption and the timeline pins. |
+| `marker` | `{week, kind: "shock"\|"price_change"\|"stock_ordered"\|"stock_arrives"\|"sold_out"\|"rival_move"\|"rival_price"\|"new_player", firm: "A"\|"B"\|null, text}`. `text` ≤ 14 words; it drives the arena caption and the timeline pins. |
 | `replay_done` | `{replay_id, cum_profit_usd: {U1, U2}}` |
 
 ### `tick` payload (unchanged from v1, values in USD and real units)
@@ -89,7 +100,8 @@ Each event is sent as `event: <name>` followed by `data: <json>`, in roughly thi
 }
 ```
 
-- Each week sends one `tick` for `U1` and one for `U2`. The U2 event omits `choices_b64`.
+- **(v2.1)** extra keys, all in real units: `"unit_cost": [6.9, 7.6]` (weighted-average material cost per unit), `"cover_weeks": [2.9, 1.4]`, `"in_transit": [560, 280]`, and on U1 only `"cum_cash_delta": -7280.0` (cumulative cash vs do nothing).
+- Each week sends one `tick` for `U1` and one for `U2`. The U2 event omits `choices_b64` and `cum_cash_delta`.
 - `bullwhip` may be `null` until 8 weeks have passed.
 - **Throttle:** the frontend applies at most one store update per week. The arena reads `choices_b64` into a typed array held in a ref.
 
