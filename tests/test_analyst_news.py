@@ -21,7 +21,7 @@ from backend.agents.schemas import (
 )
 from backend.engine import planner
 from backend.engine.planner import PlanSpec, ShockCase
-from backend.services.news_watch import NewsWatch, exact_span
+from backend.services.news_watch import NewsWatch, contradicts, exact_span, is_social
 from backend.services.tavily_scout import TavilyScout
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -819,3 +819,98 @@ async def test_pick_stands_when_ultra_has_seen_every_result():
                            step("finish", [], pick="Plan A")]
     out = await make_analyst(FakeRouter(script), Recorder(), max_rounds=2).run()
     assert out["memo"]["plan_name"] == "Plan A"        # not the best on average, but Ultra picked it after seeing everything
+
+
+# --- news guards (P4 step 3 review) ---------------------------------------------------------------
+
+
+def test_social_posts_are_not_articles():
+    for url in ("https://www.instagram.com/p/DeW9oa0loIh", "https://m.facebook.com/x/posts/1", "https://x.com/a/status/1",
+                "https://www.youtube.com/watch?v=1"):
+        assert is_social(url)
+    for url in ("https://reuters.com/world/robusta", "https://kenh14.vn/a.chn", "https://box.com/a"):
+        assert not is_social(url)
+
+
+async def test_social_results_dropped_before_extract(tmp_path):
+    supply = [{"url": "https://www.instagram.com/p/DeW9oa0loIh", "title": "Instagram", "content": SNIPPET, "score": 0.99},
+              {"url": "https://reuters.com/world/robusta-record", "title": "Robusta hits record", "content": SNIPPET, "score": 0.5}]
+    market = [{"url": "https://www.facebook.com/someone/posts/1", "title": "Grand opening", "content": "Khai trương " * 20, "score": 0.9},
+              {"url": "https://vnexpress.net/chain-opens", "title": "Chuỗi mới", "content": "Một chuỗi cà phê mới " * 20, "score": 0.6}]
+    nw, client, _ = watcher(tmp_path, client=FakeClient(supply=supply, market=market))
+    res = await nw.find(PROFILE, fallback_shock=FALLBACK, live=True)
+    assert client.extracts[0]["urls"] == ["https://reuters.com/world/robusta-record"]
+    assert [i["url"] for i in res["items"]] == ["https://reuters.com/world/robusta-record", "https://vnexpress.net/chain-opens"]
+    assert res["dropped"] == 2
+
+
+@pytest.mark.parametrize(("delta", "quote", "wrong"), [
+    (0.05, "Prices reached exceptionally high levels in 2025, then retreated during 2026", True),   # the coffee run
+    (0.35, "raw-material prices jumped by more than a third in a month", False),
+    (-0.1, "Robusta futures rose 31% in a month", True),
+    (-0.1, "prices fell 10% as the harvest came in", False),
+    (0.2, "prices rose in spring and fell back in summer", False),       # both ways: not ours to judge
+    (0.12, "the reroute adds roughly 10 days to transit", False),        # no price movement word
+    (0.1, "Giá cà phê tăng mạnh", False),
+    (0.1, "Giá cà phê giảm", True),
+])
+def test_direction_check(delta, quote, wrong):
+    assert contradicts(delta, [quote]) is wrong
+
+
+async def test_cost_change_against_its_quote_falls_back(tmp_path):
+    class Falling(FakeClient):
+        async def extract(self, **kw):
+            self.extracts.append(kw)
+            text = ("Prices reached exceptionally high levels in 2025, then retreated during 2026 as the outlook for "
+                    "production improved. Traders expect a calm quarter.")
+            return {"results": [{"url": u, "raw_content": text} for u in kw["urls"]]}
+
+    router = ShockRouter(quote="then retreated during 2026", shock=(0.05, 0, 0.0))
+    nw, _, _ = watcher(tmp_path, client=Falling(), router=router)
+    res = await nw.find(PROFILE, fallback_shock=FALLBACK, live=True)
+    sup = [i for i in res["items"] if i["kind"] == "supply"]
+    assert len(router.calls) == 2 and len(sup) == 1 and sup[0]["source"] == "Example assumption"
+    assert res["news_shock"]["delta_c_raw"] == 0.35
+
+    nw, _, _ = watcher(tmp_path / "check", client=Falling(), router=router)
+    assert (await nw.check(PROFILE))["items"] == []
+
+
+FALLBACK_KNOBS = {k: FALLBACK[k] for k in ("delta_c_raw", "delta_lead_time", "demand_shock")}
+ASSUMPTION_NEWS = {
+    "items": [
+        {"id": "n1", "kind": "supply", "title": "Example assumption (no live article found)", "url": "",
+         "source": "Example assumption", "published": "", "quote": "raw-material prices jumped by more than a third in a month",
+         "shock": FALLBACK_KNOBS, "cost_line": "Beans +35% × 85% of your cost is beans = your cost +30% (+$1.93 a bag)",
+         "impact_usd": -7100.0, "impact_p5_usd": -9000.0, "live": False, "applied": True},
+        NEWS["items"][1],
+    ],
+    "used_for_grid": "n1",
+    "news_shock": FALLBACK_KNOBS,
+}
+
+
+def test_prompts_never_offer_the_assumption_as_a_source():
+    item = ASSUMPTION_NEWS["items"][0]
+    scen = prompts.scenario_messages(PROFILE, {"label": "Beans +35% (today's news)", **FALLBACK_KNOBS}, item["cost_line"],
+                                     [item], [NEWS["items"][1]])[1]["content"]
+    assert "[n1]" not in scen and item["quote"] not in scen and "[m1]" in scen
+    assert "example's own assumption, not news" in scen
+    for msgs in (prompts.analyst_messages(PROFILE, ASSUMPTION_NEWS["items"], "", "", 1, 3, []),
+                 prompts.memo_messages(PROFILE, "Stock up 4 weeks now", {}, {}, ASSUMPTION_NEWS["items"])):
+        user = msgs[-1]["content"]
+        assert item["quote"] not in user and "not news" in user and "+$1.93 a bag" in user
+
+
+async def test_ultra_cannot_cite_the_assumption():
+    rec = Recorder()
+    cited = scenario_set(case_dict("Mild", delta_c_raw=0.15, source_ids=["n1", "m1"], demand_shock=-0.05),
+                         case_dict("Worse", delta_c_raw=0.5, source_ids=["n1"]),
+                         unmodelled=[{"text": "Port strike", "source_id": "n1"}, {"text": "A chain opens", "source_id": "m1"}])
+    a = make_analyst(FakeRouter({ScenarioSet: [cited]}), rec, news=ASSUMPTION_NEWS)
+    await a.scenarios()
+    ai = [c for c in a.shocks if c.origin == "ai"]
+    assert [c.source_ids for c in ai] == [["m1"], []]
+    assert a.unmodelled == [{"text": "Port strike", "source_id": None}, {"text": "A chain opens", "source_id": "m1"}]
+    assert a.shocks[0].id == "news" and a.shocks[0].source_ids == ["n1"]     # its own column still links its card

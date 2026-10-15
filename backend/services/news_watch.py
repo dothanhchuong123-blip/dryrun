@@ -1,7 +1,8 @@
 """News for one business: supply headlines turned into shocks, plus local-market context (SPEC §15.7).
 
 `NewsWatch.find` searches each of the profile's queries, drops pages that aren't articles, has Super parse
-the top 3 supply articles into shock numbers with verbatim quotes, and scores every headline by what it would
+the top 3 supply articles into shock numbers with verbatim quotes (dropping social posts, and any cost change
+whose quote says the opposite), and scores every headline by what it would
 do to "Do nothing" (the engine, never an LLM). `NewsWatch.check` is the "Check live news" button: one fresh
 search, one article, one card with `live: true, applied: false`.
 """
@@ -18,7 +19,7 @@ from urllib.parse import urlparse
 import numpy as np
 
 from backend.agents import wording
-from backend.agents.prompts import shock_parser_messages
+from backend.agents.prompts import ASSUMPTION_SOURCE, shock_parser_messages
 from backend.agents.schemas import ShockVector
 from backend.engine import planner
 from backend.services.tavily_scout import verify_evidence
@@ -27,6 +28,21 @@ log = logging.getLogger(__name__)
 
 # Pages that are indexes, tickers or sitemaps, not articles (FEEDBACK_LOG 2026-10-14). Dropped before any extract.
 NON_ARTICLE = re.compile(r"(?i)/sitemap|/tag/|/tags/|/page/\d+|/index(\.html?)?$|/quote/|/ticker|/markets/data")
+# Social posts are promos and personal updates, not reporting (FEEDBACK_LOG 2026-10-15). Dropped like non-articles.
+SOCIAL_DOMAINS = (
+    "instagram.com", "facebook.com", "fb.com", "fb.watch", "tiktok.com", "twitter.com", "x.com", "threads.net",
+    "youtube.com", "youtu.be", "pinterest.com", "reddit.com", "linkedin.com",
+)
+# Movement words, for checking that a parsed cost change goes the way its quote says. Level words ("record high")
+# don't count: "prices hit record highs, then retreated" is a fall.
+_UP = re.compile(
+    r"(?i)\b(?:rise[sn]?|rising|rose|surg\w*|soar\w*|jump\w*|climb\w*|increas\w*|spik\w*|rall(?:y|ied|ies)|higher|"
+    r"up \d|tăng)\b"
+)
+_DOWN = re.compile(
+    r"(?i)\b(?:fall(?:s|en|ing)?|fell|drop\w*|declin\w*|retreat\w*|eas(?:e|ed|es|ing)|slump\w*|plung\w*|"
+    r"slid(?:e|es|ing)?|tumbl\w*|lower(?:ed|ing|s)?|dip(?:s|ped)?|down \d|cheaper|giảm)\b"
+)
 MIN_SNIPPET = 80          # a search result whose snippet is this short or shorter is dropped
 MAX_CREDITS = 5           # per analysis: searches (1 each, basic) plus one extract call
 MAX_SUPPLY_SEARCHES, MAX_MARKET_SEARCHES = 3, 2
@@ -68,8 +84,36 @@ def exact_span(quote: str, text: str) -> str | None:
     return m.group(0) if m else None
 
 
+def is_social(url: str) -> bool:
+    host = _source(url)
+    return any(host == d or host.endswith("." + d) for d in SOCIAL_DOMAINS)
+
+
+def direction(text: str) -> int:
+    """+1 if the text only says something went up, -1 if it only says down, 0 if both, neither or unclear."""
+    up, down = bool(_UP.search(text)), bool(_DOWN.search(text))
+    return 0 if up == down else (1 if up else -1)
+
+
+def contradicts(delta: float, quotes: list[str]) -> bool:
+    """True when a parsed change has the opposite sign to what its quotes say (e.g. +5% from "prices retreated")."""
+    d = direction(" ".join(quotes))
+    return (delta > 0 and d < 0) or (delta < 0 and d > 0)
+
+
 def _usable(r: dict) -> bool:
-    return bool(r.get("url")) and not NON_ARTICLE.search(r["url"]) and len(str(r.get("content", "")).strip()) > MIN_SNIPPET
+    url = r.get("url")
+    return (
+        bool(url) and not NON_ARTICLE.search(url) and not is_social(url)
+        and len(str(r.get("content", "")).strip()) > MIN_SNIPPET
+    )
+
+
+def _wrong_way(shock: ShockVector) -> bool:
+    if contradicts(shock.delta_c_raw, [ev.quote for ev in shock.evidence]):
+        log.info("news: dropped a parsed cost change of %+.0f%% that its quote contradicts", shock.delta_c_raw * 100)
+        return True
+    return False
 
 
 def _merge(batches: list[list[dict]]) -> list[dict]:
@@ -182,7 +226,7 @@ class NewsWatch:
         mean, p5 = impact(knobs)
         return {
             "id": "n1", "kind": "supply", "title": "Example assumption (no live article found)", "url": "",
-            "source": "Example assumption", "published": "", "quote": str(quote)[:MAX_QUOTE], "shock": knobs,
+            "source": ASSUMPTION_SOURCE, "published": "", "quote": str(quote)[:MAX_QUOTE], "shock": knobs,
             "cost_line": wording.cost_line(profile, _case(knobs)), "impact_usd": round(mean, 2),
             "impact_p5_usd": round(p5, 2), "live": False, "applied": True,
         }
@@ -227,7 +271,7 @@ class NewsWatch:
         parsed = await asyncio.gather(*(self._parse(a, profile) for a in articles))
         items: list[dict] = []
         for article, shock in zip(articles, parsed, strict=True):
-            if shock is None:
+            if shock is None or _wrong_way(shock):
                 continue
             published = _published(by_url[article["url"]].get("published_date"))
             item = await asyncio.to_thread(
@@ -270,7 +314,7 @@ class NewsWatch:
         impact = _Impact(planner.calibrate(profile))
         for article in articles:
             shock = await self._parse(article, profile)
-            if shock is None:
+            if shock is None or _wrong_way(shock):
                 continue
             self._live_n += 1
             item = await asyncio.to_thread(

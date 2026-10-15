@@ -206,11 +206,29 @@ Keep your reasoning SHORT: at most about 8 steps, then answer.
 Reply with JSON only, matching the schema: thought, action ("test"|"finish"), plans (0-3 plan objects with every field), pick, why."""
 
 
+# The news item that is the example's own assumption (no live article was found) has this `source`. Ultra must not
+# cite it or call it news (FEEDBACK_LOG 2026-10-15), so it gets no id and no quote.
+ASSUMPTION_SOURCE = "Example assumption"
+
+
+def is_assumption(item: dict) -> bool:
+    return item.get("source") == ASSUMPTION_SOURCE
+
+
+_ASSUMPTION_LINE = (
+    "- No supply article was found. Today's headline future is the example's own assumption, not news: "
+    "never cite it or describe it as reported"
+)
+
+
 def _news_block(news_items: list[dict], limit: int = 3) -> str:
     if not news_items:
         return "(no news found)"
     lines = []
     for n in news_items[:limit]:
+        if is_assumption(n):
+            lines.append(_ASSUMPTION_LINE + (f' ({n["cost_line"]})' if n.get("cost_line") else ""))
+            continue
         quote = str(n.get("quote", ""))[:200]
         lines.append(f'- {n.get("title", "")} ({n.get("source", "")}): "{quote}"')
     return "\n".join(lines)
@@ -273,7 +291,7 @@ Futures worth considering when the news gives any reason (existing knobs only):
 - the rival holds or cuts its price (rival_price_change_pct -5 to -10);
 - delays longer than the supplier lead time (delta_lead_time +3 to +6);
 - a false alarm: the input price rise fades (delta_c_raw slightly negative, e.g. -0.05, or small). This is the future that punishes over-stocking.
-For each: label (<=40 chars, plain words, e.g. "Beans +31% and Highland cuts 5%"), likelihood ("likely"|"possible"|"unlikely"), why (<=120 chars), source_ids (ids of the news items it rests on, or [] for a standard stress test, then say so in why).
+For each: label (<=40 chars, plain words, e.g. "Beans +31% and Highland cuts 5%"), likelihood ("likely"|"possible"|"unlikely"), why (<=120 chars), source_ids (ids in [brackets] of the news items it rests on, or [] for a standard stress test, then say so in why).
 Risks you found that these knobs cannot express (a new law, a strike, a quality problem): put them in unmodelled (0-4, text <=100 chars, source_id or ""). Never squeeze them into a made-up number.
 thought: <=250 chars, plain words for the owner.
 Keep your reasoning SHORT: at most about 8 steps, then answer.
@@ -299,6 +317,7 @@ def scenario_messages(
     """Step 0b (SPEC §15.6): Ultra proposes the grid's other futures. Returns a ScenarioSet."""
     supply = "\n".join(
         f'- [{n.get("id", "")}] {n.get("title", "")} ({n.get("source", "")}): "{str(n.get("quote", ""))[:200]}"'
+        if not is_assumption(n) else _ASSUMPTION_LINE
         for n in supply_items[:3]
     ) or "(no supply news found)"
     headline = {k: headline_case.get(k) for k in ("label", "delta_c_raw", "delta_lead_time", "demand_shock")}

@@ -22,7 +22,13 @@ import numpy as np
 from pydantic import BaseModel
 
 from backend.agents import wording
-from backend.agents.prompts import analyst_messages, memo_messages, plan_crowd_messages, scenario_messages
+from backend.agents.prompts import (
+    analyst_messages,
+    is_assumption,
+    memo_messages,
+    plan_crowd_messages,
+    scenario_messages,
+)
 from backend.agents.schemas import (
     AnalystStep,
     ArchetypeSentiment,
@@ -426,7 +432,7 @@ class Analyst:
     async def scenarios(self) -> list[ShockCase]:
         """Ultra picks the grid's other futures; code applies the rules. Emits `scenarios`, then `shocks`."""
         news_case = self.shocks[0]
-        ids = {str(i.get("id")) for i in self.news_items}
+        ids = {str(i.get("id")) for i in self.news_items if not is_assumption(i)}  # the assumption isn't a source
         msgs = scenario_messages(
             self.profile, news_case.to_dict(), wording.cost_line(self.profile, news_case),
             self.supply_items, self.market_items,
