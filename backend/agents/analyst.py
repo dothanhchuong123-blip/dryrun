@@ -17,6 +17,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel
 
 from backend.agents import wording
@@ -49,6 +50,7 @@ NEAR_DUPLICATE = 2.0               # futures whose knobs are all within this man
 MAX_AI_CASES = 5
 ULTRA_TRIES = 2                    # "fails twice in a row" means two calls, each with the router's own retry
 GUT_PREFIX = "Your gut call: "
+CROWD_RETRY_TIMEOUT = 10.0         # s; a shopper half that failed at the fast tier's 5 s gets one more try this long
 
 
 # --------------------------------------------------------------------------------------
@@ -208,29 +210,40 @@ async def ask_crowd(
 ) -> tuple[CrowdSentiment, list[dict], bool]:
     """The 12 shopper groups react to one plan: two parallel Lightning calls of 6 groups (SPEC §15.6).
 
-    Returns (sentiment, `crowd` event rows, any_missing). Groups that never answer count as neutral."""
+    Returns (sentiment, `crowd` event rows, any_missing). Groups that never answer count as neutral. A plan that
+    changes neither the price nor marketing is invisible to shoppers, so it gets neutral shoppers without a call
+    (P4 step 1: Lightning invented a "bulk discount" for a stock-only plan and moved the result by +$1.2k)."""
+    if not shoppers_see(spec):
+        return neutral_crowd()
     halves = [ARCHETYPES[:6], ARCHETYPES[6:]]
     rival = float(profile.get("rival_price") or 0)
 
     async def ask(i: int, half: list[dict]) -> list[ArchetypeSentiment]:
-        """One half. Lightning sometimes answers 1 of 6 groups and still validates, so ask once more for the rest."""
+        """One half. Lightning sometimes answers 1 of 6 groups and still validates, so ask once more for the rest.
+        A call that fails (timeout, invalid JSON) is tried once more with CROWD_RETRY_TIMEOUT: a lost half would
+        count as neutral and flatter price rises (P4 step 1)."""
         got: dict[int, ArchetypeSentiment] = {}
-        for _ in range(2):
+        refills = failures = 0
+        while refills < 2 and failures < 2:
             todo = [a for a in half if a["id"] not in got]
             if not todo:
                 break
+            extra = {"timeout": CROWD_RETRY_TIMEOUT} if failures else {}
             try:
                 res = await router.call(
                     "fast", plan_crowd_messages(todo, dict(profile), spec.to_dict(), rival, batch=i),
-                    CrowdBatch, thinking=False, role="crowd",
+                    CrowdBatch, thinking=False, role="crowd", **extra,
                 )
+                parsed = res.parsed
             except Exception as e:  # noqa: BLE001  a lost crowd call means neutral shoppers, nothing more
                 log.info("crowd call failed: %s", e)
-                break
-            if res.parsed is None:
-                break
+                parsed = None
+            if parsed is None:
+                failures += 1
+                continue
+            refills += 1
             asked = {a["id"] for a in todo}
-            got.update({a.id: a for a in res.parsed.archetypes if a.id in asked})
+            got.update({a.id: a for a in parsed.archetypes if a.id in asked})
         return list(got.values())
 
     answers = await asyncio.gather(*(ask(i, half) for i, half in enumerate(halves)))
@@ -240,6 +253,15 @@ async def ask_crowd(
     sentiment = crowd_to_sentiment(batches)
     if not batches:  # neutral, as SPEC §15.6: mu 0, sigma 0.1
         sentiment = CrowdSentiment(mu=sentiment.mu, sigma=sentiment.sigma + 0.1)
+    return sentiment, _crowd_rows(got), missing
+
+
+def shoppers_see(spec: PlanSpec) -> bool:
+    """Shoppers react only to what they can see: a price change (incl. the textbook rule) or marketing."""
+    return spec.is_textbook or spec.price_change_pct != 0 or spec.marketing_change_pct != 0
+
+
+def _crowd_rows(got: Mapping[int, ArchetypeSentiment]) -> list[dict]:
     rows = []
     for a in ARCHETYPES:
         s = got.get(a["id"])
@@ -249,7 +271,13 @@ async def ask_crowd(
              "sigma": [s.sigma_a, s.sigma_b] if s else [0.1, 0.1],
              "bubble": s.bubble if s else ""}
         )
-    return sentiment, rows, missing
+    return rows
+
+
+def neutral_crowd() -> tuple[CrowdSentiment, list[dict], bool]:
+    """Neutral shoppers (mu 0, sigma 0.1) without asking anyone."""
+    zeros = np.zeros((N_ARCHETYPES, 2))
+    return CrowdSentiment(mu=zeros, sigma=zeros + 0.1), _crowd_rows({}), False
 
 
 def gut_name(name: str) -> str:
@@ -430,6 +458,9 @@ class Analyst:
         self.crowd_rows[spec.name] = rows
         await self._emit("crowd", {"plan_name": spec.name, "archetypes": rows})
         spoken = [r for r in rows if r["bubble"]]
+        if not shoppers_see(spec):
+            await self._step(rnd, "shoppers", "No price or marketing change, so shoppers see nothing new: counted as neutral.", spec.name, "engine")
+            return
         if missing:
             await self._fallback(rnd, f"Some shoppers did not answer for “{spec.name}”; counted as neutral.")
         if spoken:

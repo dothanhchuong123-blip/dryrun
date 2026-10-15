@@ -395,3 +395,62 @@ async def test_ultra_down_still_finishes_with_a_memo(tmp_path):
 
 def test_offline_script_is_valid():
     assert STEPS[0].action == "test" and len(STEPS[0].plans) == 2
+
+
+async def test_shoppers_are_not_asked_about_a_plan_they_cannot_see():
+    from backend.agents.analyst import ask_crowd
+
+    router = ScriptedRouter()
+    sentiment, rows, missing = await ask_crowd(router, EXAMPLE["profile"], PlanSpec(name="Stock", extra_stock_weeks=4))
+    assert router.calls == [] and not missing and not sentiment.mu.any()
+    assert all(r["mu"] == [0.0, 0.0] and r["bubble"] == "" for r in rows)
+    await ask_crowd(router, EXAMPLE["profile"], PlanSpec(name="Ads", marketing_change_pct=20))
+    assert [c[0] for c in router.calls] == ["fast", "fast"]
+
+
+async def test_a_failed_shopper_half_is_retried_with_the_longer_timeout():
+    from backend.agents import analyst
+    from backend.agents.schemas import CrowdBatch
+    from backend.sim.offline import FAIL, neutral_crowd
+
+    router = ScriptedRouter({CrowdBatch: [FAIL, neutral_crowd, neutral_crowd]})
+    timeouts = []
+    orig = router.call
+
+    async def spy(tier, messages, schema, **kw):
+        timeouts.append(kw.get("timeout"))
+        return await orig(tier, messages, schema, **kw)
+
+    router.call = spy
+    _, rows, missing = await analyst.ask_crowd(router, EXAMPLE["profile"], PlanSpec(name="Up", price_change_pct=5))
+    assert not missing and all(r["bubble"] for r in rows)
+    assert sorted(timeouts, key=lambda t: t or 0) == [None, None, analyst.CROWD_RETRY_TIMEOUT]
+    def second_half_down(messages):  # fails twice (5 s, then 10 s): that half stays neutral
+        return FAIL if "(batch 1)" in messages[-1]["content"].split("\n")[0] else neutral_crowd(messages)
+
+    router = ScriptedRouter({CrowdBatch: [second_half_down] * 5})
+    _, rows, missing = await analyst.ask_crowd(router, EXAMPLE["profile"], PlanSpec(name="Up", price_change_pct=5))
+    assert missing and len(router.calls) == 3 and sum(1 for r in rows if r["bubble"]) == 6
+
+
+async def test_fresh_news_skips_the_cache_and_overwrites_it(tmp_path):
+    from backend.services.news_watch import NewsWatch
+
+    class Counting(FakeClient):
+        n = 0
+
+        async def search(self, **kw):
+            Counting.n += 1
+            return await super().search(**kw)
+
+    scout = TavilyScout(tmp_path / "cache", client=Counting())
+    nw = NewsWatch(scout, make_router())
+    fb = EXAMPLE["fallback_shock"]
+    await nw.find(EXAMPLE["profile"], fallback_shock=fb, live=True)
+    first = Counting.n
+    await nw.find(EXAMPLE["profile"], fallback_shock=fb, live=True)
+    assert Counting.n == first  # cached
+    await nw.find(EXAMPLE["profile"], fallback_shock=fb, live=True, fresh=True)
+    assert Counting.n == 2 * first
+    await nw.find(EXAMPLE["profile"], fallback_shock=fb, live=False, fresh=True)  # REPLAY never refreshes
+    assert Counting.n == 2 * first

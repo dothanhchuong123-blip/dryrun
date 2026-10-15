@@ -188,11 +188,13 @@ class NewsWatch:
         }
 
     # --- public API --------------------------------------------------------------------------
-    async def find(self, profile: dict, *, fallback_shock: dict, live: bool) -> dict:
+    async def find(self, profile: dict, *, fallback_shock: dict, live: bool, fresh: bool = False) -> dict:
         """`{items, used_for_grid, news_shock, credits, dropped}`; `items` match the `news` event (EVENTS v2.1).
 
         `live=False` reads the Tavily cache only (REPLAY); `live=True` may spend credits on a cache miss.
+        `fresh=True` (with `live`) skips the cache and overwrites it with today's results.
         """
+        fresh = fresh and live
         before = self.scout.credits_used
         impact = _Impact(planner.calibrate(profile))
         n_supply = min(len(profile.get("search_terms", [])), MAX_SUPPLY_SEARCHES)
@@ -206,8 +208,9 @@ class NewsWatch:
         supply_q = list(profile.get("search_terms", []))[:n_supply]
         market_q = list(profile.get("market_terms", []))[:n_market]
         supply_batches, market_batches = await asyncio.gather(
-            asyncio.gather(*(self._search(q, time_range="week", topic="news", country="", live=live) for q in supply_q)),
-            asyncio.gather(*(self._search(q, time_range="month", topic="general", country=country, live=live) for q in market_q)),
+            asyncio.gather(*(self._search(q, time_range="week", topic="news", country="", live=live, fresh=fresh) for q in supply_q)),
+            asyncio.gather(*(self._search(q, time_range="month", topic="general", country=country, live=live, fresh=fresh)
+                             for q in market_q)),
         )
         supply_all, market_all = _merge(list(supply_batches)), _merge(list(market_batches))
         supply = [r for r in supply_all if _usable(r)][:KEEP_SUPPLY]
@@ -219,7 +222,7 @@ class NewsWatch:
             log.info("news: dropped %d non-article or too-short results before extract", dropped)
 
         top = supply[:PARSE_TOP]
-        articles = await self._articles(top, supply_q[0] if supply_q else "", live=live)
+        articles = await self._articles(top, supply_q[0] if supply_q else "", live=live, fresh=fresh)
         by_url = {r["url"]: r for r in top}
         parsed = await asyncio.gather(*(self._parse(a, profile) for a in articles))
         items: list[dict] = []

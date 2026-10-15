@@ -127,6 +127,7 @@ class Analysis:
         n_paths: int = N_PATHS,
         max_rounds: int = 3,
         cheap: bool = False,
+        fresh_news: bool = False,
         recording: Path | None = None,
         speed: float = 1.0,
         analysis_id: str | None = None,
@@ -134,7 +135,8 @@ class Analysis:
     ) -> None:
         """`example` is an example id or its loaded JSON; `profile` defaults to the example's. `mode` is "live" or
         "replay". In REPLAY, `recording` (default: the example's `analysis_<id>.jsonl`) is played if it exists;
-        otherwise the analysis is computed with cached news only. `telemetry` is this analysis's own HUD store
+        otherwise the analysis is computed with cached news only. `fresh_news` (LIVE) re-runs the Tavily searches
+        instead of reading the cache, and overwrites the cache with the new results. `telemetry` is this analysis's own HUD store
         (default: a fresh in-memory one; the router keeps logging every call to disk as usual)."""
         self.example = load_example(example) if isinstance(example, str) else (dict(example) if example else None)
         self.example_id: str | None = self.example["id"] if self.example else None
@@ -151,6 +153,7 @@ class Analysis:
         self._router_inner = router
         self.router = _RouterProxy(router, self._after_call, cheap=cheap) if router is not None else None
         self.scout = scout
+        self.fresh_news = fresh_news
         self.telemetry = telemetry if telemetry is not None else TelemetryStore(persist=False)
         if recording is None and self.mode == "replay" and self.example_id:
             recording = replay.analysis_path(self.example_id)
@@ -326,7 +329,9 @@ class Analysis:
         if self._news_watch is None:
             raise RuntimeError("no news scout configured")
         live_news = self.mode == "live" and not getattr(self.scout, "offline", False)
-        news = await self._news_watch.find(self.profile, fallback_shock=self.fallback_shock, live=live_news)
+        news = await self._news_watch.find(
+            self.profile, fallback_shock=self.fallback_shock, live=live_news, fresh=self.fresh_news
+        )
         await send("news", {"items": news["items"], "used_for_grid": news["used_for_grid"]})
         if self.router is None:
             raise RuntimeError("no router configured")

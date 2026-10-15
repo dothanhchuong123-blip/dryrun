@@ -226,7 +226,8 @@ async def test_full_run_coffee():
     seeds = [PlanSpec(name="Raise price 5% now", price_change_pct=5), PlanSpec(name="Stock up 4 weeks now", extra_stock_weeks=4)]
     sent = crowd_to_sentiment([crowd_batch([None, {"content": "\n".join(f"id={i} x" for i in range(1, 7))}]),
                                crowd_batch([None, {"content": "\n".join(f"id={i} x" for i in range(7, 13))}])])
-    direct = planner.evaluate_grid(cal, seeds, [ShockCase.from_dict(c) for c in cases], {s.name: sent for s in seeds}, 24, N_PATHS, 0)
+    # "Stock up 4 weeks now" changes nothing shoppers can see, so it is simulated with neutral shoppers (P4)
+    direct = planner.evaluate_grid(cal, seeds, [ShockCase.from_dict(c) for c in cases], {"Raise price 5% now": sent}, 24, N_PATHS, 0)
     mine = [{k: v for k, v in c.items() if k != "source"} for c in out["cells"] if c["plan_name"] in {s.name for s in seeds}]
     assert mine == direct["cells"]
 
@@ -324,7 +325,7 @@ async def test_crowd_failure_is_neutral_and_run_completes():
     out = await make_analyst(router, rec).run()
     assert out["memo"]["fallback_used"] is True
     assert any(d["kind"] == "fallback" and "neutral" in d["text"] for d in rec.of("agent_step"))
-    assert not any(d["kind"] == "shoppers" for d in rec.of("agent_step"))
+    assert not any(d["kind"] == "shoppers" and d["tier"] == "fast" for d in rec.of("agent_step"))
     for d in rec.of("crowd"):
         assert all(a["mu"] == [0.0, 0.0] and a["sigma"] == [0.1, 0.1] and a["bubble"] == "" for a in d["archetypes"])
     cal = planner.calibrate(PROFILE)
@@ -336,11 +337,8 @@ async def test_crowd_failure_is_neutral_and_run_completes():
 
 
 async def test_one_crowd_half_fails_counts_as_neutral_for_the_rest():
-    calls = {"n": 0}
-
-    def flaky(messages):
-        calls["n"] += 1
-        return FAIL if calls["n"] % 2 == 0 else crowd_batch(messages)
+    def flaky(messages):  # the second half fails every time, including the longer retry
+        return FAIL if "(batch 1)" in messages[1]["content"].split("\n")[0] else crowd_batch(messages)
 
     script = full_script()
     script[CrowdBatch] = [flaky] * 20
@@ -773,9 +771,10 @@ async def test_incomplete_crowd_batch_is_asked_again_for_the_rest():
     rec = Recorder()
     await make_analyst(FakeRouter(script), rec, max_rounds=0).run()
     for d in rec.of("crowd"):
-        assert all(a["bubble"] for a in d["archetypes"])               # nothing left neutral
+        if d["plan_name"] == "Raise price 5% now":  # the stock-only seed is not shown to shoppers (P4)
+            assert all(a["bubble"] for a in d["archetypes"])               # nothing left neutral
     assert not any(d["kind"] == "fallback" and "neutral" in d["text"] for d in rec.of("agent_step"))
-    assert len(asked) == 4 and all(len(v) == 2 for v in asked.values())
+    assert len(asked) == 2 and all(len(v) == 2 for v in asked.values())
     for _first, retry in asked.values():
         assert len(re.findall(r"^id=\d+ ", retry, flags=re.MULTILINE)) == 5      # only the 5 missing groups
 

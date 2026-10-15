@@ -49,7 +49,7 @@
 - Every LLM call:
   - uses strict `json_schema` with Pydantic validation and clamps the result;
   - retries once, then uses the tier's deterministic fallback;
-  - has its own per-tier timeout (Ultra 30 s, Super 10 s, fast tier 5 s).
+  - has its own per-tier timeout (Ultra 30 s, Super 10 s, fast tier 5 s). A shopper half that fails gets one retry at 10 s (approved 2026-10-15, P4).
 - Ultra's reasoning streams in `delta.reasoning_content`; `content` is clean JSON.
 - The engine is pure, seeded and unit-tested. No I/O in `engine/`.
 - Never put keys in the repo. Use `.env` (gitignored) and `.env.example` for placeholders.
