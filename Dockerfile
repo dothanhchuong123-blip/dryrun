@@ -14,5 +14,9 @@ COPY backend ./backend
 COPY fixtures ./fixtures
 COPY frontend/out ./frontend/out
 
-EXPOSE 8000
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Hugging Face Spaces runs the container as uid 1000 and routes to $PORT (7860). The 10k job runs in-process (local backend).
+RUN useradd -m -u 1000 app && mkdir -p /tmp/jobs && chown -R app /app /tmp/jobs
+USER app
+ENV PORT=7860 JOB_BACKEND=local JOB_DATA_DIR=/tmp/jobs
+EXPOSE 7860
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT}"]

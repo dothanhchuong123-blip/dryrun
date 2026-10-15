@@ -1,5 +1,22 @@
-# Deploying on Nebius (T09)
+# Deploying (T09)
 
+## Decision (2026-10-15): public demo on Hugging Face Spaces, not Nebius compute
+Nebius projects are suspended until a $25 top-up, and a 24/7 CPU endpoint to Dec 15 would cost about $90-195.
+We stay eligible through Token Factory runtime calls (SPEC §1). The Nebius deploy below stays as an optional short
+run (a few hours) for benchmark numbers if we choose to top up. Hugging Face needs no card.
+
+### Hugging Face Spaces (Docker, free)
+1. Create a Space: SDK **Docker**, public. Add secrets `NEBIUS_API_KEY` and `TAVILY_API_KEY` in Settings.
+2. The Space repo needs a README with this front matter (keep the project README.md untouched; use a separate Space README):
+   `---\ntitle: Market Digital Twin\nsdk: docker\napp_port: 7860\n---`
+3. Push this repo's files (Dockerfile, backend/, fixtures/, frontend/out/, pyproject.toml, uv.lock) to the Space git remote.
+   `frontend/out` is gitignored here, so build it first and force-add it in the Space copy.
+4. The image runs as uid 1000 on `$PORT` (7860) with `JOB_BACKEND=local`: the 10k verify job runs in-process.
+5. Free Spaces sleep after inactivity; set up an uptime ping on `/health` to keep it awake, and test from a logged-out browser.
+
+---
+
+## Nebius deploy (optional)
 Status: **code and images are ready; nothing is deployed yet.** This machine has no `nebius` CLI and no Docker,
 so the billable steps below are waiting for the owner's OK. Commands come from the Nebius CLI reference
 (`nebius ai endpoint create`, `nebius ai create --type job`); flags marked ⚠️ were not confirmed against a live run.
