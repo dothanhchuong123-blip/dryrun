@@ -117,11 +117,11 @@ class TavilyScout:
         key = hashlib.sha1(json.dumps({"kind": kind, **req}, sort_keys=True, default=str).encode()).hexdigest()
         return self.cache_dir / f"{kind}_{key}.json"
 
-    async def _cached(self, kind: str, req: dict, credits: int, fetch, use_cache: bool) -> dict:
+    async def _cached(self, kind: str, req: dict, credits: int, fetch, use_cache: bool, cache_only: bool = False) -> dict:
         path = self._path(kind, req)
         if use_cache and path.exists():
             return json.loads(path.read_text())
-        if self.offline:
+        if self.offline or cache_only:
             raise OfflineCacheMiss(f"offline mode: no cached {kind} for {req}")
         resp = await asyncio.wait_for(fetch(), TAVILY_TIMEOUT)
         self.credits_used += credits
@@ -133,26 +133,35 @@ class TavilyScout:
     async def search(
         self, query: str, depth: str = "advanced", time_range: str = "week",
         include_domains: list[str] | None = None, *, use_cache: bool = True,
+        topic: str = "news", country: str = "", cache_only: bool = False,
     ) -> dict:
-        req = {"query": query, "depth": depth, "time_range": time_range, "include_domains": include_domains or []}
+        """`country` boosts local results and is only sent with `topic="general"` (Tavily ignores it for news).
+        `cache_only` raises OfflineCacheMiss instead of spending a credit when the cache has no answer."""
+        req: dict[str, Any] = {"query": query, "depth": depth, "time_range": time_range, "include_domains": include_domains or []}
+        if topic != "news":  # keep the cache keys of plain news searches unchanged
+            req["topic"] = topic
+        if topic == "general" and country:
+            req["country"] = country
 
         async def fetch():
             kw: dict[str, Any] = {
-                "query": query, "search_depth": depth, "topic": "news", "time_range": time_range, "max_results": 5,
+                "query": query, "search_depth": depth, "topic": topic, "time_range": time_range, "max_results": 5,
             }
             if include_domains:
                 kw["include_domains"] = include_domains
+            if topic == "general" and country:
+                kw["country"] = country
             return await self.client.search(**kw)
 
-        return await self._cached("search", req, CREDITS_SEARCH[depth], fetch, use_cache)
+        return await self._cached("search", req, CREDITS_SEARCH[depth], fetch, use_cache, cache_only)
 
-    async def extract(self, urls: list[str], query: str = "", *, use_cache: bool = True) -> dict:
+    async def extract(self, urls: list[str], query: str = "", *, use_cache: bool = True, cache_only: bool = False) -> dict:
         req = {"urls": urls, "query": query}
 
         async def fetch():
             return await self.client.extract(urls=urls, query=query or None, extract_depth="basic", format="text")
 
-        return await self._cached("extract", req, math.ceil(len(urls) / 5), fetch, use_cache)
+        return await self._cached("extract", req, math.ceil(len(urls) / 5), fetch, use_cache, cache_only)
 
     # --- pipeline ---------------------------------------------------------------------
     async def _parse(self, articles: list[dict], hint: str) -> ShockVector | None:

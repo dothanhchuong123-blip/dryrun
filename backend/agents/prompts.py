@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 
+from backend.agents import wording
+
 HISTORY_ROWS = 8
 
 _CEO_SYSTEM = """You are the CEO of Firm {firm} in a two-firm market (Firm A vs Firm B), run over a finite horizon of ticks.
@@ -189,7 +191,10 @@ _ANALYST_SYSTEM = """You are a careful analyst advising a small business. A simu
 Each plan is a few knobs: price_change_pct (-20..20) from price_change_week (0..23); extra_stock_weeks (0..8), one extra raw-material order placed in stock_week (0..23); marketing_change_pct (-50..100); switch_supplier (bool) with alt_cost_change_pct (-30..50), alt_lead_time_weeks (1..16) and alt_shock_exposure (0..1, how much of the news shock also hits the alternative supplier, default 0.3). Give each plan a short, descriptive name (<=40 chars). "Do nothing" is always the reference and is not a choice.
 
 How to work:
-- Propose AT MOST 3 NEW, DIFFERENT plans per round. Never re-test a name that is already in the tested list. Try a different idea each time (price, stock timing, supplier, marketing, or a mix).
+- Propose AT MOST 3 NEW, DIFFERENT plans per round. Never re-test a name that is already in the tested list. Ideas to try across rounds (suggestions, not rules):
+  1. Staged timing: buy stock early (stock_week 0) to lock in today's cost, then a smaller price rise later, around when the cheap stock runs out (about onset + lead time).
+  2. Partial hedge within cash: when cash_available > 0, a 2-3 week stock-up under the cash limit, plus a supplier switch or a modest marketing push to hold customers.
+  3. Fix the weak spot: in rounds 2-3, find a plan's worst bad-case column and the P&L line behind it (cheaper stock vs customers lost, shown under the table), and propose a variant that addresses it.
 - Prefer plans that are still OK in the bad case. A small business cannot afford to gamble: look at the "bad case" column (the 1-in-20 outcome), not only the average.
 - Prefer plans whose gain does NOT depend on the rival running short: compare "steady" (rival never runs out) with the mean. A gain that exists only because the rival runs short is luck, not a plan.
 - Look at cash: "cash" is the most extra cash a plan ties up. Never pick a plan marked OVER CASH without saying so in why.
@@ -256,6 +261,11 @@ Today's headline future is already in the grid. Add 2-5 OTHER futures that a sen
 - at least one milder than the headline and one worse;
 - at least one that is not about cost (rival, new player, demand or delays) when the local market news gives any reason;
 - each different from the others; never all knobs zero.
+Futures worth considering when the news gives any reason (existing knobs only):
+- cost up AND demand down together;
+- the rival holds or cuts its price (rival_price_change_pct -5 to -10);
+- delays longer than the supplier lead time (delta_lead_time +3 to +6);
+- a false alarm: the input price rise fades (delta_c_raw slightly negative, e.g. -0.05, or small). This is the future that punishes over-stocking.
 For each: label (<=40 chars, plain words, e.g. "Beans +31% and Highland cuts 5%"), likelihood ("likely"|"possible"|"unlikely"), why (<=120 chars), source_ids (ids of the news items it rests on, or [] for a standard stress test, then say so in why).
 Risks you found that these knobs cannot express (a new law, a strike, a quality problem): put them in unmodelled (0-4, text <=100 chars, source_id or ""). Never squeeze them into a made-up number.
 thought: <=250 chars, plain words for the owner.
@@ -289,6 +299,7 @@ def scenario_messages(
         [
             "Business (money in USD):\n" + _profile_block(profile),
             "Today's headline future (already in the grid): " + json.dumps(headline, ensure_ascii=False)
+            + "\nThe headline as two numbers: " + wording.input_changes_line(profile, headline_case)
             + "\nWhat it does to their cost: " + cost_line,
             "Supply news:\n" + supply,
             f'Local market news ({profile.get("country") or "country unknown"}):\n' + _market_block(market_items),
@@ -299,7 +310,7 @@ def scenario_messages(
 
 
 _MEMO_SYSTEM = """You write a short decision memo for a busy small-business owner, in plain words, no jargon.
-Return JSON: headline (<=90 chars, the recommendation), why (<=400 chars, why this plan beats the others), watch_out (<=300 chars, the main risk and what the bad case looks like), recheck_when (<=150 chars, what news or date should make them look again).
+Return JSON: headline (<=80 chars, the recommendation), why (<=330 chars, why this plan beats the others), watch_out (<=250 chars, the main risk and what the bad case looks like), recheck_when (<=120 chars, what news or date should make them look again). Finish every sentence inside these limits.
 Rules:
 - Do NOT write any number, percentage or dollar amount that is not in the numbers provided. If you want to point at a result, say "the figures above". The program adds the real numbers next to your words.
 - Ground your reasons in the news provided. Do not invent facts.
