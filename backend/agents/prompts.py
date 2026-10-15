@@ -195,7 +195,7 @@ How to work:
 - Look at cash: "cash" is the most extra cash a plan ties up. Never pick a plan marked OVER CASH without saying so in why.
 - Output decisions only. Never invent numbers. Every number you mention must come from the results table below.
 - Set action to "finish" when you are happy with your pick or no new idea is worth testing; otherwise "test" with 1-3 new plans. With "finish", plans may be empty.
-- thought: <=300 chars, plain words for the business owner. pick: the name of the plan you prefer so far (<=40 chars; use "Do nothing" if nothing beats it). why: <=300 chars.
+- thought: <=250 chars, plain words for the business owner. pick: the name of the plan you prefer so far (<=40 chars; use "Do nothing" if nothing beats it). why: <=300 chars.
 
 Keep your reasoning SHORT: at most about 8 steps, then answer.
 Reply with JSON only, matching the schema: thought, action ("test"|"finish"), plans (0-3 plan objects with every field), pick, why."""
@@ -258,7 +258,7 @@ Today's headline future is already in the grid. Add 2-5 OTHER futures that a sen
 - each different from the others; never all knobs zero.
 For each: label (<=40 chars, plain words, e.g. "Beans +31% and Highland cuts 5%"), likelihood ("likely"|"possible"|"unlikely"), why (<=120 chars), source_ids (ids of the news items it rests on, or [] for a standard stress test, then say so in why).
 Risks you found that these knobs cannot express (a new law, a strike, a quality problem): put them in unmodelled (0-4, text <=100 chars, source_id or ""). Never squeeze them into a made-up number.
-thought: <=300 chars, plain words for the owner.
+thought: <=250 chars, plain words for the owner.
 Keep your reasoning SHORT: at most about 8 steps, then answer.
 Reply with JSON only: thought, cases, unmodelled."""
 
