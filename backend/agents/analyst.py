@@ -48,6 +48,7 @@ SEARCH_STOCKS = (0, 2, 4)          # ...times extra stock weeks
 NEAR_DUPLICATE = 2.0               # futures whose knobs are all within this many points are the same future
 MAX_AI_CASES = 5
 ULTRA_TRIES = 2                    # "fails twice in a row" means two calls, each with the router's own retry
+GUT_PREFIX = "Your gut call: "
 
 
 # --------------------------------------------------------------------------------------
@@ -202,6 +203,60 @@ def _unique_name(name: str, taken: set[str]) -> str:
     return base
 
 
+async def ask_crowd(
+    router: Any, profile: Mapping[str, Any], spec: PlanSpec
+) -> tuple[CrowdSentiment, list[dict], bool]:
+    """The 12 shopper groups react to one plan: two parallel Lightning calls of 6 groups (SPEC §15.6).
+
+    Returns (sentiment, `crowd` event rows, any_missing). Groups that never answer count as neutral."""
+    halves = [ARCHETYPES[:6], ARCHETYPES[6:]]
+    rival = float(profile.get("rival_price") or 0)
+
+    async def ask(i: int, half: list[dict]) -> list[ArchetypeSentiment]:
+        """One half. Lightning sometimes answers 1 of 6 groups and still validates, so ask once more for the rest."""
+        got: dict[int, ArchetypeSentiment] = {}
+        for _ in range(2):
+            todo = [a for a in half if a["id"] not in got]
+            if not todo:
+                break
+            try:
+                res = await router.call(
+                    "fast", plan_crowd_messages(todo, dict(profile), spec.to_dict(), rival, batch=i),
+                    CrowdBatch, thinking=False, role="crowd",
+                )
+            except Exception as e:  # noqa: BLE001  a lost crowd call means neutral shoppers, nothing more
+                log.info("crowd call failed: %s", e)
+                break
+            if res.parsed is None:
+                break
+            asked = {a["id"] for a in todo}
+            got.update({a.id: a for a in res.parsed.archetypes if a.id in asked})
+        return list(got.values())
+
+    answers = await asyncio.gather(*(ask(i, half) for i, half in enumerate(halves)))
+    batches = [CrowdBatch(archetypes=a) for a in answers if a]
+    got = {a.id: a for b in batches for a in b.archetypes}
+    missing = len(got) < N_ARCHETYPES
+    sentiment = crowd_to_sentiment(batches)
+    if not batches:  # neutral, as SPEC §15.6: mu 0, sigma 0.1
+        sentiment = CrowdSentiment(mu=sentiment.mu, sigma=sentiment.sigma + 0.1)
+    rows = []
+    for a in ARCHETYPES:
+        s = got.get(a["id"])
+        rows.append(
+            {"id": a["id"], "label": a["label"],
+             "mu": [s.mu_a, s.mu_b] if s else [0.0, 0.0],
+             "sigma": [s.sigma_a, s.sigma_b] if s else [0.1, 0.1],
+             "bubble": s.bubble if s else ""}
+        )
+    return sentiment, rows, missing
+
+
+def gut_name(name: str) -> str:
+    """Row label of the owner's gut-call plan (review 2026-10-15, wave-3 verdict §C 8.1)."""
+    return (GUT_PREFIX + (name.strip() or "my plan"))[:40]
+
+
 class Analyst:
     def __init__(
         self,
@@ -216,10 +271,12 @@ class Analyst:
         max_plans: int = 8,
         n_paths: int = 1000,
         seed: int = 0,
+        gut_plan: PlanSpec | Mapping[str, Any] | None = None,
     ) -> None:
         """`news` is `NewsWatch.find`'s result (or just its items). `shocks` is the grid's columns so far: leave it
         empty (or pass only the `news` column) and `scenarios()` builds the rest with Ultra; pass 2 or more and
-        they are used as given (the caller has already emitted them)."""
+        they are used as given (the caller has already emitted them). `gut_plan` is the owner's own idea: it is
+        tested with the seed plans as "Your gut call: {name}" (source `user`), and Ultra is told whose idea it is."""
         self.router, self.cal, self.profile, self._emit_fn = router, cal, dict(profile), emit
         self.max_rounds, self.max_plans, self.n_paths, self.seed = max_rounds, max_plans, n_paths, seed
         if isinstance(news, Mapping):
@@ -249,6 +306,15 @@ class Analyst:
         self.ultra_pick: str | None = None
         self._stale = False            # plans were tested after Ultra last picked, so it has not seen their results
         self.search_fallback = False   # Ultra failed in a round: the fixed search ran, so the memo is a template
+        self.gut: PlanSpec | None = None
+        self.gut_is_do_nothing = False
+        if gut_plan is not None:
+            g = gut_plan if isinstance(gut_plan, PlanSpec) else PlanSpec.from_dict(gut_plan)
+            g = g.clamp()
+            if _slug_spec(g) == _slug_spec(PlanSpec.do_nothing()):
+                self.gut_is_do_nothing = True
+            else:
+                self.gut = replace(g, name=gut_name(g.name))
 
     # --- plumbing ----------------------------------------------------------------------------
     async def _emit(self, event: str, data: dict) -> None:
@@ -356,48 +422,7 @@ class Analyst:
 
     # --- shoppers ----------------------------------------------------------------------------
     async def _crowd(self, spec: PlanSpec) -> tuple[CrowdSentiment, list[dict], bool]:
-        """Two parallel calls of 6 groups. Returns (sentiment, event rows, any_missing)."""
-        halves = [ARCHETYPES[:6], ARCHETYPES[6:]]
-        rival = float(self.profile.get("rival_price") or 0)
-
-        async def ask(i: int, half: list[dict]) -> list[ArchetypeSentiment]:
-            """One half. Lightning sometimes answers 1 of 6 groups and still validates, so ask once more for the rest."""
-            got: dict[int, ArchetypeSentiment] = {}
-            for _ in range(2):
-                todo = [a for a in half if a["id"] not in got]
-                if not todo:
-                    break
-                try:
-                    res = await self.router.call(
-                        "fast", plan_crowd_messages(todo, self.profile, spec.to_dict(), rival, batch=i),
-                        CrowdBatch, thinking=False, role="crowd",
-                    )
-                except Exception as e:  # noqa: BLE001  a lost crowd call means neutral shoppers, nothing more
-                    log.info("crowd call failed: %s", e)
-                    break
-                if res.parsed is None:
-                    break
-                asked = {a["id"] for a in todo}
-                got.update({a.id: a for a in res.parsed.archetypes if a.id in asked})
-            return list(got.values())
-
-        answers = await asyncio.gather(*(ask(i, half) for i, half in enumerate(halves)))
-        batches = [CrowdBatch(archetypes=a) for a in answers if a]
-        got = {a.id: a for b in batches for a in b.archetypes}
-        missing = len(got) < N_ARCHETYPES
-        sentiment = crowd_to_sentiment(batches)
-        if not batches:  # neutral, as SPEC §15.6: mu 0, sigma 0.1
-            sentiment = CrowdSentiment(mu=sentiment.mu, sigma=sentiment.sigma + 0.1)
-        rows = []
-        for a in ARCHETYPES:
-            s = got.get(a["id"])
-            rows.append(
-                {"id": a["id"], "label": a["label"],
-                 "mu": [s.mu_a, s.mu_b] if s else [0.0, 0.0],
-                 "sigma": [s.sigma_a, s.sigma_b] if s else [0.1, 0.1],
-                 "bubble": s.bubble if s else ""}
-            )
-        return sentiment, rows, missing
+        return await ask_crowd(self.router, self.profile, spec)
 
     async def _announce_crowd(self, rnd: int, spec: PlanSpec, crowd: tuple[CrowdSentiment, list[dict], bool]) -> None:
         sentiment, rows, missing = crowd
@@ -460,13 +485,19 @@ class Analyst:
         return "\n".join(f'- {name}: {note}' for name, note in self._notes.items())
 
     async def _seed(self) -> None:
-        for spec in SEED_PLANS:
-            self._register(spec, "seed", 0)
-            await self._emit("plan", {"name": spec.name, "source": "seed", "round": 0, "spec": spec.to_dict()})
-        crowds = await asyncio.gather(*(self._crowd(s) for s in SEED_PLANS))
-        for spec, crowd in zip(SEED_PLANS, crowds, strict=True):
+        seeds = list(SEED_PLANS)
+        if self.gut is not None:  # a gut call equal to a seed plan takes that seed's row
+            seeds = [s for s in seeds if _slug_spec(s) != _slug_spec(self.gut)]
+        plans = [(s, "seed") for s in seeds] + ([(self.gut, "user")] if self.gut is not None else [])
+        for spec, source in plans:
+            self._register(spec, source, 0)
+            await self._emit("plan", {"name": spec.name, "source": source, "round": 0, "spec": spec.to_dict()})
+        if self.gut_is_do_nothing:
+            await self._step(0, "result", "Your gut call is to wait and see. That is the “Do nothing” line every plan is scored against.")
+        crowds = await asyncio.gather(*(self._crowd(s) for s, _ in plans))
+        for (spec, _), crowd in zip(plans, crowds, strict=True):
             await self._announce_crowd(0, spec, crowd)
-        for spec in SEED_PLANS:
+        for spec, _ in plans:
             await self._evaluate(spec, 0)
         await self._emit_summary()
 
@@ -493,6 +524,7 @@ class Analyst:
             self.profile, self.supply_items, wording.results_table(self.cells, self._shock_dicts()),
             self._crowd_notes(), rnd, self.max_rounds, [DO_NOTHING, *(s.name for s in self.specs)],
             futures_block=wording.futures_block(self._shock_dicts()),
+            owner_idea=self.gut.name if self.gut is not None else None,
         )
         step, latency = await self._ultra(msgs, AnalystStep, role="analyst", rnd=rnd, thinking=True)
         if step is None:

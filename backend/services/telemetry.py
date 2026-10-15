@@ -46,8 +46,10 @@ class CallRecord(BaseModel):
 
 
 class TelemetryStore:
-    def __init__(self, directory: Path | None = None) -> None:
+    def __init__(self, directory: Path | None = None, *, persist: bool = True) -> None:
+        """`persist=False` keeps records in memory only (a per-analysis view, or tests)."""
         self.dir = directory or TELEMETRY_DIR
+        self.persist = persist
         self.records: list[CallRecord] = []
         self.job: dict = {"id": None, "status": "idle"}
         self._lock = threading.Lock()
@@ -60,6 +62,8 @@ class TelemetryStore:
             rec.ts = datetime.now(UTC).isoformat()
         with self._lock:
             self.records.append(rec)
+            if not self.persist:
+                return
             self.dir.mkdir(parents=True, exist_ok=True)
             with self.path_for().open("a") as f:
                 f.write(rec.model_dump_json() + "\n")

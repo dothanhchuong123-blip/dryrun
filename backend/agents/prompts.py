@@ -234,7 +234,9 @@ def analyst_messages(
     max_rounds: int,
     tested_names: list[str],
     futures_block: str = "",
+    owner_idea: str | None = None,
 ) -> list[dict]:
+    """`owner_idea` is the row name of the owner's own gut-call plan, if they gave one."""
     parts = [
         f"Round {round} of {max_rounds}.",
         "Business (money in USD, profit = gross profit over 24 weeks):\n" + _profile_block(profile),
@@ -244,8 +246,13 @@ def analyst_messages(
         "for today's news also steady = rival never runs out, cash = most extra cash tied up):\n" + results_table,
         "How shoppers reacted:\n" + (crowd_notes.strip() or "(no notes yet)"),
         "Already tested (do not repeat these names): " + (", ".join(tested_names) or "none"),
-        "Decide now.",
     ]
+    if owner_idea:
+        parts.append(
+            f"\"{owner_idea}\" is the owner's own idea, tested like the others. Treat it fairly: if your pick beats it, "
+            "say why in plain words in why; if it is the best plan, pick it and say so."
+        )
+    parts.append("Decide now.")
     return [{"role": "system", "content": _ANALYST_SYSTEM}, {"role": "user", "content": "\n\n".join(parts)}]
 
 

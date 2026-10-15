@@ -46,5 +46,18 @@
     "guessed_fields": [
       "exposed_cost_share"
     ]
-  }
+  },
+  "gut_plans": [
+    {
+      "name": "Raise price 10% now",
+      "price_change_pct": 10
+    },
+    {
+      "name": "Stock up 4 weeks now",
+      "extra_stock_weeks": 4
+    },
+    {
+      "name": "Wait and see"
+    }
+  ]
 }

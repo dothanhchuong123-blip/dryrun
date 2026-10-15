@@ -147,7 +147,10 @@ def test_plan_crowd_prompt():
 def test_example_files(ex_id):
     ex = EXAMPLES[ex_id]
     assert ex["id"] == ex_id
-    assert set(ex) == {"id", "title", "subtitle", "text", "scenario_id", "seed_queries", "fallback_shock", "profile"}
+    assert set(ex) == {
+        "id", "title", "subtitle", "text", "scenario_id", "seed_queries", "fallback_shock", "profile", "gut_plans"
+    }
+    assert len(ex["gut_plans"]) == 3 and all(len(g["name"]) <= 25 for g in ex["gut_plans"])  # fits "Your gut call: "
     assert (ROOT / "fixtures" / "scenarios" / f"{ex['scenario_id']}.json").exists()
     assert ex["seed_queries"] and {"delta_c_raw", "delta_lead_time", "demand_shock"} <= set(ex["fallback_shock"])
     assert 2 <= len(re.findall(r"[.!?](?:\s|$)", ex["text"])) <= 4
