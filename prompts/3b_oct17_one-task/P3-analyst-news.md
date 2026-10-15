@@ -111,3 +111,33 @@ SPEC §15 v3.1 and EVENTS v2.1 win over anything above that conflicts.
   - The `cost_line` arithmetic matches `planner.cost_change`.
   - The memo has `not_modelled.fixed` and the bridge.
 - **Live run** now also prints the futures Ultra picked and its `unmodelled` list.
+
+## Review additions (2026-10-15, from `docs/wrapups/wave3-argon-verdict.md` §B and §C)
+
+**Order:** build and test offline as usual, but **do the live run only after P2b is committed.** P2b recalibrates the engine, and the live grid must use the new numbers.
+
+- **`_ANALYST_SYSTEM`** (`backend/agents/prompts.py`). Replace "Try a different idea each time…" with ideas to try across rounds. They are suggestions, not rules:
+  1. **Staged timing:** buy stock early (`stock_week` 0) to lock in today's cost, then a smaller price rise later, around when the cheap stock runs out (≈ onset + lead time).
+  2. **Partial hedge within cash:** when `cash_available > 0`, a 2–3 week stock-up that stays under the cash limit, combined with a supplier switch or a modest marketing push to hold customers.
+  3. **Fix the weak spot:** in rounds 2–3, look at the plan's worst bad-case column and which P&L line drives it (cheaper stock vs customers lost), and propose a variant that addresses it.
+
+  Keep the existing rules (bad case, steady rival, cash). Keep the prompt under its current token budget.
+- **`_SCENARIO_SYSTEM`**: add "Futures worth considering when the news gives any reason", using the existing knobs only:
+  - cost up **and** demand down;
+  - the rival holds or cuts its price (`rival_price_change_pct` −5 to −10);
+  - delays longer than the supplier lead time (`delta_lead_time` +3 to +6);
+  - a **false alarm** (the input price rise fades: `delta_c_raw` near 0 or slightly negative). This is the case that punishes over-stocking.
+- **The input change vs your cost change.** In `scenario_messages`, show the headline as two named numbers: "input price +31% (use this for delta_c_raw); your cost +26% after the 85% share (do not use this)". A test checks the text.
+- **Step 0b validators** (`Analyst.scenarios()`), each logged in a `fallback`-style `agent_step` only when it changes something:
+  1. `rival_price_change_pct` or `share_shift_pct` with 0 < |v| < 1 → × 100 (Ultra sent a fraction).
+  2. If no case has `delta_c_raw` below the news case's, insert `default_shock_cases(...)`'s `mild` (`origin: "default"`).
+  3. Drop market ids (`m…`) from `source_ids` on a case whose demand, rival and share knobs are all 0 (cost-only case). Keep the case.
+  4. The existing rules: clamp, zero cases, near-duplicates, unknown ids, ≤ 5.
+
+  Add one test per new rule.
+- **News URL filter** (`news_watch.py`): before any extract, drop URLs matching `(?i)/sitemap|/tag/|/tags/|/page/\d+|/index(\.html?)?$|/quote/|/ticker|/markets/data` and results whose snippet is ≤ 80 characters. Log the count dropped. This saves extract credits; see the FEEDBACK_LOG row from 2026-10-14.
+- **Memo fields for the UI** (`memo` event, code-built, never LLM numbers):
+  - `actions`: the pick's `PlanSpec` as week-by-week steps (`[{week, text}]`, e.g. `{week: 0, text: "Order 4 extra weeks of beans (about $7.3k)"}`, `{week: 5, text: "Raise price 10% ($11.00 → $12.10)"}`). Build them in `wording.plan_actions(plan, profile, cell)`.
+  - `runner_up`: `{name, mean_delta_usd, p5_delta_usd}` of the second-best plan in the `news` column, so F3 can show "Why not {runner-up}?". The text can come from Ultra's `why` only if it names that plan; otherwise use a template.
+
+  Add both to EVENTS v2.1's `memo` row, marked "(review)", **after asking the user** (it's a contract).

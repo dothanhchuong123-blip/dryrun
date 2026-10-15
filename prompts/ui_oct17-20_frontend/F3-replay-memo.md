@@ -61,3 +61,20 @@ DESIGN.md §12.3a and EVENTS v2.1 win over anything above that conflicts.
   - the cash line when `peak_cash_usd > 0` ("Needs about $Z up front · pays back by week W", or "Over the $C you said you have");
   - a closing **"Not in these numbers"** box with `not_modelled.fixed` and `not_modelled.found` (with source links).
   - All of these go into `memo_markdown` too, which is P4's job; here they only need to render.
+
+## Review additions (2026-10-15, `docs/wrapups/wave3-argon-verdict.md` §C, §C2)
+- **Replay, the one change that explains stock-up:** each shop's stock bar is split in two colours: stock bought at the old cost vs at the new cost (`old_cost_share` from P2b). Under it: "Cost $6.50 · margin $4.50" from `unit_cost`, which updates weekly. The viewer sees your cheap stock earning a margin while the rival's has already gone up.
+- **Speech bubbles** never cover the dot-group labels (D7 bug: "Saigon never ran out" over "25 buy from Highland"). Place them above or below the dot groups, max 2.
+- **Memo order:**
+  1. headline;
+  2. the week-by-week **actions** strip (P3's `actions`);
+  3. the 3 numbers;
+  4. the P&L waterfall and the skill vs luck bar;
+  5. the cash line;
+  6. Why;
+  7. **"Why not {runner-up}?"** (P3's `runner_up`);
+  8. Watch out for;
+  9. Recheck when;
+  10. Sources;
+  11. "Not in these numbers".
+- **"Recheck when"** carries a "Check the news now" button that calls `/api/analyses/{id}/news-check` (1 Tavily credit, capped) and shows the result inline.

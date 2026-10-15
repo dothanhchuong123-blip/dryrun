@@ -59,6 +59,7 @@ The app now tests a user's own business plans against live news. The spec is **S
 
 ```
 Oct 15–16   P1 ✓ · D7 ✓ · P2 ✓ ──┐   F0 frontend shell v2 (Claude Sonnet), alongside P2
+Oct 16–17   P2b engine recalibration (Claude Opus) ◄┤   (from the Argon review; before any live run or recording)
 Oct 17      P3 analyst loop + futures + news (Claude) ◄──────┘   F1 · F2 · F3 screens (3 Claude sessions, parallel, after F0)
 Oct 18      P4 orchestrator + CLI (Claude Opus) = MILESTONE A    (F1–F3 finish)
 Oct 19–20   T08 API v2 → T09 Nebius deploy = MILESTONE B
@@ -73,9 +74,12 @@ Oct 21–24   connect frontend ↔ backend, polish · Argon reviews A2 · A4 · 
 | [x] | D7 pivot mockup, screens 1–6 (numbers to refresh for v3.1: optional Claude task) | Argon #2 → you approved | nothing | `prompts/3_oct15-16_pivot-parallel/D7-pivot-mockup.md` |
 
 ### Wave 3b · Oct 15–17 · `prompts/3b_oct17_one-task/` + F0
+**Review (Oct 15):** Argon's wave 3 review was checked against the code: `docs/wrapups/wave3-argon-verdict.md`. The engine is too insensitive to price, so "Raise 5%" wins with no shock and cost-plus beats every plan. **P2b fixes this, and must land before P3's live run, P4's recordings and F0's mock numbers.** P3, P4 and F0–F3 each gained a "Review additions" section.
+
 | Done | Task | Builder | Needs | File |
 |---|---|---|---|---|
-| [ ] | P3 analyst loop, futures step, shopper reactions, news watch | Claude Sonnet 5.5 (effort high) | P1, P2 | `prompts/3b_oct17_one-task/P3-analyst-news.md` |
+| [ ] | **P2b engine recalibration**: price sensitivity, outside option, per-path uncertainty (SPEC §15.3 change approved 2026-10-15) | Claude **Opus 5.5** (effort high) | P2 | `prompts/3b_oct17_one-task/P2b-engine-recalibration.md` |
+| [ ] | P3 analyst loop, futures step, shopper reactions, news watch (offline part can run alongside P2b; **live run after P2b**) | Claude Sonnet 5.5 (effort high) | P1, P2 (+P2b for the live run) | `prompts/3b_oct17_one-task/P3-analyst-news.md` |
 | [ ] | F0 frontend shell v2: types, store, stream, mock, page shell | Claude Sonnet 5.5 (effort medium). **Can start now**, alongside P2 | EVENTS v2.1 | `prompts/ui_oct17-20_frontend/F0-frontend-shell-v2.md` |
 
 ### Wave 3c · Oct 18 · **Milestone A** (headless end-to-end analysis) · `prompts/3c_oct18_one-task/`

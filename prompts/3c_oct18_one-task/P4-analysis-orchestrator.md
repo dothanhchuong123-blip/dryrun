@@ -62,3 +62,10 @@ You are wiring the pivot together: one "analysis" from business profile to memo,
 Report the spend from telemetry, the final grid and the memo for step 2. Add any quirks to `docs/FEEDBACK_LOG.md`.
 
 Commit as `P4: analysis orchestrator, cell replay, CLI (Milestone A)`. Commit the recordings separately as `P4: record example analyses`.
+
+## Review addition (2026-10-15): the owner's gut-check plan
+From `docs/wrapups/wave3-argon-verdict.md` §C 8.1. It's the video's hook: the owner's instinct gets tested next to Ultra's plans.
+- `start_analysis(..., gut_plan: PlanSpec | None = None)`. If given, it's simulated with the seed plans, named "Your gut call: {name}", `source: "user"` (the existing user-plan path). Ultra sees it in the results table like any other plan, and the prompt says "the owner's own idea" so Ultra can explain why it beats it, or doesn't.
+- 3 preset gut plans per example, in `fixtures/examples/*.json` as `gut_plans` (e.g. coffee: "Raise price 10% now", "Stock up 4 weeks now", "Wait and see" = Do nothing, which is shown as a no-op note instead of a row).
+- Record each example replay **with** a gut plan (coffee: "Raise price 10% now"). **Record only after P2b** (recalibrated engine).
+- API: `POST /api/analyses` takes an optional `gut_plan` (a `PlanSpec`). That's an EVENTS.md change, so ask the user, then mark it "(review)" in the REST table.

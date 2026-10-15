@@ -63,3 +63,14 @@ DESIGN.md §12.3a and EVENTS v2.1 win over anything above that conflicts.
   - **The cell tooltip is the P&L breakdown:** the five lines + total; the two rival lines ("With a rival who never runs out" / "Extra if {rival} runs short"); then "Cash tied up $Z · back by week W".
   - An "Over your cash" badge on `over_cash` cells.
   - In "+ Add your own plan", show upfront cash live (extra stock weeks × weekly sales × unit cost), with the badge when it's over `cash_available`.
+
+## Review additions (2026-10-15, `docs/wrapups/wave3-argon-verdict.md` §C, §C2)
+- **Cells:** 2 lines only: the big mean (tabular) and a muted "bad case …". A small "Over cash" corner tag only when it applies. The `news` column gets a light full-height tint.
+- **Tooltip** (≈ 280 px; on phones a bottom sheet opened by tap, and a second tap opens the replay), in three tiers:
+  1. plan · future · mean · "better in N% of runs" · bad case;
+  2. the 5-line P&L breakdown as small diverging bars that add up to the total;
+  3. the **skill vs luck bar**: a two-tone bar, solid indigo = "With a rival who never runs out" and hatched amber = "Extra if {rival} runs short". Then "Cash tied up $Z · back by week W".
+- **Cash slider** in the grid header: "Cash you could put in: $8,000" (from `cash_available`; hidden when 0). Dragging it recomputes over-cash tags and the Best today / Safest badges client-side with `lib/labels.ts`. No backend call.
+- **Analyst log:** collapsible round cards ("Futures to test", "Round 1", "Round 2", "Round 3"). A finished round collapses to a one-line takeaway built from its `result` steps. "Show full Nemotron thinking" opens automatically while that round's reasoning streams, and closes when the round's JSON arrives. Fix the D7 bug where the first row is clipped under the checklist (scroll padding).
+- **Phone:** the first column (plan names) is sticky during horizontal scroll.
+- **Dark mode:** 1 px semantic borders on green and red cells (they blend into the card in D7).

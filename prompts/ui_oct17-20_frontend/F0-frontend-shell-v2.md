@@ -77,3 +77,7 @@ DESIGN.md §12.3a and EVENTS v2.1 win over anything above that conflicts.
   - bridges that really sum to the cell mean;
   - a "Futures to test" `agent_step` before the seed plans.
   - Use the coffee_hcmc profile numbers ($11 price, $6.50 cost, 280 bags/week, cash $8,000), not D7's $38/$21. Every mock number must check out with a calculator.
+
+## Review additions (2026-10-15, `docs/wrapups/wave3-argon-verdict.md`)
+- **Mock data = real engine output.** Generate the mock stream's numbers from the planner on `coffee_hcmc` ($11.00 a bag, $6.50 cost), not hand-typed D7 numbers ($38/$21). Add `scripts/make_mock_stream.py`, which writes `frontend/mock/coffee_hcmc.json` from `planner.evaluate_grid` and `simulate_detail`. Re-run it after P2b lands. Until then, use the current planner and note that the numbers will change.
+- **`frontend/lib/labels.ts`**: a pure `labels(cells, shocks, cashAvailable) → {bestToday, safest}` that mirrors `planner._labels` exactly (over-cash exclusion, "unlikely" columns skipped, ties to the earlier plan), plus `overCash(cell, cash)`. Test it against a fixture of planner output. F2's cash slider uses it.

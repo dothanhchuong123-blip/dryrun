@@ -58,3 +58,9 @@ DESIGN.md §12.3a and EVENTS v2.1 win over anything above that conflicts.
   - supply cards show `cost_line` verbatim under the quote;
   - market cards (`kind: "market"`) go in a lower group, "In your market ({country})", with the chip "Used to pick futures" and no impact chip;
   - the loading text mentions the country.
+
+## Review additions (2026-10-15, `docs/wrapups/wave3-argon-verdict.md` §C, §C2)
+- **First 10 seconds:** one line above the two cards: "Today's news hits your costs. Nemotron proposes plans; a simulator tests each one 1,000 times. Every number comes from the simulator, not the AI." (≤ 25 words; adjust to the copy rules).
+- **All 3 example chips enabled** (no "(soon)"). In Example replay mode, the coffee example is pre-filled on load, with its "guessed" tags visible.
+- **Gut-check row** (needs P4's `gut_plan`): under the parsed fields, "What would you do?" with 3 buttons from the example's `gut_plans` (e.g. "Raise price 10% now", "Stock up 4 weeks", "Wait and see"). The choice is sent with the analysis and later shows as the indigo "Your gut call" row in the grid. It's optional; skipping it is fine.
+- **Screen 2, two labelled groups:** "Your supply route" (supply cards with the cost line) and "In your market ({country})" (market cards, chip "Used to pick futures"). One small caption under each group names the search: "Tavily news search, last week" / "Tavily local search, {country}, last month".
