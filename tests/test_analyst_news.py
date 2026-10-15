@@ -914,3 +914,37 @@ async def test_ultra_cannot_cite_the_assumption():
     assert [c.source_ids for c in ai] == [["m1"], []]
     assert a.unmodelled == [{"text": "Port strike", "source_id": None}, {"text": "A chain opens", "source_id": "m1"}]
     assert a.shocks[0].id == "news" and a.shocks[0].source_ids == ["n1"]     # its own column still links its card
+
+
+async def test_pinned_assumption_keeps_articles_as_cards(tmp_path):
+    nw, _, _ = watcher(tmp_path)
+    res = await nw.find(PROFILE, fallback_shock=FALLBACK, live=True, pin_assumption=True)
+    sup = [i for i in res["items"] if i["kind"] == "supply"]
+    assert [i["id"] for i in sup] == ["n1", "n2", "n3"]
+    assert sup[0]["source"] == "Example assumption" and sup[0]["applied"] is True
+    assert all(i["applied"] is False and i["url"] for i in sup[1:]) and sup[1]["shock"]["delta_c_raw"] == 0.31
+    assert res["used_for_grid"] == "n1" and res["news_shock"] == FALLBACK_KNOBS
+
+
+async def test_assumed_headline_is_labelled_assumed():
+    a = make_analyst(FakeRouter({}), Recorder(), news=ASSUMPTION_NEWS)
+    assert a.shocks[0].label == "Beans +35% (assumed)"
+    assert make_analyst(FakeRouter({}), Recorder()).shocks[0].label.endswith("(today's news)")
+
+
+async def test_ultra_cannot_invent_a_cheaper_supplier():
+    rec = Recorder()
+    script = full_script()
+    script[AnalystStep] = [
+        step("test", [{"name": "Switch supplier -20%", "switch_supplier": True, "alt_cost_change_pct": -20},
+                      {"name": "Switch supplier +5%", "switch_supplier": True, "alt_cost_change_pct": 5}]),
+        step("finish"),
+    ]
+    a = make_analyst(FakeRouter(script), rec)
+    await a.run()
+    names = [s.name for s in a.specs]
+    assert "Switch supplier +5%" in names and "Switch supplier -20%" not in names
+    notes = [d["text"] for d in rec.of("agent_step") if d["kind"] == "fallback"]
+    assert any("Skipped “Switch supplier -20%”" in n and "20% cheaper" in n for n in notes)
+    assert not a.fallback_used
+    assert "alt_cost_change_pct (0..50" in prompts.analyst_messages(PROFILE, [], "", "", 1, 3, [])[0]["content"]

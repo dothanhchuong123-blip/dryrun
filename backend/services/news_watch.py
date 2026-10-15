@@ -232,11 +232,15 @@ class NewsWatch:
         }
 
     # --- public API --------------------------------------------------------------------------
-    async def find(self, profile: dict, *, fallback_shock: dict, live: bool, fresh: bool = False) -> dict:
+    async def find(
+        self, profile: dict, *, fallback_shock: dict, live: bool, fresh: bool = False, pin_assumption: bool = False,
+    ) -> dict:
         """`{items, used_for_grid, news_shock, credits, dropped}`; `items` match the `news` event (EVENTS v2.1).
 
         `live=False` reads the Tavily cache only (REPLAY); `live=True` may spend credits on a cache miss.
         `fresh=True` (with `live`) skips the cache and overwrites it with today's results.
+        `pin_assumption=True` (the example recordings) always uses the example's labelled assumption for the `news`
+        column; the articles found are still shown as cards, never applied.
         """
         fresh = fresh and live
         before = self.scout.credits_used
@@ -279,8 +283,10 @@ class NewsWatch:
             )
             if item["quote"] and any(item["shock"].values()):  # a headline that moves nothing says nothing
                 items.append(item)
-        if not items:
-            items = [await asyncio.to_thread(self._fallback_item, profile, fallback_shock, impact)]
+        if not items or pin_assumption:
+            items = [await asyncio.to_thread(self._fallback_item, profile, fallback_shock, impact), *items]
+            for i, it in enumerate(items, 1):
+                it["id"] = f"n{i}"
             used = items[0]
         else:
             used = max(items, key=lambda it: abs(it["impact_usd"]))

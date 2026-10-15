@@ -57,6 +57,9 @@ NEAR_DUPLICATE = 2.0               # futures whose knobs are all within this man
 MAX_AI_CASES = 5
 ULTRA_TRIES = 2                    # "fails twice in a row" means two calls, each with the router's own retry
 GUT_PREFIX = "Your gut call: "
+# Ultra may not invent a cheaper supplier (SPEC §15.4, approved 2026-10-15). The profile has no field naming a known
+# cheaper one yet, so every Ultra supplier switch costs at least today's price. Owner-entered plans are exempt.
+ALT_COST_FLOOR_PCT = 0.0
 CROWD_RETRY_TIMEOUT = 10.0         # s; a shopper half that failed at the fast tier's 5 s gets one more try this long
 
 
@@ -383,6 +386,8 @@ class Analyst:
         knobs = dict(news_shock or (item or {}).get("shock") or {})
         base = {"delta_c_raw": 0.0, "delta_lead_time": 0, "demand_shock": 0.0, **knobs}
         case = planner.default_shock_cases(base, self.profile)[1]  # label "Beans +31% (today's news)"
+        if item is not None and is_assumption(item):
+            case = replace(case, label=case.label.replace(" (today's news)", " (assumed)"))
         return replace(
             case, id=NEWS_ID, origin="news", likelihood="likely",
             source_ids=[self.used_for_grid] if self.used_for_grid else [],
@@ -546,22 +551,30 @@ class Analyst:
             await self._evaluate(spec, 0)
         await self._emit_summary()
 
-    def _accept_plans(self, step: AnalystStep) -> list[PlanSpec]:
-        """Clamp Ultra's plans, rename duplicate names, skip a plan identical to one already tested."""
+    def _accept_plans(self, step: AnalystStep) -> tuple[list[PlanSpec], list[str]]:
+        """Clamp Ultra's plans, rename duplicate names, skip a plan identical to one already tested, and skip a
+        supplier switch to a cheaper supplier nobody knows of (SPEC §15.4). Returns the plans and notes."""
         taken = {DO_NOTHING.lower(), *(s.name.lower() for s in self.specs)}
         seen_specs = {_slug_spec(s) for s in self.specs}
         out: list[PlanSpec] = []
+        notes: list[str] = []
         for model in step.plans:
             if len(self.specs) + len(out) >= self.max_plans:
                 break
             spec = PlanSpec.from_dict(model.to_engine())
+            if spec.switch_supplier and spec.alt_cost_change_pct < ALT_COST_FLOOR_PCT:
+                notes.append(
+                    f"Skipped “{spec.name}”: it assumes a supplier {-spec.alt_cost_change_pct:.0f}% cheaper than today's, "
+                    "and none is known."
+                )
+                continue
             if _slug_spec(spec) in seen_specs:
                 continue  # same settings under another name: never re-tested
             spec = replace(spec, name=_unique_name(spec.name, taken))
             taken.add(spec.name.lower())
             seen_specs.add(_slug_spec(spec))
             out.append(spec)
-        return out
+        return out, notes
 
     async def _round(self, rnd: int) -> bool:
         """One Ultra round. Returns False to stop (finish, nothing new, or Ultra failed twice)."""
@@ -582,7 +595,9 @@ class Analyst:
         step = step.model_copy(update={"thought": tidy(step.thought, 300), "why": tidy(step.why, 300)})
         self.last_why = step.why
         await self._step(rnd, "think", step.thought, None, "ultra", latency)
-        new = self._accept_plans(step) if step.action == "test" else []
+        new, notes = self._accept_plans(step) if step.action == "test" else ([], [])
+        for note in notes:
+            await self._fallback(rnd, note, counts=False)
         if not new:
             await self._step(rnd, "finish", step.why or "No new idea worth testing.", None, "ultra")
             return False

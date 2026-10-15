@@ -4,6 +4,7 @@
     --cheap                       Ultra's calls go to Super (SPEC §7.1 dev rule)
     --offline                     cached Tavily only and a scripted router: no network, $0
     --record                      write fixtures/replays/analysis_<ID>.jsonl and the memo plan's `news` cell replay
+                                  (the `news` column is the example's labelled assumption, as with --assumption-news)
     --fresh-news                  re-run the Tavily searches (about 4 credits) instead of reading the cache
     --gut NAME | none             the owner's gut call, from the example's `gut_plans` (default: the first one)
     --replay-cell PLAN SHOCK      replay one cell of the last analysis week by week
@@ -143,6 +144,7 @@ async def _run(args: argparse.Namespace) -> int:
     a = Analysis(
         profile=profile, example=example, mode="live", router=router, scout=scout, seed=args.seed,
         gut_plan=gut, n_paths=args.n_paths, cheap=args.cheap, fresh_news=args.fresh_news,
+        assumption_news=args.record or args.assumption_news,
     )
     await a.run(_printer())
     _print_result(a)
@@ -163,7 +165,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--cheap", action="store_true", help="send Ultra's calls to Super")
     ap.add_argument("--offline", action="store_true", help="cached Tavily and a scripted router, no network")
     ap.add_argument("--fresh-news", action="store_true", help="re-run the Tavily searches instead of the cache (~4 credits)")
-    ap.add_argument("--record", action="store_true", help="write the example's replay recordings")
+    ap.add_argument("--record", action="store_true", help="write the example's replay recordings (implies --assumption-news)")
+    ap.add_argument("--assumption-news", action="store_true",
+                    help="use the example's labelled assumption for the news column; articles are still shown as cards")
     ap.add_argument("--gut", help="the owner's gut call by name from the example's gut_plans, or 'none'")
     ap.add_argument("--replay-cell", nargs=2, metavar=("PLAN", "SHOCK"), help="replay one cell of the last analysis")
     ap.add_argument("--seed", type=int, default=0)

@@ -188,7 +188,7 @@ def profile_parser_messages(text: str) -> list[dict]:
 
 _ANALYST_SYSTEM = """You are a careful analyst advising a small business. A simulator is your tool: it tests business plans against several news-shock cases and reports the results in a table. You decide which plans to test and which one to recommend. You never compute outcomes yourself.
 
-Each plan is a few knobs: price_change_pct (-20..20) from price_change_week (0..23); extra_stock_weeks (0..8), one extra raw-material order placed in stock_week (0..23); marketing_change_pct (-50..100); switch_supplier (bool) with alt_cost_change_pct (-30..50), alt_lead_time_weeks (1..16) and alt_shock_exposure (0..1, how much of the news shock also hits the alternative supplier, default 0.3). Give each plan a short, descriptive name (<=40 chars). "Do nothing" is always the reference and is not a choice.
+Each plan is a few knobs: price_change_pct (-20..20) from price_change_week (0..23); extra_stock_weeks (0..8), one extra raw-material order placed in stock_week (0..23); marketing_change_pct (-50..100); switch_supplier (bool) with alt_cost_change_pct (0..50: no cheaper supplier is known, so a switch never costs less than today; a plan below 0 is not tested), alt_lead_time_weeks (1..16) and alt_shock_exposure (0..1, how much of the news shock also hits the alternative supplier, default 0.3). Give each plan a short, descriptive name (<=40 chars). "Do nothing" is always the reference and is not a choice.
 
 How to work:
 - Propose AT MOST 3 NEW, DIFFERENT plans per round. Never re-test a name that is already in the tested list. Ideas to try across rounds (suggestions, not rules):

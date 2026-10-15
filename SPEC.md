@@ -536,6 +536,7 @@ A plan is a few knobs, turned by code into per-week decisions. The fields are fl
 | `alt_shock_exposure` | 0 … 1 | how much of the news shock also hits the alternative (default 0.3) |
 
 - **"Do nothing"** = all zeros, `switch_supplier = false`. It's always simulated as the reference, and it's never sent to the LLM as a choice.
+- **No invented cheaper supplier (approved 2026-10-15, P4).** Ultra's supplier switches must have `alt_cost_change_pct ≥ 0`: the analyst can't assume a cheaper supplier exists. Code skips an Ultra plan below 0 and says so in a note. The exception, a cheaper supplier named in the profile, needs a new §15.3 field and isn't built yet. Plans the owner enters are exempt (they know their suppliers). The −30 bound stays in the engine and the schema for that case.
 - **Seed plans**, tested before Ultra's first round: "Do nothing", "Raise price 5% now", "Stock up 4 weeks now".
 - **Cost-plus** (§4.7's old U2 rule) is available as an optional plan row named "Textbook price rule". It needs a small exception in the planner: the price follows `ATC × (1 + m)` every week.
 
