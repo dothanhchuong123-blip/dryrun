@@ -2,14 +2,16 @@
 
 | | |
 |---|---|
-| Builder | **Gemini 4 Argon**, Pro account #3. Then a Claude check (Sonnet 5.5, effort medium). |
-| Start | `uv run scripts/argon.py pack F3`, then follow `prompts/argon/HOW-TO.md` → "Build a task". Upload screenshots of D7's replay and memo screens. |
-| Parallel with | F1, F2 (Argon) · P4 (Claude) |
+| Builder | **Claude Code**: **Sonnet 5.5**, effort medium |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/ui_oct17-20_frontend/F3-replay-memo.md` |
+| Parallel with | F1, F2 (Claude, separate sessions) · P3/P4 |
 | Time | ~3 h |
 | Depends on | F0 committed |
 | Target date | Oct 18–20 |
 
 ---
+The visual reference is `docs/mockups/D7-pivot.html`: open it in the built-in browser to look at it. Copy its layout and look, but **not its numbers**. Its numbers are older than v3.1 and some are wrong, so use the coffee_hcmc example instead. Check your screens in the built-in browser (`npm run dev`) at 1440, 1280 and 390 px before you commit.
+
 You are building the replay view, which reuses the pixel arena, and the decision memo.
 
 **Read these first:** `docs/DESIGN.md` §12.1 rows 5–6, §12.3, §11 (arena rules) and §7; `docs/mockups/D7-pivot.html`'s replay and memo screens; `docs/EVENTS.md` v2 (the replay stream, `memo`, `/memo`); F0's store, events and format modules; and the existing `components/Arena.tsx`, `components/arena/*` and `components/terminal/*`.

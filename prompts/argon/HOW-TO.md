@@ -2,6 +2,9 @@
 
 **Gemini 4 Argon** is your Gemini Pro plan's model (pick **Argon High** next to the input box). It's strong at coding, long files (1M tokens) and watching video, and using it costs **no Claude quota**. It does make things up sometimes, so a short Claude session checks everything it produces before it's committed.
 
+
+> **Since Oct 15, Argon builds nothing new.** Every remaining build (P2–P4, F0–F3, T08–T14) is a Claude prompt; see `prompts/README.md`. Use Argon for **reviews and advice**: "Run a review" (A2–A9) on finished work, or a free second opinion when you're unsure. The "Build a task" section below stays for reference.
+
 ## Do I give Gemini access to this folder?
 
 **No.** Even if Gemini offers folder or Drive access, don't use it here, for two reasons:
@@ -82,6 +85,16 @@ Example: **A1**.
    `Check the Argon review in dist/argon/A1/ using prompts/argon/check-review.md`
 
    For A5, A7 and A8, the review file says what to do instead (you read it and decide).
+
+## Design mockups (D1–D5) and design reviews (A10–A13)
+
+- **D1–D5** work exactly like "Build a task". For example:
+  ```bash
+  uv run scripts/argon.py pack D1
+  ```
+  Then import with `uv run scripts/argon.py import D1`. Each one writes a single file, `docs/mockups/D1-*.html`. Open it in a browser and press Play. **Task mode is better here**, because Argon can preview its own page. They need no Claude check.
+- **A10–A13** work like "Run a review". For A12 and A13, also drag in your own screenshots of each mockup (intro, mid-run and end).
+- The order is on the board: `prompts/README.md` → "UI exploration".
 
 ## Rules
 - Never paste keys or `.env` into Gemini. The packs are already safe; don't add files to them by hand.

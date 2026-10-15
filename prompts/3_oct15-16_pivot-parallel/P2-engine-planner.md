@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| Builder | **Gemini 4 Argon**, Pro account #1. Then a Claude check (Sonnet 5.5, effort high: this is the core of the pivot). |
-| Start | `uv run scripts/argon.py pack P2`, then follow `prompts/argon/HOW-TO.md` → "Build a task" |
-| Parallel with | P1 (Claude) · D7 (Argon #2) |
+| Builder | **Claude Code**: **Opus 5.5**, effort high (this is the core of the pivot, and math-heavy) |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/3_oct15-16_pivot-parallel/P2-engine-planner.md` |
+| Parallel with | F0 (frontend shell): no shared files |
 | Time | ~5–6 h (v3.1 adds ~1.5 h) |
-| Depends on | T01–T03 committed (their code goes into the upload pack) |
+| Depends on | T01–T03 committed (done) |
 | Target date | Oct 15–16 |
 
 ---

@@ -2,14 +2,16 @@
 
 | | |
 |---|---|
-| Builder | **Gemini 4 Argon**, Pro account #3. Then a Claude check (Sonnet 5.5, effort medium). |
-| Start | `uv run scripts/argon.py pack F0`, then follow `prompts/argon/HOW-TO.md` → "Build a task". Also upload screenshots of D7's analyst + grid screen and memo. |
-| Parallel with | P3 (Claude). Runs **before** F1–F3, which build on it. |
+| Builder | **Claude Code**: **Sonnet 5.5**, effort medium |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/ui_oct17-20_frontend/F0-frontend-shell-v2.md` |
+| Parallel with | P2 (Claude). Runs **before** F1–F3, which build on it. |
 | Time | ~3 h |
-| Depends on | D7 approved by the user. EVENTS.md v2 is already committed. |
+| Depends on | EVENTS.md v2.1 (committed). |
 | Target date | Oct 17 |
 
 ---
+The visual reference is `docs/mockups/D7-pivot.html`: open it in the built-in browser to look at it. Copy its layout and look, but **not its numbers**. Its numbers are older than v3.1 and some are wrong, so use the coffee_hcmc example instead. Check your screens in the built-in browser (`npm run dev`) at 1440, 1280 and 390 px before you commit.
+
 You are rebuilding the frontend's foundation for the pivot ("Test your plans", SPEC §15). F1–F3 will build the screens on top of it in parallel, so **the store, the actions and the component slots you define are their contract.**
 
 **Read these first:**

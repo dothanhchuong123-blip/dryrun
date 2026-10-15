@@ -40,7 +40,7 @@
   - SPEC §4.7 (tick order)
 - **Submission:** `docs/SUBMISSION.md` maps every Devpost form field to its source and owner.
 - **Feedback log:** hit a Nemotron, Token Factory, Nebius or Tavily quirk (or something that worked really well)? **Add one row to `docs/FEEDBACK_LOG.md` right away**, with evidence. It feeds the required feedback answers and the feedback prize (10 × $100).
-- **Gemini 4 Argon** (Gemini app, 3 Pro accounts, no repo access) builds T01, T02, T03, T10, T11 and T12, and runs reviews A1–A9. Step-by-step guide: `prompts/argon/HOW-TO.md`. Argon code goes through `uv run scripts/argon.py pack|import <ID>`, and a Claude session must check it (`prompts/argon/check-build.md`) before it's committed.
+- **Gemini 4 Argon** (Gemini app, 3 Pro accounts, no repo access) built T01–T03, T10–T12 and the D1–D7 mockups. **Since 2026-10-15 every build task is a Claude prompt.** Argon only runs reviews (A2–A9) on finished work or gives advice, and a Claude session decides what to act on. Guide: `prompts/argon/HOW-TO.md` → "Run a review".
 - **Config:** read keys, model IDs and the base URL only via `backend.config.get_settings()`. Keys are `SecretStr`.
 - **Dev commands:** `uv sync` · `uv run pytest -q` · `uv run ruff check backend tests` · `uv run uvicorn backend.main:app --reload`
 

@@ -11,7 +11,7 @@ Each numbered folder is one **wave**. **Everything inside a folder can run at th
      `Do the task in prompts/1_oct15_all-parallel/T04-llm-router.md`
 
   Nothing to paste: the session reads the file and `CLAUDE.md` itself.
-- **Argon task:** follow `prompts/argon/HOW-TO.md` → "Build a task". It takes five steps: pack → upload + paste → copy the answer → import → Claude check.
+- **Argon (since Oct 15: reviews and advice only, no more builds):** follow `prompts/argon/HOW-TO.md` → "Run a review". Every build task from here on is a Claude prompt.
 
 ## The board
 
@@ -34,28 +34,75 @@ Each numbered folder is one **wave**. **Everything inside a folder can run at th
 | [x] | T12 canvas arena | Argon #2 → Claude check | T10 | `prompts/2_oct16-17_all-parallel/T12-frontend-arena.md` |
 | [x] | T06 Tavily scout + scenarios | Claude Sonnet 5.5 | T04, T05 | `prompts/2_oct16-17_all-parallel/T06-tavily-scout.md` |
 
-### Wave 3 · Oct 18 · Milestone A (headless run) · `prompts/3_oct18_one-task/`
+### UI exploration · Oct 15–16 · `prompts/ui_oct15-16_all-parallel/`. Runs alongside waves 1–3 (no code touched).
+The brief is `docs/DESIGN.md`. There are five Argon mockups (one HTML file each, in `docs/mockups/`) and four perspective reviews. **No Claude check needed for the mockups.**
+
+| Done | Job | Builder | When | File |
+|---|---|---|---|---|
+| [x] | A10 design references | Argon, any account | first, or alongside D1–D3 | `prompts/argon/reviews/A10-design-references.md` |
+| [x] | A11 plain-English copy deck | Argon, any account | alongside | `prompts/argon/reviews/A11-plain-english-copy.md` |
+| [x] | D1 Daylight (clean light) | Argon #1 | Oct 15 | `prompts/ui_oct15-16_all-parallel/D1-daylight.md` |
+| [x] | D2 Night shift (calm dark) | Argon #2 | Oct 15 | `prompts/ui_oct15-16_all-parallel/D2-night-shift.md` |
+| [x] | D3 Sim town (full pixel game) | Argon #3 | Oct 15 | `prompts/ui_oct15-16_all-parallel/D3-sim-town.md` |
+| [x] | D4 Explainer (data journalism) | Argon #1 | after D1 | `prompts/ui_oct15-16_all-parallel/D4-explainer.md` |
+| [x] | D5 Trading desk (dense pro dark) | Argon #2 | after D2 | `prompts/ui_oct15-16_all-parallel/D5-trading-desk.md` |
+| [x] | A12 persona panel (5 viewers × 5 mockups) | Argon, any account | after D1–D5 | `prompts/argon/reviews/A12-persona-panel.md` |
+| [x] | A13 shootout + final pick | Argon, a **different** account | after A12 | `prompts/argon/reviews/A13-design-shootout.md` |
+| [x] | **You pick.** Claude fills in DESIGN.md §11 (D4 × D1, big arena + chart track, light only) | you + Claude | Oct 14 | `docs/DESIGN.md` §11 |
+| [x] | D6 Final mockup (superseded by D7 after the pivot) | Argon, any account | alongside T07 | `prompts/ui_oct15-16_all-parallel/D6-final.md` |
+
+## ⟳ Pivot v3 (decided Oct 14): "Test your plans"
+
+The app now tests a user's own business plans against live news. The spec is **SPEC §15**, the screens are **DESIGN.md §12**, the contract is **EVENTS.md v2**, and the wireframes are `docs/PIVOT-PLAN.html`. Waves 1–2 stay: the engine, router, Tavily scout, arena and charts are all reused. The old T07 is retired (`prompts/_retired/`).
+
+**v3.1 (Oct 15):** realism update (SPEC §15 v3.1, EVENTS v2.1, DESIGN §12.3a). **All remaining builds are Claude sessions.** Argon only reviews finished work or gives advice (A2–A9).
+
+```
+Oct 15–16   P1 ✓ · D7 ✓ · P2 engine planner (Claude Opus) ──┐   F0 frontend shell v2 (Claude Sonnet), alongside P2
+Oct 17      P3 analyst loop + futures + news (Claude) ◄──────┘   F1 · F2 · F3 screens (3 Claude sessions, parallel, after F0)
+Oct 18      P4 orchestrator + CLI (Claude Opus) = MILESTONE A    (F1–F3 finish)
+Oct 19–20   T08 API v2 → T09 Nebius deploy = MILESTONE B
+Oct 21–24   connect frontend ↔ backend, polish · Argon reviews A2 · A4 · A5 on the working app
+```
+
+### Wave 3 · Oct 15–16 · `prompts/3_oct15-16_pivot-parallel/`. P2 now (with F0 alongside).
 | Done | Task | Builder | Needs | File |
 |---|---|---|---|---|
-| [ ] | T07 orchestrator + headless CLI | Claude **Opus 5.5** (effort high) | all of waves 1–2 | `prompts/3_oct18_one-task/T07-orchestrator-headless.md` |
+| [x] | P1 pivot schemas, prompts, example businesses (+ native tool-call check) | Claude Sonnet 5.5 (effort high) | nothing | `prompts/3_oct15-16_pivot-parallel/P1-profile-schemas-prompts.md` |
+| [ ] | P2 engine planner: calibration, plans, grid, cell replay (+ v3.1 bridge, cash, rival split) | Claude **Opus 5.5** (effort high) | T01–T03 | `prompts/3_oct15-16_pivot-parallel/P2-engine-planner.md` |
+| [x] | D7 pivot mockup, screens 1–6 (numbers to refresh for v3.1: optional Claude task) | Argon #2 → you approved | nothing | `prompts/3_oct15-16_pivot-parallel/D7-pivot-mockup.md` |
 
-Then: Argon review **A3** (whole repo), `prompts/argon/reviews/A3-repo-review.md`.
+### Wave 3b · Oct 15–17 · `prompts/3b_oct17_one-task/` + F0
+| Done | Task | Builder | Needs | File |
+|---|---|---|---|---|
+| [ ] | P3 analyst loop, futures step, shopper reactions, news watch | Claude Sonnet 5.5 (effort high) | P1, P2 | `prompts/3b_oct17_one-task/P3-analyst-news.md` |
+| [ ] | F0 frontend shell v2: types, store, stream, mock, page shell | Claude Sonnet 5.5 (effort medium). **Can start now**, alongside P2 | EVENTS v2.1 | `prompts/ui_oct17-20_frontend/F0-frontend-shell-v2.md` |
 
-### Wave 4 · Oct 19–20 · Milestone B (deployed) · `prompts/4_oct19-20_in-order/`. **T08 first, then T09.**
+### Wave 3c · Oct 18 · **Milestone A** (headless end-to-end analysis) · `prompts/3c_oct18_one-task/`
+| Done | Task | Builder | Needs | File |
+|---|---|---|---|---|
+| [ ] | P4 analysis orchestrator, cell replay, CLI, example recordings | Claude **Opus 5.5** (effort high) | P1–P3 | `prompts/3c_oct18_one-task/P4-analysis-orchestrator.md` |
+
+Then (optional, advice only): Argon review **A2** (prompt red-team on the analyst, futures and profile prompts) and **A3** (whole repo).
+
+### Frontend screens · Oct 17–20 · `prompts/ui_oct17-20_frontend/`. F1–F3 run in parallel (3 Claude sessions) after F0.
 | Done | Task | Builder | File |
 |---|---|---|---|
-| [ ] | T08 API, SSE, replay, spend guard | Claude Sonnet 5.5 | `prompts/4_oct19-20_in-order/T08-api-sse-replay.md` |
-| [ ] | T09 Nebius Endpoint + Job | Claude Sonnet 5.5 **+ you** (console, billing) | `prompts/4_oct19-20_in-order/T09-nebius-deploy.md` |
+| [ ] | F1 screens 1–2: your business, news | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F1-setup-news.md` |
+| [ ] | F2 screens 3–4: analyst log, plans × futures grid | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F2-analyst-grid.md` |
+| [ ] | F3 screens 5–6: replay drawer (arena), decision memo | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F3-replay-memo.md` |
 
-### Oct 21–24 · buffer and polish (no new prompt files)
-- Connect the frontend to the live backend.
-- **UI restyle (deferred from T10 check, Oct 14).** The T10 shell works but looks like a debug console: boxes inside boxes, monospace everywhere, too many coloured outlines, internal labels ("T12 CANVAS SLOT") showing, weak headline numbers, cramped 3-row header. Write `docs/DESIGN.md` (fonts, surfaces, type scale, colour meaning, number format), then restyle `tailwind.config.ts`, `globals.css`, `app/page.tsx`, and bring T11/T12 in line. Do it before A5.
-- Scenarios 2–3.
-- P1 items from SPEC §11.
-- Argon reviews **A5** (UI) and **A4** (calibration).
-- Fix whatever comes up.
+### Wave 4 · Oct 19–20 · **Milestone B** (deployed) · `prompts/4_oct19-20_in-order/`. **T08 first, then T09.**
+| Done | Task | Builder | File |
+|---|---|---|---|
+| [ ] | T08 API v2, SSE, replay, spend guard | Claude Sonnet 5.5 | `prompts/4_oct19-20_in-order/T08-api-sse-replay.md` |
+| [ ] | T09 Nebius Endpoint + 10,000-per-cell Job | Claude Sonnet 5.5 **+ you** (console, billing) | `prompts/4_oct19-20_in-order/T09-nebius-deploy.md` |
 
-The frontend was finished early by Argon, so these four days are slack.
+### Oct 21–24 · connect, polish, review (no new prompt files)
+- Point the frontend at the deployed backend (`NEXT_PUBLIC_API_BASE`) and fix whatever the real stream shows that the mock didn't.
+- Run a LIVE analysis on a business you type in yourself. Is the memo something an owner would act on?
+- P1 items from SPEC §15.10: Nash in the analyst tab, the Ultra rival in LIVE replays.
+- Argon reviews **A5** (UI, on the real app) and **A4** (calibration: do the example businesses' numbers look believable?).
 
 ### Wave 5 · Oct 25–26 · `prompts/5_oct25-26_one-task/`
 | Done | Task | Builder | File |
@@ -64,12 +111,12 @@ The frontend was finished early by Argon, so these four days are slack.
 
 Also: **A3** again (before the freeze), plus A6 and A7.
 
-### Oct 27 · **feature freeze 23:59** · record the replays
+### Oct 27 · **feature freeze 23:59** · re-record the 3 example analyses (`python -m backend.sim.cli --example <id> --record`)
 
 ### Wave 6 · Oct 28–29 · `prompts/6_oct28-29_one-task/`
 | Done | Task | Builder | File |
 |---|---|---|---|
-| [ ] | T14 README, video script, Devpost text, QA | Claude Sonnet 5.5 **+ you** | `prompts/6_oct28-29_one-task/T14-submission.md` |
+| [ ] | T14 README, video script (coffee roaster story), Devpost text, QA | Claude Sonnet 5.5 **+ you** | `prompts/6_oct28-29_one-task/T14-submission.md` |
 
 Also: **A8** video critique (Oct 28) and **A9** judge simulation (Oct 29). Form answers come from `docs/SUBMISSION.md`.
 
@@ -79,9 +126,9 @@ Also: **A8** video critique (Oct 28) and **A9** judge simulation (Oct 29). Form 
 
 | Builder | Tasks | Why |
 |---|---|---|
-| **Gemini 4 Argon** (3 Pro accounts) | T01, T02, T03, T10, T11, T12 + reviews A1–A9 | Pure code built against written contracts, with no keys or live calls, so tests or a build can check it. Uses no Claude quota. |
-| **Claude Sonnet 5.5** | T04, T05, T06, T08, T09, T13, T14 + every Argon check | These need API keys or live Nemotron/Tavily calls, the Nebius console, or your judgement. |
-| **Claude Opus 5.5** | T07, plus checking A3 | Integration: it needs the whole repo at once. |
+| **Claude Sonnet 5.5** | T04–T06, P1, **P3, F0–F3**, T08, T09, T13, T14 | Every remaining build. Claude can run the tests, the dev server and the browser, so there's no copy-paste-import loop. |
+| **Claude Opus 5.5** | **P2, P4**, plus acting on A3 | P2 is the math-heavy core; P4 is integration and needs the whole repo at once. |
+| **Gemini 4 Argon** (3 Pro accounts) | **Reviews and advice only** (A2–A9), on finished work, usually near the end. It built T01–T03, T10–T12 and D1–D7 earlier. | A free second opinion that costs no Claude quota. Argon's findings are advice: a Claude session decides what to act on. |
 | **Claude Haiku 5.5** | small doc fixes | Cheapest option. |
 
 ## Rules for every Claude session (these keep quota down and parallel work safe)

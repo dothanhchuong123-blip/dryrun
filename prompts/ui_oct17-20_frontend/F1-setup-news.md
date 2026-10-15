@@ -2,14 +2,16 @@
 
 | | |
 |---|---|
-| Builder | **Gemini 4 Argon**, Pro account #1. Then a Claude check (Sonnet 5.5, effort medium). |
-| Start | `uv run scripts/argon.py pack F1`, then follow `prompts/argon/HOW-TO.md` → "Build a task". Upload screenshots of D7's screens 1 and 2. |
-| Parallel with | F2, F3 (Argon) · P4 (Claude). Each F task owns its own folders. |
+| Builder | **Claude Code**: **Sonnet 5.5**, effort medium |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/ui_oct17-20_frontend/F1-setup-news.md` |
+| Parallel with | F2, F3 (Claude, separate sessions) · P3/P4. Each F task owns its own folders. |
 | Time | ~2 h |
 | Depends on | F0 committed |
 | Target date | Oct 18–19 |
 
 ---
+The visual reference is `docs/mockups/D7-pivot.html`: open it in the built-in browser to look at it. Copy its layout and look, but **not its numbers**. Its numbers are older than v3.1 and some are wrong, so use the coffee_hcmc example instead. Check your screens in the built-in browser (`npm run dev`) at 1440, 1280 and 390 px before you commit.
+
 You are building the first two screens of the pivot UI.
 
 **Read these first:** `docs/DESIGN.md` §12.1 rows 1–2, §12.3 and §11; `docs/mockups/D7-pivot.html` screens 1–2 (match them); `docs/EVENTS.md` v2 (`/api/examples`, `/api/profile/parse`, the `news` event, news-check); and F0's `frontend/lib/store.ts`, `events.ts` and `format.ts`. Use only the store's actions; don't call `fetch` yourself.

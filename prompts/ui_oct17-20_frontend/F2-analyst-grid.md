@@ -2,14 +2,16 @@
 
 | | |
 |---|---|
-| Builder | **Gemini 4 Argon**, Pro account #2. Then a Claude check (Sonnet 5.5, effort medium). |
-| Start | `uv run scripts/argon.py pack F2`, then follow `prompts/argon/HOW-TO.md` → "Build a task". Upload screenshots of D7's analyst + grid screen, mid-run and finished. |
-| Parallel with | F1, F3 (Argon) · P4 (Claude) |
+| Builder | **Claude Code**: **Sonnet 5.5**, effort medium |
+| Start | New Claude Code session in this folder → pick that model → type: `Do the task in prompts/ui_oct17-20_frontend/F2-analyst-grid.md` |
+| Parallel with | F1, F3 (Claude, separate sessions) · P3/P4 |
 | Time | ~3 h |
 | Depends on | F0 committed |
 | Target date | Oct 18–19 |
 
 ---
+The visual reference is `docs/mockups/D7-pivot.html`: open it in the built-in browser to look at it. Copy its layout and look, but **not its numbers**. Its numbers are older than v3.1 and some are wrong, so use the coffee_hcmc example instead. Check your screens in the built-in browser (`npm run dev`) at 1440, 1280 and 390 px before you commit.
+
 You are building the heart of the pivot UI: the screen where judges watch Nemotron work and see which plan holds up.
 
 **Read these first:** `docs/DESIGN.md` §12.1 row "3+4", §12.3, §11 and §5 (colour meaning); `docs/mockups/D7-pivot.html`'s analyst + grid screen (match it); `docs/EVENTS.md` v2 (`plan`, `crowd`, `grid_cell`, `grid_summary`, `agent_step`, `reasoning`, `shocks`, `memo`, `/plans`); and F0's store, events and format modules. Use only the store's actions.
