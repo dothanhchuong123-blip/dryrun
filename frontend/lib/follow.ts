@@ -21,7 +21,7 @@ export const reducedMotion = (): boolean =>
 /** breathing room kept between a revealed element and the edge of the view (px) */
 const PAD = 28;
 /** time constant of the glide (ms): about 3× this to settle */
-const TAU = 260;
+const TAU = 420;
 
 let scroller: HTMLElement | null = null;
 let target = 0;

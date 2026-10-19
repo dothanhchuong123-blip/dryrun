@@ -1,14 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { AnalystLog } from "../components/analyst/AnalystLog";
-import { PlanGrid } from "../components/grid/PlanGrid";
-import { MemoScreen } from "../components/memo/MemoScreen";
-import { NewsScreen } from "../components/news/NewsScreen";
-import { ReplayDrawer } from "../components/replay/ReplayDrawer";
-import { SetupScreen } from "../components/setup/SetupScreen";
-import { Footer } from "../components/shell/Footer";
-import { TopBar } from "../components/shell/TopBar";
+import { Flow } from "../components/flow/Flow";
 import { useMarketStore } from "../lib/store";
 
 function isTyping(t: EventTarget | null): boolean {
@@ -39,50 +32,12 @@ function useReplayKeys() {
   }, []);
 }
 
-function AnalystScreen() {
-  const name = useMarketStore((s) => s.profile?.business_name);
-  const replayOpen = useMarketStore((s) => s.replay.open);
-  const closeReplay = useMarketStore((s) => s.closeReplay);
-  return (
-    <section className="screen fill" data-screen="analyst">
-      <div className="sub">
-        {name && <span className="biz">{name}</span>}
-        <h2>Which plan holds up best?</h2>
-      </div>
-      <div className="body3">
-        <AnalystLog />
-        <PlanGrid />
-      </div>
-      {replayOpen && (
-        <>
-          <div className="scrim" onClick={closeReplay} />
-          <aside className="drawer" role="dialog" aria-label="Replay one plan">
-            <ReplayDrawer />
-          </aside>
-        </>
-      )}
-    </section>
-  );
-}
-
 export default function Page() {
-  const step = useMarketStore((s) => s.step);
   const loadExamples = useMarketStore((s) => s.loadExamples);
   useReplayKeys();
   useEffect(() => {
     void loadExamples();
   }, [loadExamples]);
 
-  return (
-    <div className="app">
-      <TopBar />
-      <main className="stage">
-        {step === "business" && <SetupScreen />}
-        {step === "news" && <NewsScreen />}
-        {step === "analyst" && <AnalystScreen />}
-        {step === "memo" && <MemoScreen />}
-      </main>
-      <Footer />
-    </div>
-  );
+  return <Flow />;
 }

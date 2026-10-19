@@ -142,7 +142,7 @@ export function PlanGrid() {
   const allCellsIn = plans.length > 0 && shocks.length > 0;
 
   return (
-    <div className="card pg" data-slot="PlanGrid">
+    <div className={`card pg liquid${analysis.status === "running" || analysis.status === "starting" ? " on" : ""}`} data-slot="PlanGrid">
       <div className="pg-head">
         <div>
           <h2>Which plan holds up?</h2>

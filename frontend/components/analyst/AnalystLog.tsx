@@ -115,7 +115,7 @@ export function AnalystLog() {
   const empty = groups.length === 0;
 
   return (
-    <div className="card al" data-slot="AnalystLog">
+    <div className={`card al liquid${status === "running" || status === "starting" ? " on" : ""}`} data-slot="AnalystLog">
       <div className="al-head">
         <div>
           <h2>Analyst log</h2>

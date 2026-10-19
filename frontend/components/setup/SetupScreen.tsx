@@ -11,7 +11,7 @@ import "./setup.css";
 type NumKey = "price" | "unit_cost" | "weekly_sales" | "lead_time_weeks" | "stock_weeks" | "rival_price" | "exposed_cost_share" | "cash_available";
 type TextKey = "business_name" | "rival_name" | "supplier_region" | "country";
 
-interface NumField {
+export interface NumField {
   key: NumKey;
   label: string;
   unit: string;
@@ -25,7 +25,7 @@ interface NumField {
 }
 
 // SPEC §15.3 bounds. Order = the order on screen.
-const NUM_FIELDS: NumField[] = [
+export const NUM_FIELDS: NumField[] = [
   { key: "price", label: "Your price", unit: "$ per unit", min: 0.01 },
   { key: "unit_cost", label: "Raw cost per unit", unit: "$ per unit", min: 0.01 },
   { key: "weekly_sales", label: "Sales per week", unit: "units", min: 1 },
@@ -36,12 +36,12 @@ const NUM_FIELDS: NumField[] = [
   { key: "cash_available", label: "Cash you could put into stock", unit: "$ (empty = not given)", min: 0, optional: true },
 ];
 
-function trimNum(x: number): string {
+export function trimNum(x: number): string {
   return String(Math.round(x * 1000) / 1000);
 }
 
 /** Returns an inline hint, or null when the draft is fine. */
-function checkNum(f: NumField, draft: string, p: BusinessProfile): string | null {
+export function checkNum(f: NumField, draft: string, p: BusinessProfile): string | null {
   const t = draft.trim();
   if (t === "") return f.optional ? null : "Needs a number.";
   const v = Number(t);
@@ -226,7 +226,7 @@ export function SetupScreen() {
           </li>
         </ol>
         <div className="su-two">
-          <div className={`card su-pane fu${stage === 1 ? " su-live" : ""}`} style={{ ["--i" as string]: 1 }}>
+          <div className={`card su-pane liquid${reading ? " on" : ""} fu${stage === 1 ? " su-live" : ""}`} style={{ ["--i" as string]: 1 }}>
             <div className="su-title">
               <span className="su-n">1</span>
               <h1>Describe your business</h1>
@@ -264,7 +264,7 @@ export function SetupScreen() {
             </div>
           </div>
 
-          <div className={`card su-pane fu${stage === 2 ? " su-live" : ""}`} style={{ ["--i" as string]: 2 }} ref={fieldsRef}>
+          <div className={`card su-pane liquid${reading ? " on" : ""} fu${stage === 2 ? " su-live" : ""}`} style={{ ["--i" as string]: 2 }} ref={fieldsRef}>
             <div className="su-head">
               <div className="l su-title">
                 <span className="su-n">2</span>

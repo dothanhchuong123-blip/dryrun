@@ -230,7 +230,7 @@ export function NewsScreen() {
           Tavily searches the news, Nemotron Super reads each article, and the simulator prices what it does to your gross profit over 6 months.
         </p>
 
-        <div className={`card nw-search fu ${phase}`} style={{ ["--i" as string]: 2 }} aria-live="polite" data-step="read">
+        <div className={`card nw-search liquid fu ${phase}${phase === "done" ? "" : " on"}`} style={{ ["--i" as string]: 2 }} aria-live="polite" data-step="read">
           <div className="nw-sr">
             <span className="nw-orb" aria-hidden>
               {phase === "done" ? (

@@ -213,3 +213,53 @@ main.stage { overflow: auto; position: relative; min-height: 0; }
 @keyframes vtin { from { opacity: 0; transform: translateX(16px); } }
 @keyframes vtoutb { to { opacity: 0; transform: translateX(16px); } }
 @keyframes vtinb { from { opacity: 0; transform: translateX(-16px); } }
+
+/* ---- the flow: every reached step stacked in one river ---- */
+.flow { position: relative; max-width: 1240px; margin: 0 auto; padding-bottom: 18vh; }
+.flow-sec { position: relative; scroll-margin-top: 12px; }
+.flow-sec + .flow-sec { margin-top: 8px; animation: fu 1s var(--ease) both; }
+.flow-sec .screen { min-height: 0; }
+/* no scroll traps: the page is the only thing that scrolls vertically, so the wheel never gets stuck in a box */
+.flow-sec .screen.fill { height: auto; display: block; }
+.flow-sec .body3 { align-items: start; }
+.flow-sec .pg { height: auto; overflow: visible; }
+.flow-sec .pg-box { height: auto; min-height: 0; overflow-x: auto; overflow-y: visible; }
+.flow-sec .al { height: auto; max-height: 640px; }
+.flow-sec .al-body { overscroll-behavior: auto; }
+.flow-sec .slot { overflow: visible; }
+/* a thin current that ties the steps together */
+.flow-sec + .flow-sec::before { content: ""; position: absolute; left: 50%; top: -8px; width: 1px; height: 8px; background: linear-gradient(var(--line-strong), var(--firm-a)); }
+.flow-sec:not(.now) { transition: opacity 0.6s var(--ease), filter 0.6s var(--ease); }
+.flow-sec:not(.now):not(:hover):not(:focus-within) { opacity: 0.86; }
+@media (max-width: 900px) { .flow-sec .screen.fill { height: auto; } }
+
+/* ---- liquid: a slow tide of colour inside a card while its job runs (add "liquid", and "on" while running) ---- */
+.liquid { position: relative; isolation: isolate; overflow: hidden; }
+.liquid::before, .liquid::after { content: ""; position: absolute; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 1.4s var(--ease); }
+.liquid.on::before, .liquid.on::after { opacity: 1; }
+.liquid::before {
+  inset: -30%;
+  background:
+    radial-gradient(40% 35% at 25% 30%, color-mix(in srgb, var(--firm-a) 34%, transparent), transparent 70%),
+    radial-gradient(38% 40% at 78% 65%, color-mix(in srgb, var(--nv-green) 26%, transparent), transparent 70%),
+    radial-gradient(30% 30% at 55% 15%, color-mix(in srgb, var(--firm-b) 18%, transparent), transparent 70%);
+  filter: blur(22px); animation: liq-drift 15s ease-in-out infinite alternate;
+}
+.liquid::after {
+  left: 0; right: 0; bottom: 0; height: 38%;
+  background: linear-gradient(to top, color-mix(in srgb, var(--firm-a) 32%, transparent), transparent);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 60' preserveAspectRatio='none'%3E%3Cpath d='M0 30Q150 0 300 30T600 30V60H0Z'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpath d='M0 34Q100 8 200 34T400 34V60H0Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 60' preserveAspectRatio='none'%3E%3Cpath d='M0 30Q150 0 300 30T600 30V60H0Z'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpath d='M0 34Q100 8 200 34T400 34V60H0Z'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: repeat-x; mask-repeat: repeat-x;
+  -webkit-mask-size: 600px 100%, 400px 100%; mask-size: 600px 100%, 400px 100%;
+  -webkit-mask-position: 0 100%, 0 100%; mask-position: 0 100%, 0 100%;
+  animation: liq-wave 11s linear infinite;
+}
+@keyframes liq-drift {
+  0% { transform: translate3d(-4%, -3%, 0) rotate(0) scale(1); }
+  50% { transform: translate3d(5%, 3%, 0) rotate(8deg) scale(1.08); }
+  100% { transform: translate3d(-2%, 5%, 0) rotate(-6deg) scale(1.02); }
+}
+@keyframes liq-wave {
+  to { -webkit-mask-position: -600px 100%, 400px 100%; mask-position: -600px 100%, 400px 100%; }
+}
