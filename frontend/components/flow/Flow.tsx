@@ -175,6 +175,7 @@ export function Flow() {
     setReached(-1);
   };
   const up = view >= 0;
+  const offline = s.backend === "mock";
 
   // ---- gates --------------------------------------------------------------------------------------
   const frontier = view === reached;
@@ -194,7 +195,7 @@ export function Flow() {
         void s.startAnalysis();
         go(1);
       },
-      autoOk: !!s.exampleId,
+      autoOk: !!s.examples.find((e) => e.id === s.exampleId)?.has_replay,
     };
   } else if (view === 1) {
     const ok = nShocks > 0;
@@ -257,7 +258,6 @@ export function Flow() {
   };
 
   const calls = s.telemetry ? s.telemetry.tiers.ultra.calls + s.telemetry.tiers.super.calls + s.telemetry.tiers.fast.calls : 0;
-  const offline = s.backend === "mock";
   const modeLabel = offline ? "OFFLINE DEMO" : s.analysis.mode === "live" ? "LIVE" : s.exampleId || s.analysis.mode === "replay" ? "EXAMPLE REPLAY" : null;
 
   return (
@@ -337,13 +337,17 @@ export function Flow() {
             <div className="fl-ex">
               <p>Or start from a real example. It replays instantly and costs nothing.</p>
               <div className="fl-exg">
-                {s.examples.map((e) => (
-                  <button key={e.id} type="button" className="fl-exb" onClick={() => pickExample(e.id)}>
-                    <b>{e.title}</b>
-                    <span>{e.subtitle}</span>
-                    {e.has_replay && <small>Instant replay</small>}
-                  </button>
-                ))}
+                {s.examples.map((e) => {
+                  // offline, only recorded examples have data; the others would replay someone else's run
+                  const blocked = offline && !e.has_replay;
+                  return (
+                    <button key={e.id} type="button" className="fl-exb" disabled={blocked} onClick={() => pickExample(e.id)}>
+                      <b>{e.title}</b>
+                      <span>{e.subtitle}</span>
+                      <small className={e.has_replay ? undefined : "live"}>{e.has_replay ? "Instant replay" : blocked ? "Needs the live server" : "Runs live · about 2 min"}</small>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

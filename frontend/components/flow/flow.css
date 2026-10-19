@@ -89,6 +89,8 @@
 .fl-exb b { font-weight: 600; font-size: 14.5px; }
 .fl-exb span { font-size: 13px; color: var(--fl-ink-3); }
 .fl-exb small { font-size: 11.5px; color: var(--fl-accent-ink); font-weight: 600; margin-top: 2px; }
+.fl-exb small.live { color: var(--fl-ink-3); }
+.fl-exb:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; border-color: var(--fl-line); }
 .fl-err { margin: 10px 0 0; font-size: 13.5px; color: var(--fl-loss); text-align: center; }
 
 /* stepper */
@@ -207,10 +209,21 @@
 .fl-bubs { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
 .fl-bub { font-size: 13px; line-height: 1.45; color: var(--fl-ink-2); padding: 7px 10px; border-radius: 10px 10px 10px 3px; background: var(--fl-sunk); animation: fl-blockin 0.45s var(--ease) both; }
 .fl-bub b { font-weight: 600; color: var(--fl-ink); }
-.fl-sim svg { display: block; width: 100%; height: auto; overflow: visible; }
-.fl-sim .curve { transition: d 0.6s var(--ease); }
-.fl-simn { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 8px; font-size: 13px; color: var(--fl-ink-3); }
-.fl-simn b { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.fl-fan { position: relative; border: 1px solid var(--fl-line); border-radius: 10px; background: var(--fl-sunk); overflow: hidden; }
+.fl-fan svg { display: block; width: 100%; height: 150px; }
+.fl-fan .zero { stroke: var(--fl-line-2); stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.fl-fan .run { fill: none; stroke-width: 1.2; stroke-opacity: 0.55; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: fl-draw 0.7s var(--ease) forwards; animation-delay: var(--d, 0ms); }
+.fl-fan .run.g { stroke: var(--fl-gain-bar); }
+.fl-fan .run.r { stroke: var(--fl-loss-bar); }
+.fl-fan .avg { fill: none; stroke: var(--fl-accent); stroke-width: 2.4; stroke-linecap: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; animation: fl-draw 0.6s var(--ease) 0.9s forwards; }
+@keyframes fl-draw { to { stroke-dashoffset: 0; } }
+.fl-fan .tl, .fl-fan .br { position: absolute; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fl-ink-3); }
+.fl-fan .tl { left: 8px; top: 6px; } .fl-fan .br { right: 8px; bottom: 5px; }
+.fl-simn { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--fl-ink-3); }
+.fl-simn b { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--fl-ink); }
+.fl-simn b.pos { color: var(--fl-gain); } .fl-simn b.neg { color: var(--fl-loss); }
+.fl-sim .res { animation: fl-fadein 0.4s ease 1.2s both; }
+@keyframes fl-fadein { from { opacity: 0; } }
 
 /* grid */
 .fl-gridw { overflow-x: auto; margin: 0 -4px; padding: 0 4px 4px; }
@@ -225,7 +238,8 @@
 .fl-cell { position: relative; height: 58px; border-radius: 10px; padding: 8px 10px; background: var(--z); cursor: default; outline: none; transition: background 0.5s, transform 0.25s var(--ease), box-shadow 0.25s; vertical-align: middle; }
 .fl-cell .v { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; display: block; }
 .fl-cell .b { font-size: 11.5px; color: var(--fl-ink-3); display: block; margin-top: 1px; }
-.fl-cell.ready { cursor: pointer; animation: fl-pop 0.45s var(--spring) both; }
+.fl-cell.ready { cursor: pointer; animation: fl-cellin 0.6s var(--ease) both; }
+@keyframes fl-cellin { from { opacity: 0; transform: scale(0.96); } }
 .fl-cell.ready:hover, .fl-cell.ready:focus-visible, .fl-cell.hov { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--fl-accent), 0 10px 24px rgba(18, 24, 38, 0.12); }
 .fl-cell.g3 { background: var(--g3); } .fl-cell.g3 .v, .fl-cell.g3 .b { color: #fff; }
 .fl-cell.g2 { background: var(--g2); } .fl-cell.g1 { background: var(--g1); } .fl-cell.z { background: var(--z); }

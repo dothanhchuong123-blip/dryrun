@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GridCellData } from "../../lib/events";
 
 export const MINUS = "−";
@@ -110,8 +110,8 @@ export function relDate(iso: string): string {
 }
 
 /** Counts up to `to` over `ms` (snaps when motion is reduced). */
-export function useCountUp(to: number, ms = 900): number {
-  const [v, setV] = useState(to);
+export function useCountUp(to: number, ms = 900, start?: number): number {
+  const [v, setV] = useState(start ?? to);
   useEffect(() => {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
       setV(to);
@@ -150,4 +150,20 @@ export function useTyped(text: string, active: boolean, cps = 140): string {
     return () => window.clearTimeout(t);
   }, [active, n, text.length, cps]);
   return text.slice(0, n);
+}
+
+/** Follows `value`, but changes at most once every `ms`; the latest value always lands in the end. */
+export function useHeld<T>(value: T, ms: number): T {
+  const [held, setHeld] = useState(value);
+  const since = useRef(0);
+  useEffect(() => {
+    if (Object.is(value, held)) return;
+    const wait = Math.max(0, since.current + ms - performance.now());
+    const t = window.setTimeout(() => {
+      since.current = performance.now();
+      setHeld(value);
+    }, wait);
+    return () => window.clearTimeout(t);
+  }, [value, held, ms]);
+  return held;
 }

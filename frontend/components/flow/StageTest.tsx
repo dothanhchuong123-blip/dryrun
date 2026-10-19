@@ -9,7 +9,7 @@ import { cellKey, reasoningKey, useMarketStore, type PlanRow } from "../../lib/s
 import type { Beat } from "../../lib/timeline";
 import { AddPlanPanel } from "../grid/AddPlanPanel";
 import { topBubbles } from "../grid/tips";
-import { DivBar, maxAbs, sign, tone, useCountUp, useTyped } from "./parts";
+import { DivBar, maxAbs, sign, tone, useCountUp, useHeld, useTyped } from "./parts";
 
 const TAG: Record<string, string> = { think: "Thinking", test: "Testing", result: "Result", shoppers: "Shoppers", finish: "Decided", fallback: "Fallback" };
 
@@ -127,7 +127,7 @@ function Analyst({ shown, active }: { shown: Shown; active: boolean }) {
 
 function Shoppers({ shown }: { shown: Shown }) {
   const crowd = useMarketStore((s) => s.crowdByPlan);
-  const plan = shown.crowd[shown.crowd.length - 1];
+  const plan = useHeld(shown.crowd[shown.crowd.length - 1], 1800);
   const arch: CrowdArchetype[] = plan ? (crowd[plan] ?? []) : [];
   const toYou = arch.filter((a) => a.mu[0] > 0.02).length;
   const away = arch.filter((a) => a.mu[0] < -0.02).length;
@@ -185,81 +185,138 @@ function Shoppers({ shown }: { shown: Shown }) {
 
 // ---- simulator ------------------------------------------------------------------------------------
 
-/** The spread of one box's runs, drawn as a bell from its average and its 1-in-20 bad case. */
-function Bell({ cell }: { cell: GridCellData }) {
-  const W = 300,
-    H = 120;
+/** Seeded random numbers, so the same box always draws the same lines. */
+function rng(seed: string): () => number {
+  let h = 2166136261;
+  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  return () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
+    h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0;
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+}
+
+const W = 320,
+  H = 150,
+  WEEKS = 24,
+  LINES = 18;
+
+/**
+ * A fan of example runs for one box: cumulative profit vs doing nothing, week by week. Each line ends at an
+ * evenly spaced point of the spread implied by the box's average and 1-in-20 bad case; the wiggle in between
+ * is illustration. The bold line is the average.
+ */
+function fanFor(cell: GridCellData) {
   const m = cell.mean_delta_usd;
-  const sd = Math.max(Math.abs(m - cell.p5_delta_usd) / 1.645, Math.abs(m) * 0.15, 50);
-  const lo = Math.min(m - 3.2 * sd, -sd * 0.5),
-    hi = Math.max(m + 3.2 * sd, sd * 0.5);
-  const X = (v: number) => ((v - lo) / (hi - lo)) * W;
-  const pdf = (v: number) => Math.exp(-0.5 * ((v - m) / sd) ** 2);
-  const pts: [number, number][] = [];
-  for (let i = 0; i <= 60; i++) {
-    const v = lo + ((hi - lo) * i) / 60;
-    pts.push([X(v), H - 8 - pdf(v) * (H - 22)]);
+  const sd = Math.max((m - cell.p5_delta_usd) / 1.645, Math.abs(m) * 0.12, 60);
+  const rnd = rng(cellKey(cell.plan_name, cell.shock_id));
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(2 * Math.PI * rnd());
+  const q = (u: number) => Math.sqrt(2) * erfinv(2 * u - 1);
+  const ends = Array.from({ length: LINES }, (_, i) => m + sd * q((i + 0.5) / LINES));
+  const walks = ends.map((e) => {
+    const steps = Array.from({ length: WEEKS }, () => gauss() * sd * 0.22);
+    const pts: number[] = [0];
+    let acc = 0;
+    for (let w = 1; w <= WEEKS; w++) {
+      acc += steps[w - 1];
+      // a bridge: random wiggle that is pinned to 0 at the start and to `e` at the end
+      pts.push(e * Math.pow(w / WEEKS, 1.15) + acc - (w / WEEKS) * steps.reduce((x, y) => x + y, 0));
+    }
+    return { e, pts };
+  });
+  const avg = Array.from({ length: WEEKS + 1 }, (_, w) => m * Math.pow(w / WEEKS, 1.15));
+  const all = walks.flatMap((x) => x.pts).concat(avg);
+  const lo = Math.min(0, ...all),
+    hi = Math.max(0, ...all);
+  const pad = (hi - lo) * 0.08 || 1;
+  const Y = (v: number) => H - 8 - ((v - lo + pad) / (hi - lo + 2 * pad)) * (H - 16);
+  const X = (w: number) => (w / WEEKS) * W;
+  const d = (pts: number[]) => pts.map((v, w) => `${w ? "L" : "M"}${X(w).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");
+  return { lines: walks.map((x) => ({ d: d(x.pts), good: x.e >= 0 })), avg: d(avg), zero: Y(0) };
+}
+
+/** Inverse error function (Giles' approximation), for spacing the line ends. */
+function erfinv(x: number): number {
+  const w = -Math.log((1 - x) * (1 + x));
+  let p: number;
+  if (w < 5) {
+    const t = w - 2.5;
+    p = 2.81022636e-8;
+    for (const c of [3.43273939e-7, -3.5233877e-6, -4.39150654e-6, 0.00021858087, -0.00125372503, -0.00417768164, 0.246640727, 1.50140941]) p = c + p * t;
+  } else {
+    const t = Math.sqrt(w) - 3;
+    p = -0.000200214257;
+    for (const c of [0.000100950558, 0.00134934322, -0.00367342844, 0.00573950773, -0.0076224613, 0.00943887047, 1.00167406, 2.83297682]) p = c + p * t;
   }
-  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
-  const area = `${line} L${W} ${H - 8} L0 ${H - 8} Z`;
-  const z = X(0);
+  return p * x;
+}
+
+function Fan({ cell }: { cell: GridCellData }) {
+  const f = fanFor(cell);
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Spread of ${formatRuns(cell.n)} runs`}>
-      <defs>
-        <clipPath id="fl-neg">
-          <rect x="0" y="0" width={Math.max(0, z)} height={H} />
-        </clipPath>
-        <clipPath id="fl-pos">
-          <rect x={Math.max(0, z)} y="0" width={W} height={H} />
-        </clipPath>
-      </defs>
-      <path d={area} fill="var(--fl-loss-bar)" opacity="0.22" clipPath="url(#fl-neg)" />
-      <path d={area} fill="var(--fl-gain-bar)" opacity="0.22" clipPath="url(#fl-pos)" />
-      <path className="curve" d={line} fill="none" stroke="var(--fl-ink-2)" strokeWidth="1.6" />
-      <line x1={z} x2={z} y1="6" y2={H - 8} stroke="var(--fl-ink-3)" strokeDasharray="3 3" />
-      <text x={z + 4} y="14" fontSize="10" fill="var(--fl-ink-3)">
-        same as doing nothing
-      </text>
-      <line x1={X(cell.p5_delta_usd)} x2={X(cell.p5_delta_usd)} y1="30" y2={H - 8} stroke="var(--fl-loss)" strokeWidth="1.4" />
-      <line x1={X(m)} x2={X(m)} y1="18" y2={H - 8} stroke="var(--fl-accent)" strokeWidth="2" />
-      <line x1="0" x2={W} y1={H - 8} y2={H - 8} stroke="var(--fl-line-2)" />
-    </svg>
+    <div className="fl-fan">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={`Example runs for ${cell.plan_name}`}>
+        <line x1="0" x2={W} y1={f.zero} y2={f.zero} className="zero" />
+        {f.lines.map((l, i) => (
+          <path key={i} d={l.d} className={`run ${l.good ? "g" : "r"}`} pathLength={1} style={{ ["--d" as string]: `${i * 40}ms` }} />
+        ))}
+        <path d={f.avg} className="avg" pathLength={1} />
+      </svg>
+      <span className="tl">Profit vs doing nothing</span>
+      <span className="br">6 months →</span>
+    </div>
   );
+}
+
+/** Counts this box's runs up from 0 as its lines draw. */
+function RunCount({ n }: { n: number }) {
+  const v = useCountUp(n, 1100, 0);
+  return <b>{formatRuns(Math.round(v))}</b>;
 }
 
 function Simulator({ shown }: { shown: Shown }) {
   const cells = useMarketStore((s) => s.cells);
   const shocks = useMarketStore((s) => s.shocks);
-  const key = shown.cells[shown.cells.length - 1];
+  // boxes land every ~130 ms; hold each one long enough to watch its runs draw
+  const key = useHeld(shown.cells[shown.cells.length - 1], 1900);
   const cell = key ? cells[key] : undefined;
-  const runs = shown.cells.reduce((n, k) => n + (cells[k]?.n ?? 0), 0);
-  const counted = useCountUp(runs, 500);
+  const total = shown.cells.reduce((n, k) => n + (cells[k]?.n ?? 0), 0);
   const shock = cell ? shocks.find((s) => s.id === cell.shock_id) : undefined;
   return (
     <div className="fl-card fl-sim">
       <div className="fl-ch">
-        <div>
+        <div style={{ minWidth: 0 }}>
           <h2>The simulator</h2>
-          <p className="fl-sub">{cell ? <>{cell.plan_name} · {shock?.label}</> : "Every plan, in every future, 1,000 times."}</p>
+          <p className="fl-sub">
+            {cell ? (
+              <>
+                <b style={{ color: "var(--fl-ink)", fontWeight: 600 }}>{cell.plan_name}</b> · {shock?.label}
+              </>
+            ) : (
+              "Runs every plan in every future, 1,000 times each. No AI, just math."
+            )}
+          </p>
         </div>
-        <span className="fl-pill">{formatRuns(Math.round(counted))} runs</span>
+        <span className="fl-pill">{formatRuns(total)} runs</span>
       </div>
       {cell ? (
-        <>
-          <Bell cell={cell} />
+        <div key={key}>
+          <Fan cell={cell} />
           <div className="fl-simn">
             <span>
+              <RunCount n={cell.n} /> / {formatRuns(cell.n)} runs
+            </span>
+            <span className="res">
               Average <b className={sign(cell.mean_delta_usd)}>{formatDelta(cell.mean_delta_usd)}</b>
             </span>
-            <span>better in {formatPercent(cell.p_better, 0)} of runs</span>
           </div>
-          <p className="fl-sub" style={{ marginTop: 4 }}>
-            <span style={{ color: "var(--fl-loss)" }}>Red line:</span> 1 run in 20 is worse than {formatDelta(cell.p5_delta_usd)}. The engine computes every number; the AI never does.
+          <p className="fl-sub res" style={{ marginTop: 4 }}>
+            Better than doing nothing in {Math.round(cell.p_better * 100)} of 100 runs. 1 in 20 is worse than {formatDelta(cell.p5_delta_usd)}.
           </p>
-        </>
+        </div>
       ) : (
         <div style={{ display: "grid", gap: 8, marginTop: 6 }} aria-hidden>
-          <span className="fl-skel" style={{ height: 90 }} />
+          <span className="fl-skel" style={{ height: 150 }} />
           <span className="fl-skel" style={{ width: "60%" }} />
         </div>
       )}
