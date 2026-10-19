@@ -179,6 +179,43 @@ function Shoppers({ shown }: { shown: Shown }) {
           Asked only about plans that change what customers see, like the price.
         </p>
       )}
+      <ShopperHistory plans={[...new Set(shown.crowd)].filter((x) => x !== plan).reverse()} crowd={crowd} />
+    </div>
+  );
+}
+
+/** The earlier plans the shoppers reacted to, newest first: how they split and the strongest line. */
+function ShopperHistory({ plans, crowd }: { plans: string[]; crowd: Record<string, CrowdArchetype[]> }) {
+  const rows = plans.filter((p) => (crowd[p]?.length ?? 0) > 0).slice(0, 4);
+  if (!rows.length) return null;
+  return (
+    <div className="fl-hist">
+      <small>Earlier plans</small>
+      <ul>
+        {rows.map((p) => {
+          const a = crowd[p];
+          const up = a.filter((x) => x.mu[0] > 0.02).length;
+          const down = a.filter((x) => x.mu[0] < -0.02).length;
+          const top = topBubbles(a)[0];
+          return (
+            <li key={p}>
+              <div className="hd">
+                <span className="nm">{p}</span>
+                <span className="fl-split" aria-label={`${up} lean to you, ${down} lean away`}>
+                  <i className="u" style={{ flexGrow: up }} />
+                  <i className="z" style={{ flexGrow: a.length - up - down }} />
+                  <i className="d" style={{ flexGrow: down }} />
+                </span>
+              </div>
+              {top && (
+                <p className="q">
+                  <b>{top.label}:</b> “{top.bubble}”
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -313,6 +350,7 @@ function Simulator({ shown }: { shown: Shown }) {
           <p className="fl-sub res" style={{ marginTop: 4 }}>
             Better than doing nothing in {Math.round(cell.p_better * 100)} of 100 runs. 1 in 20 is worse than {formatDelta(cell.p5_delta_usd)}.
           </p>
+          <SimHistory keys={shown.cells} current={key} />
         </div>
       ) : (
         <div style={{ display: "grid", gap: 8, marginTop: 6 }} aria-hidden>
@@ -320,6 +358,43 @@ function Simulator({ shown }: { shown: Shown }) {
           <span className="fl-skel" style={{ width: "60%" }} />
         </div>
       )}
+    </div>
+  );
+}
+
+/** The boxes tested so far, newest first: how often each beat doing nothing, and its average. */
+function SimHistory({ keys, current }: { keys: string[]; current?: string }) {
+  const cells = useMarketStore((s) => s.cells);
+  const shocks = useMarketStore((s) => s.shocks);
+  // up to the box on screen, so the list never runs ahead of the fan
+  const upTo = current ? keys.indexOf(current) : -1;
+  const rows = keys
+    .slice(0, upTo + 1)
+    .reverse()
+    .slice(0, 6)
+    .map((k) => cells[k])
+    .filter((c): c is GridCellData => !!c);
+  if (!rows.length) return null;
+  return (
+    <div className="fl-hist">
+      <small>Tested so far · share of runs that beat doing nothing</small>
+      <ul>
+        {rows.map((c) => {
+          const k = cellKey(c.plan_name, c.shock_id);
+          return (
+            <li key={k} className={`sim${k === current ? " cur" : ""}`}>
+              <span className="nm">
+                {c.plan_name}
+                <em>{shocks.find((s) => s.id === c.shock_id)?.label ?? c.shock_id}</em>
+              </span>
+              <span className="fl-win" aria-label={`${Math.round(c.p_better * 100)}% of runs beat doing nothing`}>
+                <i style={{ width: `${Math.round(c.p_better * 100)}%` }} />
+              </span>
+              <b className={sign(c.mean_delta_usd)}>{formatDelta(c.mean_delta_usd)}</b>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
