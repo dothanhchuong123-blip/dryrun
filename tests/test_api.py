@@ -1,6 +1,7 @@
 """T08 tests: the v2 HTTP layer. Scripted router, fake Tavily client, recordings from fixtures/replays; no network."""
 import asyncio
 import json
+from datetime import date
 
 import httpx
 
@@ -34,7 +35,7 @@ class Clock:
         return self.t
 
 
-def make_app(tmp_path, *, guard=None, cap=30, clock=None, settings_kw=None, **kw):
+def make_app(tmp_path, *, guard=None, cap=30, clock=None, settings_kw=None, today=lambda: date(2026, 10, 20), **kw):
     scouts = []
 
     def scout():
@@ -54,7 +55,7 @@ def make_app(tmp_path, *, guard=None, cap=30, clock=None, settings_kw=None, **kw
     app = create_app(
         settings=Settings(tavily_daily_credit_cap=cap, _env_file=None, **(settings_kw or {})),
         router=router, scout_factory=scout,
-        guard=guard or Guard(), clock=clock or Clock(), replay_speed=1000.0, telemetry_dir=tmp_path / "tel",
+        guard=guard or Guard(), clock=clock or Clock(), replay_speed=1000.0, today=today, telemetry_dir=tmp_path / "tel",
         serve_frontend=False, **kw,
     )
     app.state.scouts, app.state.router = scouts, router
@@ -332,3 +333,21 @@ async def test_bad_requests(tmp_path):
         assert (await c.post("/api/analyses", json={})).status_code == 422
         assert (await c.post("/api/analyses", json={"example_id": "nope"})).status_code == 404
         assert (await c.post("/api/analyses", json={"profile": {"business_name": "x"}})).status_code == 422
+
+
+def test_live_cap_follows_the_judging_calendar():
+    s = Settings(_env_file=None)
+    assert s.live_cap_on(date(2026, 11, 30)) == s.public_live_daily_cap_usd
+    assert s.live_cap_on(date(2026, 12, 1)) == s.judging_live_daily_cap_usd
+    assert s.live_cap_on(date(2026, 12, 16)) == s.judging_live_daily_cap_usd
+    assert s.live_cap_on(date(2026, 12, 17)) == 0.0
+    assert Settings(_env_file=None, live_enabled=False).live_cap_on(date(2026, 12, 5)) == 0.0
+
+
+async def test_live_off_after_judging_ends(tmp_path):
+    app = make_app(tmp_path, today=lambda: date(2026, 12, 17))
+    async with client(app) as c:
+        assert (await c.post("/api/analyses", json={"profile": PROFILE})).status_code == 429
+        r = await c.post("/api/analyses", json={"example_id": "coffee_austin"})
+        assert r.status_code == 200 and r.json()["mode"] == "replay"
+    assert app.state.router.n_calls == 0

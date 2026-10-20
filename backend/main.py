@@ -14,7 +14,7 @@ import uuid
 from collections import defaultdict, deque
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -169,13 +169,17 @@ def create_app(
     guard: SpendGuard | None = None,
     clock: Callable[[], float] = time.monotonic,
     replay_speed: float = 1.0,
+    today: Callable[[], date] = lambda: datetime.now(UTC).date(),
     telemetry_dir: Path | None = None,
     serve_frontend: bool = True,
 ) -> FastAPI:
     """`router` (a NemotronRouter) and `scout_factory` (one TavilyScout per analysis) default to the real ones,
     built on first use. `replay_speed` scales the playback of recorded analyses."""
     s = settings or get_settings()
-    guard = guard or SpendGuard(s.public_live_daily_cap_usd, telemetry_dir)
+    guard = guard or SpendGuard(lambda: s.live_cap_on(today()), telemetry_dir)
+
+    def live_on() -> bool:
+        return s.live_cap_on(today()) > 0
     app = FastAPI(title="Market Digital Twin")
     if s.frontend_origin:
         app.add_middleware(
@@ -241,7 +245,7 @@ def create_app(
     @app.post("/api/profile/parse")
     async def profile_parse(body: ParseRequest, request: Request) -> Any:
         ip = client_ip(request)
-        if not s.live_enabled:
+        if not live_on():
             return JSONResponse({"reason": LIVE_OFF}, 429)
         if parse_hits.full(ip):
             return JSONResponse({"reason": "You have read a few businesses already. Try again in an hour, or pick an example."}, 429)
@@ -287,7 +291,7 @@ def create_app(
 
         running = sum(1 for e in analyses.values() if e.live and not e.finished)
         blocked: str | None = None
-        if not s.live_enabled:
+        if not live_on():
             blocked = LIVE_OFF
         elif live_hits.full(ip):
             blocked = "You have used your live analyses for this hour. Try again later, or pick an example."

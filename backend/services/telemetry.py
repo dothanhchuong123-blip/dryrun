@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import statistics
 import threading
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -102,9 +103,10 @@ class TelemetryStore:
 
 
 class SpendGuard:
-    """Blocks LIVE calls once today's spend (summed from the jsonl) reaches `cap` USD."""
+    """Blocks LIVE calls once today's spend (summed from the jsonl) reaches `cap` USD.
+    `cap` may be a function, read on every check (the public demo's cap follows the judging calendar)."""
 
-    def __init__(self, cap: float, directory: Path | None = None) -> None:
+    def __init__(self, cap: float | Callable[[], float], directory: Path | None = None) -> None:
         self.cap = cap
         self.dir = directory or TELEMETRY_DIR
         self._size = -1
@@ -126,4 +128,5 @@ class SpendGuard:
         return self._spent
 
     def allow(self) -> bool:
-        return self.spent_today() < self.cap
+        cap = self.cap() if callable(self.cap) else self.cap
+        return self.spent_today() < cap

@@ -1,4 +1,5 @@
 """Single source of runtime config. Read model IDs, URLs and keys ONLY through `get_settings()`."""
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
@@ -32,6 +33,10 @@ class Settings(BaseSettings):
     # Public demo kill switch: LIVE_ENABLED=false in the host's env turns every paid Nemotron call off (replays still work).
     live_enabled: bool = True
     max_live_analyses: int = 1  # LIVE runs at once; the spend guard only sees a run's cost after it is spent
+    # Judging calendar (UTC dates, SPEC §1): a bigger daily cap while judges test, LIVE off after the last day.
+    judging_start: date = date(2026, 12, 1)
+    judging_end: date = date(2026, 12, 16)  # last day LIVE is on
+    judging_live_daily_cap_usd: float = 0.70
     tavily_daily_credit_cap: int = 30  # public "Check live news" button, SPEC §6
     # Serverless Job "mc-10k" (T09, docs/DEPLOY.md). job_backend: "" = not deployed, "local" = subprocess, "nebius" = CLI.
     job_backend: str = ""
@@ -46,6 +51,14 @@ class Settings(BaseSettings):
     job_max_wait_s: float = 1800.0
     nebius_cli: str = "nebius"
     frontend_origin: str = ""  # CORS allow-origin for the Next.js site; "" = same origin only
+
+    def live_cap_on(self, day: date) -> float:
+        """The public LIVE budget for `day` in USD; 0 means LIVE is off (switched off, or judging is over)."""
+        if not self.live_enabled or day > self.judging_end:
+            return 0.0
+        if day >= self.judging_start:
+            return self.judging_live_daily_cap_usd
+        return self.public_live_daily_cap_usd
 
 
 @lru_cache
