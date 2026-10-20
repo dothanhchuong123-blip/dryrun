@@ -7,6 +7,8 @@ COPY frontend/package.json frontend/package-lock.json ./frontend/
 RUN cd frontend && npm ci
 COPY frontend ./frontend
 COPY fixtures/replays ./fixtures/replays
+# "/" = call the backend on the same origin; without it the page runs the in-browser mock.
+ENV NEXT_PUBLIC_API_BASE=/
 RUN cd frontend && npm run build
 
 FROM python:3.12-slim

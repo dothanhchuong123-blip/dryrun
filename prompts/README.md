@@ -79,27 +79,27 @@ Oct 21–24   connect frontend ↔ backend, polish · Argon reviews A2 · A4 · 
 | Done | Task | Builder | Needs | File |
 |---|---|---|---|---|
 | [x] | **P2b engine recalibration**: price sensitivity, outside option, per-path uncertainty (SPEC §15.3 change approved 2026-10-15) | Claude **Opus 5.5** (effort high) | P2 | `prompts/3b_oct17_one-task/P2b-engine-recalibration.md` |
-| [ ] | P3 analyst loop, futures step, shopper reactions, news watch (offline part can run alongside P2b; **live run after P2b**) | Claude Sonnet 5.5 (effort high) | P1, P2 (+P2b for the live run) | `prompts/3b_oct17_one-task/P3-analyst-news.md` |
-| [ ] | F0 frontend shell v2: types, store, stream, mock, page shell | Claude Sonnet 5.5 (effort medium). **Can start now**, alongside P2 | EVENTS v2.1 | `prompts/ui_oct17-20_frontend/F0-frontend-shell-v2.md` |
+| [x] | P3 analyst loop, futures step, shopper reactions, news watch (offline part can run alongside P2b; **live run after P2b**) | Claude Sonnet 5.5 (effort high) | P1, P2 (+P2b for the live run) | `prompts/3b_oct17_one-task/P3-analyst-news.md` |
+| [x] | F0 frontend shell v2: types, store, stream, mock, page shell | Claude Sonnet 5.5 (effort medium). **Can start now**, alongside P2 | EVENTS v2.1 | `prompts/ui_oct17-20_frontend/F0-frontend-shell-v2.md` |
 
 ### Wave 3c · Oct 18 · **Milestone A** (headless end-to-end analysis) · `prompts/3c_oct18_one-task/`
 | Done | Task | Builder | Needs | File |
 |---|---|---|---|---|
-| [ ] | P4 analysis orchestrator, cell replay, CLI, example recordings | Claude **Opus 5.5** (effort high) | P1–P3 | `prompts/3c_oct18_one-task/P4-analysis-orchestrator.md` |
+| [x] | P4 analysis orchestrator, cell replay, CLI, example recordings | Claude **Opus 5.5** (effort high) | P1–P3 | `prompts/3c_oct18_one-task/P4-analysis-orchestrator.md` |
 
 Then (optional, advice only): Argon review **A2** (prompt red-team on the analyst, futures and profile prompts) and **A3** (whole repo).
 
 ### Frontend screens · Oct 17–20 · `prompts/ui_oct17-20_frontend/`. F1–F3 run in parallel (3 Claude sessions) after F0.
 | Done | Task | Builder | File |
 |---|---|---|---|
-| [ ] | F1 screens 1–2: your business, news | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F1-setup-news.md` |
-| [ ] | F2 screens 3–4: analyst log, plans × futures grid | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F2-analyst-grid.md` |
-| [ ] | F3 screens 5–6: replay drawer (arena), decision memo | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F3-replay-memo.md` |
+| [x] | F1 screens 1–2: your business, news | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F1-setup-news.md` |
+| [x] | F2 screens 3–4: analyst log, plans × futures grid | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F2-analyst-grid.md` |
+| [x] | F3 screens 5–6: replay drawer (arena), decision memo | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F3-replay-memo.md` |
 
 ### Wave 4 · Oct 19–20 · **Milestone B** (deployed) · `prompts/4_oct19-20_in-order/`. **T08 first, then T09.**
 | Done | Task | Builder | File |
 |---|---|---|---|
-| [ ] | T08 API v2, SSE, replay, spend guard | Claude Sonnet 5.5 | `prompts/4_oct19-20_in-order/T08-api-sse-replay.md` |
+| [x] | T08 API v2, SSE, replay, spend guard | Claude Sonnet 5.5 | `prompts/4_oct19-20_in-order/T08-api-sse-replay.md` |
 | [~] | T09 Nebius Endpoint + 10,000-per-cell Job | Claude Sonnet 5.5 **+ you** (console, billing) | `prompts/4_oct19-20_in-order/T09-nebius-deploy.md` |
 | | **CHECKPOINT (2026-10-15), T09 paused for UI/UX work** | | **Done and pushed:** job service (`backend/services/nebius_jobs.py`, local + Nebius backends, tested), multi-stage `Dockerfile`, `jobs/mc_worker/Dockerfile`, `render.yaml`, `scripts/bench_serverless.py`, `docs/DEPLOY.md`. Public repo: github.com/dothanhchuong123-blip/market-digital-twin. **Decisions:** no Nebius compute (projects suspended until a $25 top-up; 24/7 CPU ≈ $90-195) and no Hugging Face (Docker Spaces need PRO), so the public demo goes on **Render free**. Nebius CLI + Docker are installed and logged in. **Still to do:** (1) after the UI work, connect the repo in Render (New → Blueprint), add `NEBIUS_API_KEY` + `TAVILY_API_KEY`; (2) test the URL (`/health`, SSE) and add an uptime ping; (3) optional: top up Nebius, run `scripts/bench_serverless.py` for the feedback report; (4) tick T09 when 1-2 are done. |
 

@@ -28,11 +28,14 @@ import type { MockAnalysisHandle } from "../mock";
 
 export type BackendKind = "api" | "mock";
 
+// "/" means same origin (the Docker image, where the backend serves this static export).
+const RAW_API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+
 export function getApiBase(): string {
-  return (process.env.NEXT_PUBLIC_API_BASE ?? "").replace(/\/+$/, "");
+  return RAW_API_BASE.replace(/\/+$/, "");
 }
 
-let kind: BackendKind = getApiBase() ? "api" : "mock";
+let kind: BackendKind = RAW_API_BASE ? "api" : "mock";
 const kindListeners = new Set<(k: BackendKind) => void>();
 
 export function backendKind(): BackendKind {
