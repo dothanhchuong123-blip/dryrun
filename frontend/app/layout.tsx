@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Market Twin · Test your plans",
+  title: "Dry Run · Test your plans first",
   description:
     "Describe your business, see the news that hits it, and test plans against possible futures. Powered by NVIDIA Nemotron on Nebius, grounded with Tavily.",
 };
@@ -19,7 +19,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
         />
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>

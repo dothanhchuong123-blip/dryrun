@@ -1,0 +1,85 @@
+/* Pixel customers and the Dry Run look (DESIGN.md §12.6). Motion moves in whole pixels: steps(), never easing. */
+.pxf { display: block; width: 100%; height: auto; overflow: visible; }
+.pxf .eo { animation: px-eo 4.6s steps(1) infinite; }
+.pxf .ec { opacity: 0; animation: px-ec 4.6s steps(1) infinite; }
+@keyframes px-eo { 0%, 100% { opacity: 1; } 95% { opacity: 0; } 98% { opacity: 1; } }
+@keyframes px-ec { 0%, 100% { opacity: 0; } 95% { opacity: 1; } 98% { opacity: 0; } }
+.pxf .bob { animation: px-bob 1.6s steps(1) infinite; }
+@keyframes px-bob { 50% { transform: translateY(-0.5px); } }
+.pxf.pop { animation: px-pop 0.36s steps(3) 1; }
+@keyframes px-pop { 40% { transform: scale(1.1) translateY(-3%); } }
+.pxlogo { display: block; flex: none; }
+
+/* headings: editorial serif for page and card titles, Inter stays for everything else */
+.fl .fl-hero h1 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.01em; line-height: 1; font-size: clamp(40px, 6.2vw, 72px); }
+.fl .fl-hero h1 em { font-style: italic; color: var(--fl-accent); }
+.fl .fl-card h2 { font-family: var(--serif); font-weight: 400; font-size: 24px; letter-spacing: 0; line-height: 1.1; }
+.fl-logo { font-family: var(--serif); font-weight: 400 !important; font-size: 22px !important; letter-spacing: 0 !important; }
+
+/* landing: the pixel field the input box sits on */
+.px-field { position: relative; max-width: 1072px; margin: 30px auto 0; height: clamp(220px, 34vh, 340px); border-radius: 14px; overflow: hidden; background: var(--px-field); }
+.pxcrowd { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.px-field .lbl { position: absolute; top: 16px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; opacity: 0.85; }
+.px-field .lbl.a { left: 20px; }
+.px-field .lbl.b { right: 20px; }
+.px-field + .fl-box { margin-top: -64px; z-index: 2; }
+
+/* shoppers: a crowd of faces */
+.px-crowd { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 10px 6px; margin-top: 12px; }
+.px-p { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-align: center; }
+.px-p .disc { position: relative; width: 100%; max-width: 52px; transition: transform 0.2s steps(2); }
+.px-p:hover .disc, .px-p:focus-visible .disc { transform: translateY(-3px); }
+.px-p:focus-visible { outline: none; }
+.px-p:focus-visible .disc { outline: 2px solid var(--fl-accent); outline-offset: 2px; }
+.px-p.sel .disc { outline: 2px solid var(--fl-ink); outline-offset: 2px; }
+.px-p .lean { position: absolute; top: -2px; right: -2px; width: 14px; height: 14px; display: grid; place-items: center; font-size: 9px; font-weight: 700; color: #fff; background: var(--px-none); box-shadow: 0 0 0 2px var(--fl-card); }
+.px-p.up .lean { background: var(--px-you); }
+.px-p.down .lean { background: var(--px-rival); }
+.px-p .nm { margin-top: 4px; font-size: 11.5px; font-weight: 600; line-height: 1.2; color: var(--fl-ink-2); }
+.px-p .tr { display: none; }
+.px-p.wait .disc { opacity: 0.5; }
+
+/* pixel speech bubble: notched corners and a stepped tail */
+.px-bub { position: relative; display: inline-block; max-width: 100%; padding: 7px 10px; font-size: 12.5px; line-height: 1.4; color: var(--fl-on-solid); background: var(--fl-solid);
+  clip-path: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)); }
+.px-bub b { font-weight: 650; }
+.px-bub small { display: block; font-size: 11px; opacity: 0.7; }
+.px-said { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.px-line { display: flex; align-items: flex-end; gap: 8px; animation: fl-blockin 0.45s var(--ease) both; }
+.px-line .who { flex: none; width: 32px; }
+.px-line .tail { flex: none; width: 8px; height: 8px; margin: 0 -8px 6px 0; background: var(--fl-solid); clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 50%, 50% 50%, 50% 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pxf .eo, .pxf .ec, .pxf .bob, .pxf.pop { animation: none; }
+  .pxf .ec { opacity: 0; }
+}
+
+/* landing: the shopper panel preview (docs/mockups/D8-faces.html) */
+.cp { max-width: 1072px; margin: 40px auto 0; padding: 26px; background: var(--fl-card); border: 1px solid var(--fl-line); border-radius: 14px; }
+.cp-h { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.cp-h h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 3.6vw, 42px); line-height: 1; letter-spacing: 0; color: var(--fl-ink); }
+.cp-h h2 em { color: var(--fl-accent); }
+.cp-h p { margin: 8px 0 0; font-size: 14px; color: var(--fl-ink-3); }
+.cp-plans { display: flex; gap: 6px; flex-wrap: wrap; }
+.cp-plans button { font-size: 13px; font-weight: 500; padding: 7px 11px; border-radius: 6px; border: 1px solid var(--fl-line-2); background: var(--fl-card); color: var(--fl-ink-2); cursor: pointer; }
+.cp-plans button.on { background: var(--fl-solid); border-color: var(--fl-solid); color: var(--fl-on-solid); }
+.cp-tally { display: flex; gap: 2px; height: 8px; margin: 22px 0 6px; overflow: hidden; }
+.cp-tally i { flex-basis: 0; transition: flex-grow 0.6s var(--ease); }
+.cp-tally .u { background: var(--px-you); } .cp-tally .z { background: var(--px-none); } .cp-tally .d { background: var(--px-rival); }
+.cp-tl { display: flex; gap: 18px; flex-wrap: wrap; margin: 0; font-size: 13px; color: var(--fl-ink-2); }
+.cp-tl b { color: var(--fl-ink); font-variant-numeric: tabular-nums; }
+.cp-tl small { margin-left: auto; font-size: 12px; color: var(--fl-ink-3); }
+.cp-crowd { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px 14px; margin-top: 46px; }
+.cp-p { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; outline: none; }
+.cp-p .disc { position: relative; width: 100%; max-width: 150px; transition: transform 0.2s steps(2); }
+.cp-p:hover .disc, .cp-p:focus-visible .disc { transform: translateY(-5px); }
+.cp-p .lean { position: absolute; top: 6%; right: 6%; width: 20px; height: 20px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; box-shadow: 0 0 0 2px var(--fl-card); background: var(--px-none); }
+.cp-p.you .lean { background: var(--px-you); } .cp-p.rival .lean { background: var(--px-rival); }
+.cp-p b { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--fl-ink); }
+.cp-p small { font-size: 11.5px; color: var(--fl-ink-3); }
+.cp-bub { position: absolute; left: 50%; bottom: calc(100% - 24px); z-index: 3; width: max-content; max-width: 200px; padding: 8px 11px; font-size: 12.5px; line-height: 1.35; text-align: left; color: var(--fl-on-solid); background: var(--fl-solid); pointer-events: none; opacity: 0; transform: translate(-50%, 6px); transition: opacity 0.25s, transform 0.25s steps(2);
+  clip-path: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)); }
+.cp-p.say .cp-bub, .cp-p:hover .cp-bub, .cp-p:focus-visible .cp-bub { opacity: 1; transform: translate(-50%, 0); }
+.cp-p:hover ~ .cp-p.say .cp-bub, .cp-crowd:hover .cp-p.say:not(:hover) .cp-bub { opacity: 0; }
+@media (max-width: 860px) { .cp-crowd { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .cp { padding: 18px 16px; } .cp-crowd { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px; } .cp-tl small { margin-left: 0; } }

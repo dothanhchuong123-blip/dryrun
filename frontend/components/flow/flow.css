@@ -1,9 +1,12 @@
-/* The guided flow: one box, then a stage per step (docs: design canvas "Market Twin UI redesign").
+/* The guided flow: one box, then a stage per step. Look: DESIGN.md §12.6 (Dry Run: paper, ink blue, pixel customers).
    Colours reuse the app tokens from globals.css; the few extra ones below follow the same light/dark switch. */
 :root {
-  --fl-accent: #4338ca; --fl-accent-ink: #3730a3; --fl-accent-soft: #eef0fd; --fl-accent-line: #c7c9f5;
-  --fl-bg: #f7f7f4; --fl-card: #ffffff; --fl-sunk: #fafaf8; --fl-line: #e8e7e1; --fl-line-2: #dedfd9;
-  --fl-ink: #121826; --fl-ink-2: #374151; --fl-ink-3: #6b7280;
+  --fl-accent: #3b4bdb; --fl-accent-ink: #2f3cb8; --fl-accent-soft: #e4e7fb; --fl-accent-line: #c3c9f4;
+  --fl-bg: #f3efe4; --fl-card: #fffdf8; --fl-sunk: #f8f4ea; --fl-line: #e3dccb; --fl-line-2: #d6cdb9;
+  --fl-ink: #1b1a17; --fl-ink-2: #4d4a42; --fl-ink-3: #6f695d;
+  --px-field: #3b4bdb; --px-field-ink: #1e2a9c; --px-rival: #d9822b;
+  --px-you: #3b4bdb; --px-you-soft: #dce0fb; --px-rival-soft: #f8e2c8; --px-none: #b9b2a3; --px-none-soft: #e8e3d8; --px-disc: #e8e3d8;
+  --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
   --fl-gain: #15803d; --fl-gain-bar: #16a34a; --fl-gain-soft: #eef8f1; --fl-loss: #b42318; --fl-loss-bar: #dc2626; --fl-loss-soft: #fcedeb;
   --fl-mark: #fde68a; --fl-amber-soft: #fff8e6; --fl-amber-ink: #92400e;
   --fl-tip: #ffffff; --fl-tip-shadow: 0 24px 60px rgba(18, 24, 38, 0.18), 0 2px 6px rgba(18, 24, 38, 0.06);
@@ -11,9 +14,11 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --fl-accent: #5b61e8; --fl-accent-ink: #b4b8ff; --fl-accent-soft: #23244a; --fl-accent-line: #4a4e92;
-    --fl-bg: #0d0e10; --fl-card: #16171a; --fl-sunk: #1b1c20; --fl-line: #2a2c31; --fl-line-2: #33353b;
-    --fl-ink: #ecedef; --fl-ink-2: #c9ccd3; --fl-ink-3: #8b909b;
+    --fl-accent: #5260e4; --fl-accent-ink: #b9c0ff; --fl-accent-soft: #232650; --fl-accent-line: #434a99;
+    --fl-bg: #12110f; --fl-card: #1b1a17; --fl-sunk: #22201c; --fl-line: #2e2b26; --fl-line-2: #3a3630;
+    --fl-ink: #f1ece2; --fl-ink-2: #cfc8ba; --fl-ink-3: #9a9385;
+    --px-field: #2f3bb0; --px-field-ink: #141c70; --px-rival: #d9822b;
+    --px-you: #6f7cff; --px-you-soft: #2a2f66; --px-rival-soft: #4a3418; --px-none: #6b665c; --px-none-soft: #2e2b26; --px-disc: #2e2b26;
     --fl-gain: #4ade80; --fl-gain-bar: #22c55e; --fl-gain-soft: #183a27; --fl-loss: #f87171; --fl-loss-bar: #ef4444; --fl-loss-soft: #3a1d1b;
     --fl-mark: #6b5512; --fl-amber-soft: #2a2312; --fl-amber-ink: #fbbf24;
     --fl-tip: #141518; --fl-tip-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
@@ -21,9 +26,11 @@
   }
 }
 :root[data-theme="dark"] {
-  --fl-accent: #5b61e8; --fl-accent-ink: #b4b8ff; --fl-accent-soft: #23244a; --fl-accent-line: #4a4e92;
-  --fl-bg: #0d0e10; --fl-card: #16171a; --fl-sunk: #1b1c20; --fl-line: #2a2c31; --fl-line-2: #33353b;
-  --fl-ink: #ecedef; --fl-ink-2: #c9ccd3; --fl-ink-3: #8b909b;
+  --fl-accent: #5260e4; --fl-accent-ink: #b9c0ff; --fl-accent-soft: #232650; --fl-accent-line: #434a99;
+  --fl-bg: #12110f; --fl-card: #1b1a17; --fl-sunk: #22201c; --fl-line: #2e2b26; --fl-line-2: #3a3630;
+  --fl-ink: #f1ece2; --fl-ink-2: #cfc8ba; --fl-ink-3: #9a9385;
+  --px-field: #2f3bb0; --px-field-ink: #141c70; --px-rival: #d9822b;
+  --px-you: #6f7cff; --px-you-soft: #2a2f66; --px-rival-soft: #4a3418; --px-none: #6b665c; --px-none-soft: #2e2b26; --px-disc: #2e2b26;
   --fl-gain: #4ade80; --fl-gain-bar: #22c55e; --fl-gain-soft: #183a27; --fl-loss: #f87171; --fl-loss-bar: #ef4444; --fl-loss-soft: #3a1d1b;
   --fl-mark: #6b5512; --fl-amber-soft: #2a2312; --fl-amber-ink: #fbbf24;
   --fl-tip: #141518; --fl-tip-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);

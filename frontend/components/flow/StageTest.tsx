@@ -7,6 +7,8 @@ import { formatDelta, formatMoney, formatPercent, formatRuns } from "../../lib/f
 import { DO_NOTHING, overCash } from "../../lib/labels";
 import { cellKey, reasoningKey, useMarketStore, type PlanRow } from "../../lib/store";
 import type { Beat } from "../../lib/timeline";
+import { leanOf, moodOf, shopperOf, traitLine } from "../../lib/faces";
+import { PixelFace } from "../faces/PixelFace";
 import { AddPlanPanel } from "../grid/AddPlanPanel";
 import { topBubbles } from "../grid/tips";
 import { DivBar, maxAbs, sign, tone, useCountUp, useHeld, useTyped } from "./parts";
@@ -125,6 +127,9 @@ function Analyst({ shown, active }: { shown: Shown; active: boolean }) {
 
 // ---- shoppers -------------------------------------------------------------------------------------
 
+// before the first plan: the same 12 customers, waiting with flat faces
+const WAITING: CrowdArchetype[] = Array.from({ length: 12 }, (_, id) => ({ id, label: "", mu: [0, 0], sigma: [0, 0], bubble: "" }));
+
 function Shoppers({ shown }: { shown: Shown }) {
   const crowd = useMarketStore((s) => s.crowdByPlan);
   const plan = useHeld(shown.crowd[shown.crowd.length - 1], 1800);
@@ -132,23 +137,24 @@ function Shoppers({ shown }: { shown: Shown }) {
   const [open, setOpen] = useState(false);
   const [sel, setSel] = useState<number | null>(null);
   useEffect(() => setSel(null), [plan]);
-  const lean = (a: CrowdArchetype) => (a.mu[0] > 0.02 ? 1 : a.mu[0] < -0.02 ? -1 : 0);
-  const toYou = arch.filter((a) => lean(a) > 0).length;
-  const away = arch.filter((a) => lean(a) < 0).length;
+  const toYou = arch.filter((a) => leanOf(a) > 0).length;
+  const away = arch.filter((a) => leanOf(a) < 0).length;
   const same = arch.length - toYou - away;
   const picked = arch.find((a) => a.id === sel);
+  const said = (picked ? [picked] : topBubbles(arch)).filter((a) => a.bubble.trim());
+  const disc = (a: CrowdArchetype) => (leanOf(a) > 0 ? "var(--px-you-soft)" : leanOf(a) < 0 ? "var(--px-rival-soft)" : "var(--px-none-soft)");
   return (
     <div className="fl-card ts-shop">
       <div className="fl-ch">
         <div>
-          <h2>The shoppers</h2>
+          <h2>How your customers feel about it</h2>
           <p className="fl-sub">
             {plan ? (
               <>
-                <b className="ts-n">{arch.length} shopper types</b> react to “{plan}”
+                <b className="ts-n">{arch.length} kinds of customer</b> react to “{plan}”. Tap a face to hear them.
               </>
             ) : (
-              "Each kind of customer is played by Nemotron Lightning."
+              "Each kind of customer is played by Nemotron Lightning. Their faces change with every plan."
             )}
           </p>
         </div>
@@ -158,53 +164,66 @@ function Shoppers({ shown }: { shown: Shown }) {
       </div>
       {arch.length > 0 && (
         <div className="ts-sum">
-          <div className="ts-bar" role="img" aria-label={`${toYou} lean to you, ${same} don't mind, ${away} lean away`}>
+          <div className="ts-bar" role="img" aria-label={`${toYou} lean to you, ${same} don't mind, ${away} lean to the rival`}>
             <i className="u" style={{ flexGrow: toYou }} />
             <i className="z" style={{ flexGrow: same }} />
             <i className="d" style={{ flexGrow: away }} />
           </div>
           <p className="fl-sub" style={{ margin: "6px 0 0" }}>
-            <b className="pos">{toYou}</b> lean to you · <b>{same}</b> don&apos;t mind · <b className="neg">{away}</b> lean away
+            <b className="you">{toYou}</b> lean to you · <b>{same}</b> don&apos;t mind · <b className="riv">{away}</b> lean to the rival
           </p>
         </div>
       )}
-      <div className="fl-tiles ts-tiles" key={plan ?? "none"}>
-        {(arch.length ? arch : Array.from({ length: 12 }, () => null)).map((a, i) =>
-          a ? (
+      <div className="px-crowd">
+        {(arch.length ? arch : WAITING).map((a) => {
+          const who = shopperOf(a);
+          const l = leanOf(a);
+          const waiting = !arch.length;
+          return (
             <button
               type="button"
               key={a.id}
-              className={`fl-tile ts-tile pop${lean(a) > 0 ? " up" : lean(a) < 0 ? " down" : ""}${sel === a.id ? " sel" : ""}`}
-              style={{ ["--i" as string]: i }}
-              title={`${a.label}: “${a.bubble}”`}
+              className={`px-p${l > 0 ? " up" : l < 0 ? " down" : ""}${sel === a.id ? " sel" : ""}${waiting ? " wait" : ""}`}
+              title={waiting ? undefined : `${who.name}, ${traitLine(who)}: “${a.bubble}”`}
               aria-pressed={sel === a.id}
+              disabled={waiting}
               onClick={() => setSel((c) => (c === a.id ? null : a.id))}
             >
-              <span className="e" aria-hidden>
-                {lean(a) > 0 ? "↑" : lean(a) < 0 ? "↓" : "·"}
+              <span className="disc">
+                <PixelFace shopper={who} mood={waiting ? 0 : moodOf(a)} bg={waiting ? "var(--px-disc)" : disc(a)} />
+                {!waiting && (
+                  <span className="lean" aria-hidden>
+                    {l > 0 ? "↑" : l < 0 ? "↓" : "·"}
+                  </span>
+                )}
               </span>
-              {a.label}
+              <span className="nm">{who.name}</span>
+              <span className="tr">{waiting ? "waiting for a plan" : traitLine(who)}</span>
             </button>
-          ) : (
-            <div key={i} className="fl-tile" aria-hidden />
-          ),
-        )}
+          );
+        })}
       </div>
       {arch.length > 0 ? (
         <>
-          {picked ? (
-            <div className="fl-bubs">
-              <div className="fl-bub">
-                <b>{picked.label}:</b> “{picked.bubble}”
-              </div>
-            </div>
-          ) : (
-            <div className="fl-bubs">
-              {topBubbles(arch).map((a) => (
-                <div key={a.id} className="fl-bub">
-                  <b>{a.label}:</b> “{a.bubble}”
-                </div>
-              ))}
+          {said.length > 0 && (
+            <div className="px-said" aria-live="polite">
+              {said.map((a) => {
+                const who = shopperOf(a);
+                return (
+                  <div className="px-line" key={`${plan}-${a.id}`}>
+                    <span className="who">
+                      <PixelFace shopper={who} mood={moodOf(a)} bg={disc(a)} />
+                    </span>
+                    <span className="tail" aria-hidden />
+                    <span className="px-bub">
+                      <small>
+                        {who.name} · {traitLine(who)}
+                      </small>
+                      “{a.bubble}”
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
           <button type="button" className="ts-more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
@@ -215,17 +234,22 @@ function Shoppers({ shown }: { shown: Shown }) {
             <ul className="ts-react">
               {[...arch]
                 .sort((x, y) => y.mu[0] - x.mu[0])
-                .map((a) => (
-                  <li key={a.id} className={lean(a) > 0 ? "up" : lean(a) < 0 ? "down" : ""}>
-                    <span className="e" aria-hidden>
-                      {lean(a) > 0 ? "↑" : lean(a) < 0 ? "↓" : "·"}
-                    </span>
-                    <span>
-                      <b>{a.label}</b>
-                      <em>“{a.bubble}”</em>
-                    </span>
-                  </li>
-                ))}
+                .map((a) => {
+                  const who = shopperOf(a);
+                  return (
+                    <li key={a.id} className={leanOf(a) > 0 ? "up" : leanOf(a) < 0 ? "down" : ""}>
+                      <span className="f" aria-hidden>
+                        <PixelFace shopper={who} mood={moodOf(a)} bg={disc(a)} />
+                      </span>
+                      <span>
+                        <b>
+                          {who.name} <small>· {traitLine(who)}</small>
+                        </b>
+                        <em>“{a.bubble}”</em>
+                      </span>
+                    </li>
+                  );
+                })}
             </ul>
           )}
         </>
@@ -265,7 +289,7 @@ function ShopperHistory({ plans, crowd }: { plans: string[]; crowd: Record<strin
               </div>
               {top && (
                 <p className="q">
-                  <b>{top.label}:</b> “{top.bubble}”
+                  <b>{shopperOf(top).name}:</b> “{top.bubble}”
                 </p>
               )}
             </li>
@@ -279,57 +303,7 @@ function ShopperHistory({ plans, crowd }: { plans: string[]; crowd: Record<strin
 
 // ---- simulator ------------------------------------------------------------------------------------
 
-/** Seeded random numbers, so the same box always draws the same lines. */
-function rng(seed: string): () => number {
-  let h = 2166136261;
-  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
-  return () => {
-    h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0;
-    h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0;
-    return ((h ^= h >>> 16) >>> 0) / 4294967296;
-  };
-}
-
-const W = 320,
-  H = 150,
-  WEEKS = 24,
-  LINES = 18;
-
-/**
- * A fan of example runs for one box: cumulative profit vs doing nothing, week by week. Each line ends at an
- * evenly spaced point of the spread implied by the box's average and 1-in-20 bad case; the wiggle in between
- * is illustration. The bold line is the average.
- */
-function fanFor(cell: GridCellData) {
-  const m = cell.mean_delta_usd;
-  const sd = Math.max((m - cell.p5_delta_usd) / 1.645, Math.abs(m) * 0.12, 60);
-  const rnd = rng(cellKey(cell.plan_name, cell.shock_id));
-  const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-9)) * Math.cos(2 * Math.PI * rnd());
-  const q = (u: number) => Math.sqrt(2) * erfinv(2 * u - 1);
-  const ends = Array.from({ length: LINES }, (_, i) => m + sd * q((i + 0.5) / LINES));
-  const walks = ends.map((e) => {
-    const steps = Array.from({ length: WEEKS }, () => gauss() * sd * 0.22);
-    const pts: number[] = [0];
-    let acc = 0;
-    for (let w = 1; w <= WEEKS; w++) {
-      acc += steps[w - 1];
-      // a bridge: random wiggle that is pinned to 0 at the start and to `e` at the end
-      pts.push(e * Math.pow(w / WEEKS, 1.15) + acc - (w / WEEKS) * steps.reduce((x, y) => x + y, 0));
-    }
-    return { e, pts };
-  });
-  const avg = Array.from({ length: WEEKS + 1 }, (_, w) => m * Math.pow(w / WEEKS, 1.15));
-  const all = walks.flatMap((x) => x.pts).concat(avg);
-  const lo = Math.min(0, ...all),
-    hi = Math.max(0, ...all);
-  const pad = (hi - lo) * 0.08 || 1;
-  const Y = (v: number) => H - 8 - ((v - lo + pad) / (hi - lo + 2 * pad)) * (H - 16);
-  const X = (w: number) => (w / WEEKS) * W;
-  const d = (pts: number[]) => pts.map((v, w) => `${w ? "L" : "M"}${X(w).toFixed(1)} ${Y(v).toFixed(1)}`).join(" ");
-  return { lines: walks.map((x) => ({ d: d(x.pts), good: x.e >= 0 })), avg: d(avg), zero: Y(0) };
-}
-
-/** Inverse error function (Giles' approximation), for spacing the line ends. */
+/** Inverse error function (Giles' approximation), for spacing the blocks along the spread. */
 function erfinv(x: number): number {
   const w = -Math.log((1 - x) * (1 + x));
   let p: number;
@@ -345,19 +319,82 @@ function erfinv(x: number): number {
   return p * x;
 }
 
+const BLOCKS = 40,
+  VW = 300; // viewBox width; the height follows the tallest stack
+
+/**
+ * The box's runs as a block chart: 40 blocks, each standing for 1/40 of the runs, placed along "profit vs doing
+ * nothing" and stacked where outcomes pile up. The blocks are evenly spaced points of the spread implied by
+ * the box's average and 1-in-20 bad case. The colour split matches the box's real share of runs that beat doing nothing.
+ */
+function blocksFor(cell: GridCellData) {
+  const m = cell.mean_delta_usd;
+  const sd = Math.max((m - cell.p5_delta_usd) / 1.645, Math.abs(m) * 0.08, 30);
+  const vals = Array.from({ length: BLOCKS }, (_, i) => m + sd * Math.SQRT2 * erfinv(2 * ((i + 0.5) / BLOCKS) - 1));
+  const wins = Math.round(cell.p_better * BLOCKS);
+  const lo = Math.min(0, vals[0]),
+    hi = Math.max(0, vals[BLOCKS - 1]);
+  const span = hi - lo || 1;
+  const cols = 16;
+  const colOf = (v: number) => Math.min(cols - 1, Math.max(0, Math.floor(((v - lo) / span) * cols)));
+  const heights = new Array(cols).fill(0);
+  const placed = vals.map((v, i) => {
+    const c = colOf(v);
+    return { c, r: heights[c]++, win: i >= BLOCKS - wins };
+  });
+  const top = Math.max(...heights);
+  const s = Math.min(VW / cols, 110 / top); // block pitch, so the tallest stack fits
+  const x0 = (VW - cols * s) / 2;
+  const X = (v: number) => x0 + ((v - lo) / span) * cols * s;
+  const base = top * s + 20; // the axis line, under the tallest stack and the "Do nothing" label
+  return { placed, s, x0, base, zero: X(0), avg: X(m), lo, hi, wins };
+}
+
 function Fan({ cell }: { cell: GridCellData }) {
-  const f = fanFor(cell);
+  const b = blocksFor(cell);
+  const BASE = b.base;
+  const per = Math.round(cell.n / BLOCKS);
+  const z = Math.min(VW - 2, Math.max(2, b.zero));
+  const a = Math.min(VW - 30, Math.max(30, b.avg));
   return (
-    <div className="fl-fan">
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={`Example runs for ${cell.plan_name}`}>
-        <line x1="0" x2={W} y1={f.zero} y2={f.zero} className="zero" />
-        {f.lines.map((l, i) => (
-          <path key={i} d={l.d} className={`run ${l.good ? "g" : "r"}`} pathLength={1} style={{ ["--d" as string]: `${i * 40}ms` }} />
+    <div className="fl-fan dots">
+      <svg viewBox={`0 0 ${VW} ${BASE + 26}`} role="img" aria-label={`${b.wins} of ${BLOCKS} blocks beat doing nothing; average ${formatDelta(cell.mean_delta_usd)}`} shapeRendering="crispEdges">
+        <text x={z + (z > VW - 90 ? -4 : 4)} y={12} className="zl" textAnchor={z > VW - 90 ? "end" : "start"}>
+          Do nothing
+        </text>
+        <line x1={z} x2={z} y1={4} y2={BASE} className="zero" />
+        {b.placed.map((p, i) => (
+          <rect
+            key={i}
+            x={b.x0 + p.c * b.s + 0.5}
+            y={BASE - (p.r + 1) * b.s + 0.5}
+            width={b.s - 1.5}
+            height={b.s - 1.5}
+            className={p.win ? "w" : "l"}
+            style={{ ["--d" as string]: `${i * 22}ms` }} // drop in worst to best, so the chart fills left to right
+          />
         ))}
-        <path d={f.avg} className="avg" pathLength={1} />
+        <line x1={0} x2={VW} y1={BASE} y2={BASE} className="axis" />
+        <path d={`M${a - 4} ${BASE + 9}h8l-4 -6z`} className="avg" />
+        <text x={a} y={BASE + 22} className="al" textAnchor="middle">
+          avg {formatDelta(cell.mean_delta_usd)}
+        </text>
+        <text x={2} y={BASE + 22} className="ax">
+          ← worse
+        </text>
+        <text x={VW - 2} y={BASE + 22} className="ax" textAnchor="end">
+          better →
+        </text>
       </svg>
-      <span className="tl">Profit vs doing nothing</span>
-      <span className="br">6 months →</span>
+      <p className="fl-fanlg">
+        <span>
+          <i className="w" /> beat doing nothing
+        </span>
+        <span>
+          <i className="l" /> worse
+        </span>
+        <span className="per">1 block = {formatRuns(per)} runs</span>
+      </p>
     </div>
   );
 }

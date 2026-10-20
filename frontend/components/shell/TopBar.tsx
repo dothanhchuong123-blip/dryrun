@@ -101,7 +101,7 @@ export function TopBar() {
     <header className="top">
       <div className="brand">
         <i />
-        Market Twin
+        Dry Run
       </div>
       <StepBar />
       <div className="right">

@@ -5,15 +5,6 @@ import type { GridCellData } from "../../lib/events";
 
 export const MINUS = "−";
 
-export function Logo({ size = 24 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 26 26" aria-hidden>
-      <rect width="26" height="26" rx="7" fill="var(--fl-accent)" />
-      <path d="M6 17l4-5 4 3 6-8" stroke="#fff" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 /** Light/dark: follows the system until the user picks; the pick is saved (same key as app/layout.tsx). */
 export function ThemeToggle() {
   const [dark, setDark] = useState(false);

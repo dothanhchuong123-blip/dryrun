@@ -6,12 +6,15 @@ import { formatDelta, formatPrice } from "../../lib/format";
 import { useMarketStore } from "../../lib/store";
 import { usePacer, useTimeline } from "../../lib/timeline";
 import { ReplayDrawer } from "../replay/ReplayDrawer";
-import { Logo, ThemeToggle } from "./parts";
+import { CustomerPreview } from "../faces/CustomerPreview";
+import { PixelCrowd, PixelLogo } from "../faces/PixelFace";
+import { ThemeToggle } from "./parts";
 import { StageAnswer } from "./StageAnswer";
 import { StageSearch } from "./StageSearch";
 import { StageTest, shownFrom } from "./StageTest";
 import { StageUnderstand, profileInvalid } from "./StageUnderstand";
 import "./flow.css";
+import "../faces/dryrun.css";
 
 const STEPS = [
   { title: "Understand", sub: "your business" },
@@ -285,9 +288,9 @@ export function Flow() {
   return (
     <div className="fl">
       <header className="fl-top">
-        <button type="button" className="fl-logo" onClick={restart} aria-label="Market Twin, start over">
-          <Logo />
-          Market Twin
+        <button type="button" className="fl-logo" onClick={restart} aria-label="Dry Run, start over">
+          <PixelLogo />
+          Dry Run
         </button>
         {p && (
           <span className="fl-biz">
@@ -315,20 +318,18 @@ export function Flow() {
       <div className="fl-scroll" ref={scroller}>
         <main className="fl-main">
           <div className={`fl-hero${up ? " up" : ""}`} style={{ paddingTop: up ? 8 : "min(6vh, 48px)" }}>
-            <h1>Test your business plans against today&apos;s news</h1>
-            <p>Describe your business. We find the news that hits it, stress-test a few plans against good and bad futures, and tell you which one holds up.</p>
+            <h1>
+              Try your plan on <em>200 customers</em> before you try it on real ones.
+            </h1>
+            <p>Describe your business. We find the news that hits it, test a few plans against good and bad futures, and tell you which one holds up.</p>
           </div>
 
           {!up && (
-            <ol className="fl-how" aria-label="How it works">
-              {HOW.map((h, i) => (
-                <li key={h.t}>
-                  <span className="n">{i + 1}</span>
-                  <b>{h.t}</b>
-                  <small>{h.d}</small>
-                </li>
-              ))}
-            </ol>
+            <div className="px-field">
+              <PixelCrowd />
+              <span className="lbl a">Your shop</span>
+              <span className="lbl b">The rival</span>
+            </div>
           )}
 
           <div className={`fl-box${up ? " up" : ""}`}>
@@ -414,6 +415,21 @@ export function Flow() {
             </div>
           )}
           {!up && s.profileError && <p className="fl-err">{s.profileError}</p>}
+
+          {!up && <CustomerPreview />}
+
+          {!up && (
+            <ol className="fl-how" aria-label="How it works">
+              {HOW.map((h, i) => (
+                <li key={h.t}>
+                  <span className="n">{i + 1}</span>
+                  <b>{h.t}</b>
+                  <small>{h.d}</small>
+                </li>
+              ))}
+            </ol>
+          )}
+
 
           {up && (
             <div className="fl-stepper" ref={stepper}>

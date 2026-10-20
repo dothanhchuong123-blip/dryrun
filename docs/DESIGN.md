@@ -372,3 +372,42 @@ The reference is `docs/mockups/D7-pivot.html`. The user asked for "modern, not c
   - **Analyst:** a round checklist above the log (Elicit).
   - **Grid:** your own plan rows outlined in indigo, and the best plan's name underlined (Profound).
   - **Replay:** "This plan" settings and the chart key beside the chart (Quicken).
+
+### 12.6 Dry Run look (decided Oct 20; replaces §12.5's fonts, colours and shapes)
+
+The product is now called **Dry Run** ("try your plan on 200 customers before you try it on real ones"). The reference is `docs/mockups/D8-faces.html`. Code: `frontend/lib/faces.ts`, `frontend/components/faces/` (`PixelFace`, `PixelLogo`, `PixelCrowd`, `CustomerPreview`, `faces.css`, and `dryrun.css`, the skin that is loaded last over every stage).
+
+- **Pixel customers.** Each of the 12 shopper types is a 20×20 pixel face, drawn in code with no image files. Looks are fixed per archetype id, so the same person appears on every screen.
+  - **The face is the data:** μ_A sets five expressions (grin, smile, flat, annoyed, sad with a tear).
+  - Income sets the shirt, deal hunters squint, and the disc colour is where they lean (blue = you, orange = rival, grey = no change).
+  - Motion moves in whole pixels only (`steps()`): blink, bob, and a pop when the mood changes.
+- **Where faces appear:**
+  - the shopper card in Test plans: compact, 52 px faces, name only, with details in the speech bubble;
+  - the landing preview panel: large faces, sample plans, marked "Example reactions".
+  - Speech bubbles have stepped pixel corners.
+- **Landing:**
+  - a serif headline;
+  - a blue pixel-grain field with two pixel shops and 200 pixel customers, where one sometimes walks across;
+  - the input box overlaps the field;
+  - examples (4 across), then the customer preview, then "how it works".
+- **Mark:** a pixel face raising one eyebrow, white on ink blue (`PixelLogo`, `app/icon.svg`).
+- **Type:**
+  - **Instrument Serif** for page/card titles only. **Every number (grid cells, KPIs, hero figure, hover card, simulator counts, table money) is the sans at weight 700 with tabular digits**, because the serif's thin strokes are hard to read for money. The answer page uses the same skin: hard-shadow paper card, mono overlines and square tags, dashed callouts, heatmap-coloured table cells with pixel-block bars, accent bar on the recommended row;
+  - **Inter** for UI and body;
+  - **JetBrains Mono** only for small all-caps overlines, step numbers and tags.
+- **Colour (light):**
+  - paper `#F3EFE4`, card `#FFFDF8`, ink `#1B1A17`;
+  - accent and "you" ink blue `#3B4BDB`, rival `#D9822B`;
+  - dark-mode values are in `components/flow/flow.css`. NVIDIA green is still only for the model chips.
+- **Shape:** cards 10 px, controls 6 px, tags 3 px, pixel parts square. No pills, glows or gradients.
+- **Hard pixel shadow:** only on the input box, the primary buttons and the example cards on hover (`3–6px 3–6px 0`). It presses in on click.
+- **Answer header:** the same blue pixel-grain field, with a white serif headline and number.
+- **Simulator chart:** a block chart, not a line fan. 40 square blocks (1 block = 1/40 of the runs) sit along "profit vs doing nothing" and stack where outcomes pile up. Green blocks beat doing nothing, coral ones are worse. The share of green blocks is the box's real `p_better`, and a dashed "Do nothing" line and an "avg" marker are labelled. Users found the old fan of wiggly lines hard to read.
+- **Plan × future grid:** a warm paper heatmap (`--g3…--r2` overridden in `dryrun.css`) with square cells, serif values and mono "bad case" lines. Hovering a cell lifts it with the hard shadow. Waiting cells blink in steps. The hover card has a 2 px ink edge, a hard shadow, no glow and a serif number.
+- **Replay ("Watch one run", `components/replay/`):** one run, two futures. The header has a mono overline, the serif plan name, the future, and the honest "one sample run, the average of 1,000 runs is +$X" note. Square pixel buttons with hard shadows sit under it. Below that:
+  - a three-block scoreboard (Do nothing / With the plan / Gap, cumulative) with a "WEEK n / 24" tag;
+  - **twin pixel worlds** (`TwinScene`, a canvas drawn at low resolution and scaled with `image-rendering: pixelated`): left Do nothing, right the plan, same week and same seed. Each world has your shop and the rival's with price tags, a crate meter (one crate per week of cover, max 12), a blinking amber SOLD OUT tag, and an amber "arriving" stack. 60 pixel customers are split by `shares`. Switchers walk in whole pixels and flash `#FFB566`. "Same so far" shows when the two weeks are identical;
+  - a story line: a `.px-bub` with the week's marker text and a `PixelFace` whose mood follows the sign of the week's gap;
+  - the **week strip** (`WeekStrip`): one column per week of stacked square blocks, up in green and down in coral for that week's profit gap, with marker glyphs and click-to-seek;
+  - a dashed end card with this run's gap and the 1,000-run average and "% beat doing nothing".
+  - Numbers all come from the replay ticks and the grid cell. The supplier node is gone, replaced by chips (input cost vs week 0, lead time, rival price). The Analyst view tab uses the same paper panels and mono labels.

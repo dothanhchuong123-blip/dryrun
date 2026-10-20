@@ -3,6 +3,7 @@
 **Read this first, then follow `SPEC.md`. SPEC.md is the source of truth and replaces the original v1 research prompt.** Every Claude session working on this project should read both files.
 
 ## Snapshot
+- **Name (2026-10-20): Dry Run** (was "Market Twin"). Look and pixel customers: `docs/DESIGN.md` §12.6.
 - **What (pivot v3, 2026-10-14):** "Test your plans." A user describes their business, Tavily finds the news that hits it, and a **Nemotron Ultra analyst** proposes plans that a deterministic NumPy engine tests against 4 shock levels (plans × shocks grid, scored against "Do nothing"). The result is a decision memo. Nemotron makes the *decisions* (plans, shopper reactions, shock numbers); the engine computes every *outcome*. **SPEC §15 is the spec for this; read it first.** **v3.1 realism update (2026-10-15):**
   - Ultra picks the grid's futures (2–6 columns), including rival price moves and new players.
   - The news moves only the exposed share of the user's cost.

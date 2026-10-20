@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>D8 · Faces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* D8 direction: editorial paper + hand-drawn customers. Faces are drawn in code from the archetype data. */
+  :root {
+    --paper: #F3EFE4; --card: #FFFDF8; --sunk: #ECE6D8;
+    --ink: #1B1A17; --ink-2: #4D4A42; --ink-3: #807A6D; --line: #DDD5C4;
+    --you: #3B4BDB; --you-soft: #DCE0FB;       /* your shop: ink blue (GIC-style field) */
+    --rival: #D9822B; --rival-soft: #F8E2C8;   /* rival: warm orange */
+    --none: #B9B2A3; --none-soft: #E8E3D8;
+    --gain: #1F7A4A; --loss: #B3321F;
+    --skin-1: #F6D7BE; --skin-2: #E7B892; --skin-3: #C48A62; --skin-4: #8E5A3C; --skin-5: #5E3B27;
+    --nv: #76B900;
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans: Inter, system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.5 var(--sans); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px 80px; }
+  .tag { position: fixed; right: 12px; bottom: 12px; font: 11px var(--mono); color: var(--ink-3); background: var(--card); border: 1px solid var(--line); padding: 4px 8px; border-radius: 4px; z-index: 9; }
+  .over { font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 56px 0 14px; }
+
+  /* ---------- top bar ---------- */
+  .top { display: flex; align-items: center; gap: 14px; height: 64px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; font: 400 26px/1 var(--serif); }
+  .brand svg { width: 34px; height: 34px; }
+  .top nav { margin-left: auto; display: flex; gap: 22px; color: var(--ink-2); font-size: 13px; }
+  .nvchip { font: 500 11px var(--mono); color: var(--ink-2); border: 1px solid var(--line); padding: 5px 8px; border-radius: 4px; }
+  .nvchip i { display: inline-block; width: 7px; height: 7px; background: var(--nv); margin-right: 6px; }
+
+  /* ---------- hero ---------- */
+  .hero { text-align: center; padding: 64px 0 28px; }
+  .hero h1 { font: 400 76px/0.98 var(--serif); letter-spacing: -.01em; margin: 0 auto; max-width: 900px; }
+  .hero h1 em { font-style: italic; color: var(--you); }
+  .hero p { color: var(--ink-2); font-size: 16px; max-width: 560px; margin: 18px auto 0; }
+  .field { position: relative; margin-top: 36px; height: 440px; border-radius: 14px; overflow: hidden; background: var(--you); }
+  .field canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+  .field .lbl { position: absolute; top: 18px; font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #fff; opacity: .85; }
+  .field .lbl.a { left: 22px; } .field .lbl.b { right: 22px; text-align: right; }
+  .ask { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); width: min(640px, 90%); background: var(--card); border-radius: 10px; padding: 14px 14px 14px 18px; display: flex; gap: 12px; align-items: center; box-shadow: 0 10px 30px rgba(10,15,60,.25); }
+  .ask span { flex: 1; text-align: left; color: var(--ink-3); font-size: 15px; }
+  .btn { border: 0; background: var(--ink); color: var(--card); font: 600 14px var(--sans); padding: 10px 16px; border-radius: 6px; cursor: pointer; }
+
+  /* ---------- names ---------- */
+  .names { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .name { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 22px; }
+  .name .row { display: flex; align-items: center; gap: 12px; }
+  .name .row svg { width: 48px; height: 48px; flex: none; }
+  .name b { font: 400 34px/1 var(--serif); }
+  .name p { color: var(--ink-2); margin: 12px 0 0; }
+  .name small { display: block; margin-top: 10px; font: 12px var(--mono); color: var(--ink-3); }
+  .name.pick { outline: 2px solid var(--ink); }
+
+  /* ---------- shoppers ---------- */
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 26px; }
+  .ph { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+  .ph h2 { font: 400 40px/1 var(--serif); margin: 0; }
+  .ph h2 em { color: var(--you); }
+  .ph p { margin: 8px 0 0; color: var(--ink-2); }
+  .plans { display: flex; gap: 6px; flex-wrap: wrap; }
+  .plans button { font: 500 13px var(--sans); border: 1px solid var(--line); background: var(--card); color: var(--ink-2); padding: 7px 11px; border-radius: 6px; cursor: pointer; }
+  .plans button.on { background: var(--ink); color: var(--card); border-color: var(--ink); }
+  .tally { display: flex; height: 10px; border-radius: 3px; overflow: hidden; margin: 22px 0 6px; gap: 2px; }
+  .tally i { transition: flex-grow .6s ease; }
+  .tally .u { background: var(--you); } .tally .z { background: var(--none); } .tally .d { background: var(--rival); }
+  .tl { display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); }
+  .tl b { font-variant-numeric: tabular-nums; color: var(--ink); }
+
+  .crowd { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px 14px; margin-top: 52px; }
+  .p { position: relative; text-align: center; cursor: pointer; background: none; border: 0; padding: 0; font: inherit; color: inherit; }
+  .p .disc { position: relative; width: 100%; aspect-ratio: 1; transition: transform .2s steps(2); }
+  .p .disc svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .p:hover .disc { transform: translateY(-6px); }
+  .p .nm { margin-top: 8px; font-size: 12.5px; font-weight: 600; line-height: 1.25; }
+  .p .tr { font: 11px var(--mono); color: var(--ink-3); }
+  .p .lean { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 0; box-shadow: 0 0 0 2px var(--card); font: 700 12px/22px var(--sans); color: #fff; transition: background .6s; }
+  .bub { position: absolute; left: 50%; bottom: calc(100% - 18px); transform: translate(-50%, 6px) scale(.9); opacity: 0; pointer-events: none; width: 190px; background: var(--ink); color: var(--card); padding: 8px 10px; border-radius: 0; clip-path: polygon(0 4px,4px 4px,4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px)); font-size: 12.5px; line-height: 1.35; text-align: left; transition: opacity .25s, transform .25s; z-index: 3; }
+  .bub { filter: none; } .tail { position: absolute; left: 50%; bottom: calc(100% - 30px); width: 12px; height: 12px; margin-left: -6px; background: var(--ink); clip-path: polygon(0 0,100% 0,100% 4px,8px 4px,8px 8px,4px 8px,4px 12px,0 12px); opacity: 0; transition: opacity .25s; z-index: 3; pointer-events: none; } .p.say .tail, .p:hover .tail { opacity: 1; }
+  .p.say .bub, .p:hover .bub, .p:focus-visible .bub { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
+  /* face parts animate when the mood changes */
+  /* pixel motion: whole-pixel steps only */
+  .eo { animation: eo 4.6s steps(1) infinite; } .ec { opacity: 0; animation: ec 4.6s steps(1) infinite; }
+  @keyframes eo { 0%, 100% { opacity: 1; } 95% { opacity: 0; } 98% { opacity: 1; } }
+  @keyframes ec { 0%, 100% { opacity: 0; } 95% { opacity: 1; } 98% { opacity: 0; } }
+  .bob { animation: bob 1.6s steps(1) infinite; }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-.5px); } }
+  svg.pop { animation: pop .36s steps(3) 1; }
+  @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.1) translateY(-3%); } 100% { transform: scale(1); } }
+  .lg { display: inline-flex; width: 34px; height: 34px; } .lg svg { width: 100%; height: 100%; }
+  .name .lg { width: 48px; height: 48px; } .name .lg.w { width: 72px; }
+
+  .notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+  .note { border-top: 2px solid var(--ink); padding-top: 12px; color: var(--ink-2); }
+  .note b { display: block; color: var(--ink); font: 400 22px/1.1 var(--serif); margin-bottom: 6px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+  @media (max-width: 900px) { .names, .notes { grid-template-columns: 1fr; } .crowd { grid-template-columns: repeat(3, 1fr); } .hero h1 { font-size: 48px; } }
+</style>
+</head>
+<body>
+<div class="tag">D8 · Faces · mock data</div>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand"><span id="logo" class="lg"></span>Dry Run</div>
+    <nav><span>Your business</span><span>News</span><span>Plans</span><span>Memo</span></nav>
+    <span class="nvchip"><i></i>NVIDIA Nemotron · Nebius · Tavily</span>
+  </header>
+
+  <!-- 1 · hero -->
+  <section class="hero">
+    <h1>Try your plan on <em>200 customers</em> before you try it on real ones.</h1>
+    <p>Tell us about your business. We find the news that hits it, and Nemotron tests your plans against good and bad futures.</p>
+    <div class="field">
+      <canvas id="dots"></canvas>
+      <div class="lbl a">Your shop · 82 customers</div>
+      <div class="lbl b">The rival · 78 customers</div>
+      <div class="ask"><span>I run a small coffee roastery in Austin and sell about 600 bags a week…</span><button class="btn">Test my business →</button></div>
+    </div>
+  </section>
+
+  <!-- 2 · name -->
+  <div class="over">Name and mark: pick one</div>
+  <section class="names">
+    <div class="name pick"><div class="row"><span class="lg" data-logo="0"></span><b>Dry Run</b></div>
+      <p>Run your plan for pretend before you run it for real. Everyone gets it in two words.</p>
+      <small>dryrun · "Do a dry run of your price rise"</small></div>
+    <div class="name"><div class="row"><span class="lg w" data-logo="1"></span><b>Rehearsal</b></div>
+      <p>The market is a stage and the customers are the cast. Matches the faces.</p>
+      <small>rehearsal · "Rehearse the next 6 months"</small></div>
+    <div class="name"><div class="row"><span class="lg" data-logo="2"></span><b>Market Twin</b></div>
+      <p>The current name. Accurate, but "digital twin" sounds like enterprise software.</p>
+      <small>keep · no change needed</small></div>
+  </section>
+
+  <!-- 3 · shoppers -->
+  <div class="over">Shopper panel: pixel faces instead of tiles</div>
+  <section class="panel">
+    <div class="ph">
+      <div>
+        <h2>How your customers <em>feel</em> about it</h2>
+        <p>12 kinds of customer, each played by Nemotron Lightning. The face is their reaction. Hover to hear them.</p>
+      </div>
+      <div class="plans" id="plans"></div>
+    </div>
+    <div class="tally"><i class="u"></i><i class="z"></i><i class="d"></i></div>
+    <div class="tl"><span><b id="nu">0</b> lean to you</span><span><b id="nz">0</b> don't mind</span><span><b id="nd">0</b> lean to the rival</span></div>
+    <div class="crowd" id="crowd"></div>
+  </section>
+
+  <section class="notes">
+    <div class="note"><b>The face is the data</b>Mouth, brows and eyes come from Nemotron's lean (μ): grin, smile, flat, annoyed, sad with a tear. Income sets the clothes, deal hunters squint, the disc is where they lean.</div>
+    <div class="note"><b>Drawn in code</b>A 20×20 pixel generator, no image files. Each customer has fixed looks, so they are the same person in the shopper panel, the replay town and the memo.</div>
+    <div class="note"><b>Reused everywhere</b>The pixel people in the hero are the same customers zoomed out. The logo is one of them, raising an eyebrow.</div>
+  </section>
+</div>
+
+<script>
+/* ===== face generator ============================================================== */
+const SKINS = ["--skin-1", "--skin-2", "--skin-3", "--skin-4", "--skin-5"];
+const HAIRC = ["#2A211B", "#5B3A22", "#A8723B", "#D9B46A", "#8C8C8C", "#B5452E"];
+function rng(seed) { let s = seed * 9301 + 49297; return () => ((s = (s * 9301 + 49297) % 233280) / 233280); }
+
+// Pixel faces on a 20×20 grid, Lightdash-style. mood in [-1, 1]: −1 = upset, 0 = flat, 1 = delighted.
+const INK = "#1B1A17";
+const SKINHEX = ["#F6D7BE", "#E7B892", "#C48A62", "#A06A48", "#7A4E36"];
+function face(a, mood, bg) {
+  const i = a.idx, N = 20;
+  const F = Array.from({ length: N }, () => Array(N).fill(null));   // the figure (gets an outline)
+  const X = Array.from({ length: N }, () => Array(N).fill(null));   // features drawn on top (no outline)
+  const put = (G, x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) G[y][x] = c; };
+  const box = (G, x0, y0, x1, y1, c) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) put(G, x, y, c); };
+  const pts = (G, list, c) => list.forEach(([x, y]) => put(G, x, y, c));
+  // fixed per person so the crowd is varied on purpose
+  const skin = SKINHEX[[0, 3, 1, 4, 2, 0, 2, 1, 3, 4, 0, 2][i]];
+  const hair = HAIRC[[3, 0, 0, 1, 5, 4, 0, 1, 2, 0, 1, 4][i]];
+  const style = [1, 0, 3, 4, 2, 5, 6, 3, 1, 0, 2, 5][i];
+  const glasses = [0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1][i] === 1;
+  const squint = a.hunter && !glasses;
+  const shirt = a.income === "High" ? "#2F3442" : a.income === "Mid" ? "#5F8A6A" : "#C9A06A";
+
+  if (style === 1) box(F, 3, 4, 16, 15, hair);                       // long hair falls behind
+  box(F, 3, 17, 16, 19, shirt); box(F, 4, 16, 15, 16, shirt);        // shoulders
+  if (a.income === "High") pts(F, [[9, 16], [10, 16], [9, 17], [10, 17]], "#fff");
+  box(F, 8, 14, 11, 15, skin);                                       // neck
+  box(F, 5, 4, 14, 13, skin); box(F, 6, 14, 13, 14, skin);          // head
+  pts(F, [[4, 9], [4, 10], [15, 9], [15, 10]], skin);                // ears
+  const crop = () => { box(F, 5, 3, 14, 4, hair); pts(F, [[5, 5], [14, 5], [5, 6], [14, 6]], hair); };
+  if (style === 0) crop();
+  if (style === 1) { box(F, 5, 3, 14, 4, hair); pts(F, [[5, 5], [6, 5], [7, 5], [12, 5], [13, 5], [14, 5]], hair); }
+  if (style === 2) { crop(); box(F, 8, 0, 11, 2, hair); }
+  if (style === 3) { box(F, 4, 3, 15, 5, hair); pts(F, [[5, 2], [6, 2], [9, 2], [10, 2], [13, 2], [14, 2], [4, 6], [4, 7], [15, 6], [15, 7], [5, 6], [14, 6]], hair); }
+  if (style === 4) { crop(); box(F, 5, 5, 9, 5, hair); }
+  if (style === 5) { pts(F, [[5, 6], [5, 7], [5, 8], [14, 6], [14, 7], [14, 8]], hair); }
+  if (style === 6) { box(F, 5, 2, 14, 4, "#3B4BDB"); box(F, 4, 5, 17, 5, "#1E2A9C"); }
+  if (style === 5 || i === 9) { box(F, 6, 11, 13, 14, hair); pts(F, [[5, 11], [5, 12], [14, 11], [14, 12]], hair); }
+  if (a.loyal === "B" && style !== 1 && style !== 2) pts(F, [[4, 11], [15, 11]], "#D9B46A");  // earring
+
+  // eyes (open eyes blink, happy eyes don't)
+  let eyes = "open";
+  if (glasses) { box(X, 6, 8, 8, 8, INK); box(X, 11, 8, 13, 8, INK); box(X, 6, 11, 8, 11, INK); box(X, 11, 11, 13, 11, INK); pts(X, [[9, 8], [10, 8]], INK); box(X, 6, 9, 8, 10, "#E4EEF6"); box(X, 11, 9, 13, 10, "#E4EEF6"); }
+  if (mood > 0.55) { pts(X, [[6, 10], [7, 9], [8, 10], [11, 10], [12, 9], [13, 10]], INK); eyes = "happy"; }
+  else if (squint) pts(X, [[7, 9], [8, 9], [11, 9], [12, 9]], INK);
+  // brows
+  if (mood > 0.3) pts(X, [[6, 6], [7, 6], [12, 6], [13, 6]], INK);
+  else if (mood < -0.55) pts(X, [[6, 7], [7, 6], [13, 7], [12, 6]], INK);           // sad: inner ends up
+  else if (mood < -0.15) pts(X, [[6, 6], [7, 7], [13, 6], [12, 7]], INK);           // annoyed: inner ends down
+  else pts(X, [[6, 7], [7, 7], [12, 7], [13, 7]], INK);
+  // mouth
+  if (mood > 0.55) { pts(X, [[7, 11], [12, 11]], INK); box(X, 8, 12, 11, 12, "#fff"); box(X, 8, 13, 11, 13, INK); pts(X, [[7, 12], [12, 12]], INK); }
+  else if (mood > 0.15) pts(X, [[7, 12], [8, 13], [9, 13], [10, 13], [11, 13], [12, 12]], INK);
+  else if (mood < -0.55) pts(X, [[7, 13], [8, 12], [9, 12], [10, 12], [11, 12], [12, 13]], INK);
+  else if (mood < -0.15) pts(X, [[8, 13], [9, 12], [10, 12], [11, 13]], INK);
+  else box(X, 8, 12, 11, 12, INK);
+  if (mood > 0.3) { const cx = glasses ? [5, 14] : [6, 13]; pts(X, [[cx[0], 11], [cx[1], 11]], "#EE9A8A"); }
+  if (mood < -0.55) pts(X, [[14, 10], [14, 11], [14, 12]], "#6FB0E8");               // a tear
+
+  // compose: pixel disc, outline, figure, features; everything clipped to the disc
+  const inDisc = (x, y) => (x - 9.5) ** 2 + (y - 9.5) ** 2 <= 99;
+  const rows = [];
+  const run = (G, test, cls = "") => {
+    for (let y = 0; y < N; y++) {
+      let x = 0;
+      while (x < N) {
+        const c = test(x, y, G);
+        if (!c) { x++; continue; }
+        let w = 1; while (x + w < N && test(x + w, y, G) === c) w++;
+        rows.push(`<rect x="${x}" y="${y}" width="${w}" height="1" fill="${c}"${cls ? ` class="${cls}"` : ""}/>`);
+        x += w;
+      }
+    }
+  };
+  run(null, (x, y) => (inDisc(x, y) ? bg : null));
+  run(F, (x, y, G) => {
+    if (!inDisc(x, y) || G[y][x]) return null;
+    const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => G[y + dy]?.[x + dx]);
+    return n ? INK : null;
+  });
+  run(F, (x, y, G) => (inDisc(x, y) ? G[y][x] : null));
+  run(X, (x, y, G) => G[y][x]);
+  // open eyes as their own pixels so they can blink
+  const eyeOpen = eyes === "open" && !squint;
+  const eo = eyeOpen ? `<g class="eo"><rect x="6" y="9" width="1" height="2" fill="#fff"/><rect x="13" y="9" width="1" height="2" fill="#fff"/><rect x="7" y="9" width="1" height="2" fill="${INK}"/><rect x="12" y="9" width="1" height="2" fill="${INK}"/></g><g class="ec"><rect x="7" y="10" width="2" height="1" fill="${INK}"/><rect x="11" y="10" width="2" height="1" fill="${INK}"/></g>` : "";
+  return `<g class="bob" style="animation-delay:-${(i * 0.37).toFixed(2)}s">${rows.join("")}${eo}</g>`;
+}
+
+/* ===== logos ========================================================================= */
+function pixArt(rows, fg) {
+  let out = "";
+  rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === "#") out += `<rect x="${x + 1}" y="${y + 1}" width="1" height="1" fill="${fg}"/>`; }));
+  return out;
+}
+function logoSvg(variant) {
+  if (variant === 0) // Dry Run: one raised brow and a half smile, "what if?"
+    return `<svg viewBox="0 0 12 12" shape-rendering="crispEdges"><rect x="0" y="0" width="12" height="12" fill="var(--you)"/>${pixArt([
+      "..........",
+      ".##.......",
+      "......##..",
+      "..........",
+      "..#....#..",
+      "..#....#..",
+      "..........",
+      ".......#..",
+      "..#####...",
+      "..........",
+    ], "#fff")}</svg>`;
+  if (variant === 1) // Rehearsal: two customers, yours and the rival's
+    return `<svg viewBox="0 0 30 20" shape-rendering="crispEdges"><svg x="0" y="0" width="20" height="20" viewBox="0 0 20 20">${face(BASE[4], 0.8, "var(--you-soft)")}</svg><svg x="10" y="0" width="20" height="20" viewBox="0 0 20 20">${face(BASE[5], -0.7, "var(--rival-soft)")}</svg></svg>`;
+  return `<svg viewBox="0 0 12 12" shape-rendering="crispEdges"><rect width="12" height="12" fill="var(--sunk)"/>${pixArt([
+    "..........", "..........", "........#.", ".......#..", "......#...", "..#..#....", ".#.##.....", "#.........", "..........", "..........",
+  ], "var(--ink)")}</svg>`;
+}
+
+/* ===== mock archetypes (labels and lines from the pc_parts replay) =================== */
+const INC = ["Low", "Mid", "High"], NAMES = ["Priya", "Marcus", "Dana", "Tom", "Lena", "Walt", "Jae", "Rosa", "Grace", "Omar", "Mei", "Frank"];
+const BASE = [];
+INC.forEach((income, i) => [true, false].forEach((hunter) => ["A", "B"].forEach((loyal) => BASE.push({ income, hunter, loyal }))));
+BASE.forEach((a, i) => { a.idx = i; a.seed = i * 7 + 3; a.name = NAMES[i]; a.label = `${a.income}-income · ${a.hunter ? "price-hunter" : "moderate"} · loyal to ${a.loyal === "A" ? "you" : "rival"}`; });
+const PLANS = {
+  "Raise price 5%": {
+    mu: [-0.4, -0.8, -0.1, -0.3, 0.1, -0.2, 0.3, -0.2, 0.6, -0.5, 0.8, -0.6],
+    say: ["Another 5% hike? I'll check if my old card still works.", "You got expensive. I'm staying with the rival.", "Up a bit, but you're familiar. I'll keep coming.", "You cost more now. The rival feels safer.", "5% more. Still cheaper than them if the gap holds.", "I'll wait for the rival to go on sale.", "I'll stretch my budget if you're in stock.", "Price hike again? Habit wins, I'm staying put.", "441 vs 415… I'll wait for a dip.", "The rival is still cheaper. I'm not moving.", "5% is fine, your quality still leads.", "You raised prices, they look more reliable."],
+  },
+  "Do nothing": {
+    mu: [0.1, 0, 0.2, 0, 0.1, 0, 0.2, -0.1, 0.1, 0, 0.3, -0.1],
+    say: ["Same price as always. Fine by me.", "Nothing new. I'll keep going where I go.", "Still my usual place.", "No reason to switch.", "Prices held. Good.", "I'll keep an eye out, but no change.", "Nice that it didn't go up.", "Habit, really.", "Same as last month.", "Nothing to see here.", "Reliable as ever.", "I'm happy where I am."],
+  },
+  "Stock up, price −3%": {
+    mu: [0.8, 0.4, 0.6, 0.3, 0.7, 0.2, 0.5, 0.1, 0.4, -0.1, 0.5, 0],
+    say: ["Cheaper AND in stock? I'm in.", "Okay, that's tempting. Maybe I'll try you.", "Even better than usual!", "3% off… might give you a go.", "Deal. Buying two.", "Hmm, worth a look this time.", "In stock when the rival isn't. Nice.", "Not enough to make me switch.", "Small cut, but I'll take it.", "Price doesn't move me much.", "Good to see it in stock.", "I'll stay, but I noticed."],
+  },
+};
+
+document.getElementById("logo").innerHTML = logoSvg(0);
+document.querySelectorAll("[data-logo]").forEach((el) => { el.innerHTML = logoSvg(+el.dataset.logo); });
+
+const crowd = document.getElementById("crowd");
+BASE.forEach((a, i) => {
+  const b = document.createElement("button");
+  b.className = "p"; b.type = "button";
+  b.innerHTML = `<div class="bub"></div><i class="tail"></i><div class="disc"><svg viewBox="0 0 20 20" shape-rendering="crispEdges"></svg><span class="lean"></span></div><div class="nm">${a.name}</div><div class="tr">${a.income.toLowerCase()} · ${a.hunter ? "deal hunter" : "steady"}</div>`;
+  b.title = a.label;
+  crowd.appendChild(b);
+  a.el = b;
+});
+
+function setPlan(name) {
+  const plan = PLANS[name];
+  let u = 0, z = 0, d = 0;
+  BASE.forEach((a, i) => {
+    const m = Math.max(-1, Math.min(1, plan.mu[i] * 1.2));
+    const lean = plan.mu[i] > 0.02 ? 1 : plan.mu[i] < -0.02 ? -1 : 0;
+    lean > 0 ? u++ : lean < 0 ? d++ : z++;
+    const svg = a.el.querySelector("svg");
+    const had = !!svg.firstChild;
+    svg.innerHTML = face(a, m, `var(--${lean > 0 ? "you" : lean < 0 ? "rival" : "none"}-soft)`);
+    if (had) { svg.classList.remove("pop"); void svg.getBBox(); svg.classList.add("pop"); }
+    const lb = a.el.querySelector(".lean");
+    lb.textContent = lean > 0 ? "↑" : lean < 0 ? "↓" : "·";
+    lb.style.background = `var(--${lean > 0 ? "you" : lean < 0 ? "rival" : "none"})`;
+    a.el.querySelector(".bub").textContent = "“" + plan.say[i] + "”";
+    a.el.classList.remove("say");
+  });
+  // the two strongest feelings speak up on their own
+  const order = BASE.map((a, i) => [Math.abs(plan.mu[i]), a]).sort((x, y) => y[0] - x[0]);
+  setTimeout(() => { order[0][1].el.classList.add("say"); order[3][1].el.classList.add("say"); }, 700);
+  document.querySelector(".tally .u").style.flexGrow = u;
+  document.querySelector(".tally .z").style.flexGrow = z;
+  document.querySelector(".tally .d").style.flexGrow = d;
+  nu.textContent = u; nz.textContent = z; nd.textContent = d;
+  document.querySelectorAll("#plans button").forEach((x) => x.classList.toggle("on", x.textContent === name));
+}
+const plansEl = document.getElementById("plans");
+Object.keys(PLANS).forEach((n) => { const b = document.createElement("button"); b.textContent = n; b.onclick = () => setPlan(n); plansEl.appendChild(b); });
+setPlan("Raise price 5%");
+
+/* ===== hero: a dithered crowd drifting between two shops ============================== */
+const cv = document.getElementById("dots"), cx = cv.getContext("2d");
+const P = 3; // one "pixel"
+let W, H, people = [];
+const SHOP = (W, H) => [[W * 0.22, H * 0.36], [W * 0.78, H * 0.36], [W * 0.5, H * 0.2]];
+function size() {
+  W = Math.floor(cv.clientWidth / P); H = Math.floor(cv.clientHeight / P);
+  cv.width = W; cv.height = H;
+  people = Array.from({ length: 200 }, (_, i) => {
+    const side = i < 82 ? 0 : i < 160 ? 1 : 2;   // 41% you, 39% rival, 20% not buying
+    const ang = Math.random() * 6.28, rad = Math.sqrt(Math.random());
+    return { side, ox: Math.cos(ang) * rad * 62, oy: 18 + Math.sin(ang) * rad * 22, x: Math.random() * W, y: Math.random() * H, t: Math.random() * 9, sw: 0 };
+  });
+}
+function shop(x, y, aw) {
+  // a pixel storefront: awning stripes, window, door
+  x = Math.round(x - 18); y = Math.round(y - 26);
+  cx.fillStyle = "#fff"; cx.fillRect(x, y + 8, 36, 18);
+  for (let i = 0; i < 6; i++) { cx.fillStyle = i % 2 ? "#fff" : aw; cx.fillRect(x - 2 + i * 6.66, y + 2, 7, 6); }
+  cx.fillStyle = aw; cx.fillRect(x + 4, y + 12, 12, 8); cx.fillRect(x + 22, y + 14, 8, 12);
+}
+let last = 0;
+function frame(t) {
+  requestAnimationFrame(frame);
+  if (t - last < 70) return; last = t;
+  const css = getComputedStyle(document.documentElement);
+  cx.fillStyle = css.getPropertyValue("--you"); cx.fillRect(0, 0, W, H);
+  const S = SHOP(W, H);
+  shop(S[0][0], S[0][1], "#1E2A9C"); shop(S[1][0], S[1][1], css.getPropertyValue("--rival"));
+  // every so often one customer changes their mind and walks across
+  if (Math.random() < 0.08) { const p = people[Math.floor(Math.random() * 200)]; p.side = p.side === 1 ? 0 : p.side === 0 ? (Math.random() < .5 ? 1 : 2) : 0; p.sw = 40; }
+  for (const p of people) {
+    const [hx, hy] = S[p.side];
+    p.t += 0.15;
+    const tx = hx + p.ox * (p.side === 2 ? 0.6 : 1) + Math.sin(p.t * 0.4) * 2, ty = hy + p.oy * (p.side === 2 ? 0.4 : 1);
+    const k = p.sw > 0 ? 0.05 : 0.12;
+    p.x += (tx - p.x) * k; p.y += (ty - p.y) * k - (p.sw > 0 ? Math.sin((40 - p.sw) / 40 * Math.PI) * 0.6 : 0);
+    p.sw--;
+    const x = Math.round(p.x), y = Math.round(p.y);
+    // a 3×5 pixel person: head, body, legs; switchers turn orange while they walk
+    cx.fillStyle = p.sw > 0 ? "#FFB566" : p.side === 2 ? "rgba(255,255,255,.4)" : "#fff";
+    cx.fillRect(x + 1, y, 1, 1); cx.fillRect(x, y + 1, 3, 2);
+    const step = Math.floor(p.t) % 2;
+    cx.fillRect(x + (step ? 0 : 2), y + 3, 1, 1); cx.fillRect(x + 1, y + 3, 1, 1);
+  }
+  // sparse dither grain, like the GIC print look
+  cx.fillStyle = "rgba(255,255,255,.14)";
+  for (let i = 0; i < 160; i++) cx.fillRect(Math.floor(Math.random() * W), Math.floor(Math.random() * H), 1, 1);
+}
+size(); addEventListener("resize", size); requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+/* Dry Run skin (DESIGN.md §12.6). Loaded last so it restyles every stage to one system:
+   paper + ink blue, serif titles and big numbers, mono overlines, square tags, pixel details,
+   one hard "pixel" shadow on the main actions. No pills, no glows, no gradients. */
+:root {
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --px-hard: #1b1a17;
+}
+:root[data-theme="dark"] { --px-hard: #000; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --px-hard: #000; } }
+
+/* overlines: small mono caps, the only all-caps text */
+.fl .fl-card h3, .fl .am-eyebrow, .fl .am-kpi small, .fl .fl-hist > small, .fl .fl-sum .chip small, .fl .fl-fan .tl, .fl .fl-fan .br, .fl .fl-mode, .fl .am-sec > h2, .fl .am-twocol > div > h2 {
+  font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fl-ink-3);
+}
+.fl .fl-mode { border-radius: 3px; background: transparent; padding: 4px 7px; }
+
+/* titles and big numbers: the editorial serif */
+.fl .am-head h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(28px, 3.8vw, 40px); line-height: 1.05; letter-spacing: 0; }
+/* numbers: Instrument Serif is too thin for figures, so every number is the sans at 700 with tabular digits; the serif stays on titles */
+.fl .am-big b, .fl .am-kpi b, .fl .fl-impact { font-family: inherit; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fl .am-kpi b { font-size: 30px; line-height: 1.05; }
+.fl .fl-impact { font-size: 40px; line-height: 1; }
+
+/* shapes: cards 10px, controls 6px, tags 3px, pixel bits square */
+.fl .fl-card, .fl .am-paper, .fl .fl-exb, .fl .fl-how li, .fl .fl-box.up { border-radius: 10px; box-shadow: none; }
+.fl .fl-pill, .fl .fl-chip, .fl .fl-sum .chip, .fl .am-badge, .fl .am-tbl .tag, .fl .fl-log .tg, .fl .ts-more-pill, .fl .rchip, .fl .tag { border-radius: 3px; }
+.fl .fl-pill { font-size: 11.5px; padding: 3px 7px; }
+.fl .fl-log .tg { font-family: var(--mono); font-weight: 500; font-size: 10.5px; letter-spacing: 0.04em; padding: 3px 0; }
+.fl .fl-cell { border-radius: 6px; }
+.fl .fl-note, .fl .fl-think, .fl .am-box { border-radius: 6px; }
+.fl .fl-fav { border-radius: 0; }
+.fl .ts-bar, .fl .fl-split { border-radius: 0; }
+.fl .fl-quote mark { border-radius: 0; }
+
+/* buttons: ink-blue solid with a hard pixel shadow that presses in */
+.fl .fl-btn, .fl .fl-barin .go { border-radius: 6px; background: var(--fl-accent); box-shadow: 3px 3px 0 var(--px-hard); transition: transform 0.12s steps(2), box-shadow 0.12s steps(2), opacity 0.2s; }
+.fl .fl-btn:hover:not(:disabled), .fl .fl-barin .go:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--px-hard); }
+.fl .fl-btn:active:not(:disabled), .fl .fl-barin .go:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--px-hard); }
+.fl .fl-btn:disabled, .fl .fl-barin .go:disabled { box-shadow: none; opacity: 0.45; }
+.fl .fl-btn2, .fl .fl-ib { border-radius: 6px; }
+.fl .fl-barin .go .fill { height: 3px; background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.75) 0 6px, transparent 6px 8px); }
+
+/* the input box gets the same hard shadow: it's the one thing to do on the first page */
+.fl .fl-box:not(.up) { border-radius: 10px; border: 2px solid var(--px-hard); box-shadow: 6px 6px 0 var(--px-hard); }
+.fl .fl-boxbar kbd { border-radius: 3px; font-family: var(--mono); }
+
+/* example and how-it-works cards: flat, square numbers, hard shadow on hover */
+.fl .fl-exb { border: 1px solid var(--fl-line-2); transition: transform 0.12s steps(2), box-shadow 0.12s steps(2), border-color 0.2s; }
+.fl .fl-exb:hover:not(:disabled) { transform: translate(-2px, -2px); border-color: var(--px-hard); box-shadow: 4px 4px 0 var(--px-hard); }
+.fl .fl-exb small { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+.fl .fl-how .n, .fl .fl-step .n { border-radius: 0; font-family: var(--mono); font-weight: 500; }
+.fl .fl-how li { box-shadow: none; }
+
+/* step bar: square numbers, a segmented pixel progress line, no glow */
+.fl .fl-step { border-radius: 8px; }
+.fl .fl-step.live, .fl .fl-step.wait { box-shadow: none; border-color: var(--fl-accent); }
+.fl .fl-step.live .n { animation: dr-blink 1.1s steps(1) infinite; }
+@keyframes dr-blink { 50% { opacity: 0.45; } }
+.fl .fl-step .bar { height: 4px; background: repeating-linear-gradient(90deg, var(--fl-accent) 0 6px, transparent 6px 8px); }
+.fl .fl-step.view { background: var(--fl-accent-soft); border-color: var(--fl-accent-line); }
+
+/* top bar: flat paper, square toggle knob */
+.fl .fl-top { background: var(--fl-bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.fl .fl-sw, .fl .fl-sw::after { border-radius: 2px; }
+.fl .fl-cred { font-family: var(--mono); font-size: 11.5px; }
+
+/* skeletons shimmer in whole steps */
+.fl .fl-skel { border-radius: 2px; animation-timing-function: steps(6) !important; }
+
+/* the answer: a blue pixel-grain header like the landing field */
+.fl .am-head { background-color: var(--px-field); background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1.2px); background-size: 9px 9px; border-bottom: 0; color: #fff; }
+.fl .am-head h1, .fl .am-head .am-big b { color: #fff; }
+.fl .am-head .am-eyebrow, .fl .am-head .am-big span { color: rgba(255, 255, 255, 0.8); }
+.fl .am-head .am-big b.neg { color: #ffc2b8; }
+.fl .am-tbl tr.rec td { background: var(--fl-accent-soft); }
+
+/* news: the gain/loss chips and quote checks follow the tag shape */
+.fl .fl-chip { font-family: var(--mono); font-weight: 500; font-size: 11px; }
+
+/* landing column: examples line up with the field and the customer panel */
+.fl .fl-ex { max-width: 1072px; margin-top: 36px; }
+.fl .fl-exg { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 860px) { .fl .fl-exg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .fl .fl-exg { grid-template-columns: minmax(0, 1fr); } }
+.fl .fl-how { max-width: 1072px; margin-top: 24px; }
+
+/* the simulator: runs as a pixel chart on the blue field, counts in the serif */
+.fl .fl-fan.dots { border: 1px solid var(--fl-line); border-radius: 8px; background: var(--fl-sunk); padding: 10px 10px 8px; overflow: visible; }
+.fl .fl-fan.dots svg { display: block; width: 100%; height: auto; overflow: visible; }
+.fl .fl-fan.dots rect { animation: dr-drop 0.24s steps(3) both; animation-delay: var(--d, 0ms); }
+.fl .fl-fan.dots rect.w { fill: var(--fl-gain-bar); }
+.fl .fl-fan.dots rect.l { fill: #e8735c; }
+@keyframes dr-drop { from { opacity: 0; transform: translateY(-12px); } }
+.fl .fl-fan.dots .zero { stroke: var(--fl-ink); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.fl .fl-fan.dots .axis { stroke: var(--fl-ink-3); stroke-width: 1; }
+.fl .fl-fan.dots .avg { fill: var(--fl-accent); }
+.fl .fl-fan.dots text { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; fill: var(--fl-ink-3); }
+.fl .fl-fan.dots .zl { fill: var(--fl-ink); font-weight: 500; }
+.fl .fl-fan.dots .al { fill: var(--fl-accent); font-weight: 500; text-transform: none; font-size: 10.5px; }
+@media (prefers-reduced-motion: reduce) { .fl .fl-fan.dots rect { animation: none; } }
+.fl .fl-fanlg { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 8px 0 0; padding-top: 7px; border-top: 1px dashed var(--fl-line); font-size: 11.5px; color: var(--fl-ink-3); }
+.fl .fl-fanlg { gap: 4px 12px; }
+.fl .fl-fanlg span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.fl .fl-fanlg .per { margin-left: auto; font-family: var(--mono); font-size: 10.5px; }
+.fl .fl-fanlg i { width: 9px; height: 9px; }
+.fl .fl-fanlg .w { background: var(--fl-gain-bar); } .fl .fl-fanlg .l { background: #e8735c; }
+.fl .fl-simn b { font-family: inherit; font-weight: 700; font-size: 30px; line-height: 1; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.fl .fl-simn .res b { font-size: 26px; }
+.fl .fl-sim .fl-pill { font-family: var(--mono); font-weight: 500; font-size: 11px; }
+.fl .fl-hist li.sim { border-radius: 3px; }
+.fl .fl-hist li.sim.cur { background: var(--fl-accent-soft); box-shadow: inset 3px 0 0 var(--fl-accent); }
+.fl .fl-hist li.sim b { font-family: var(--mono); font-weight: 500; font-size: 12px; }
+/* win share: a row of 10 pixel blocks */
+.fl .fl-win { width: 59px; height: 8px; border-radius: 0; background: var(--fl-line);
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 6px); mask: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 6px); }
+.fl .fl-win i { border-radius: 0; background: var(--fl-accent); transition: width 0.6s steps(10); }
+
+/* every plan in every future: a paper heatmap with square cells, serif numbers and a hard shadow on hover */
+.fl {
+  --g3: #2f8a4c; --g2: #bfe0c3; --g1: #e3efd9; --z: #ebe5d7; --r1: #f7e0d7; --r2: #eeae9f;
+}
+:root[data-theme="dark"] .fl { --g3: #2b8a47; --g2: #1f4f2d; --g1: #1a2e1d; --z: #2a2723; --r1: #3a1f1a; --r2: #7d2e24; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fl { --g3: #2b8a47; --g2: #1f4f2d; --g1: #1a2e1d; --z: #2a2723; --r1: #3a1f1a; --r2: #7d2e24; } }
+.fl .fl-card .ts-scroll { border-radius: 6px; }
+.fl .fl-cell { border-radius: 3px; transition: background 0.5s, transform 0.12s steps(2), box-shadow 0.12s steps(2); }
+.fl .fl-cell .v { font-family: inherit; font-weight: 700; font-size: 19px; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fl .fl-cell .b { margin-top: 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.01em; }
+.fl .fl-cell.g3 { background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1.2px); background-size: 6px 6px; }
+.fl .fl-cell.g3 .b { color: rgba(255, 255, 255, 0.85); }
+.fl .fl-cell.ready { animation: dr-cellin 0.3s steps(3) both; }
+@keyframes dr-cellin { from { opacity: 0; transform: translateY(3px); } }
+.fl .fl-cell.ready:hover, .fl .fl-cell.ready:focus-visible, .fl .fl-cell.hov { transform: translate(-2px, -2px); box-shadow: 3px 3px 0 var(--px-hard); outline: 2px solid var(--px-hard); outline-offset: -2px; }
+.fl .fl-cell.base { border-radius: 3px; background: transparent; }
+.fl .fl-card .ts-scroll .fl-cell.base { border: 2px dashed var(--fl-line-2); background-clip: padding-box; }
+.fl .fl-cell.base .v { font-size: 17px; color: var(--fl-ink-2); }
+/* waiting boxes blink in whole steps, like a cursor */
+.fl .fl-cell.pend { background: var(--fl-sunk); background-image: radial-gradient(var(--fl-line-2) 1px, transparent 1.2px); background-size: 6px 6px; }
+.fl .fl-cell.pend::after { background: var(--fl-sunk); animation: dr-pend 1.2s steps(1) infinite; }
+@keyframes dr-pend { 50% { opacity: 0; } }
+.fl .fl-cell .over { top: 5px; right: 5px; padding: 1px 4px; font-family: var(--mono); font-weight: 500; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.04em; color: #1b1a17; background: #f5c451; }
+.fl .fl-grid thead th b { font-family: var(--serif); font-weight: 400; font-size: 17px; line-height: 1.15; }
+.fl .fl-grid tbody th { font-weight: 600; }
+.fl .fl-grid tbody th small { font-family: var(--mono); font-weight: 400; font-size: 10.5px; letter-spacing: 0.02em; margin-top: 2px; }
+.fl .fl-grid tbody th .star { color: var(--fl-accent); }
+.fl .fl-grid thead th:first-child .fl-sub { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.fl .fl-gfoot { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+.fl .ts-more-pill { border-radius: 3px; font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fl-ink); border: 2px solid var(--px-hard); box-shadow: 3px 3px 0 var(--px-hard); animation-timing-function: steps(2); }
+.fl .ts-more-pill:hover { box-shadow: 4px 4px 0 var(--px-hard); }
+.fl .ts-fade.b { border-radius: 0 0 6px 6px; }
+
+/* the box's hover card: paper, a hard ink edge, a serif headline number, no glow */
+body .fl-tip { border-radius: 10px; border: 2px solid var(--px-hard); box-shadow: 6px 6px 0 var(--px-hard); background: var(--fl-card); transition: left 0.42s var(--ease), top 0.42s var(--ease), opacity 0.15s steps(2), transform 0.15s steps(2); }
+body .fl-tip .glow { display: none; }
+body .fl-tip .v { font-family: inherit; font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+body .fl-tip .sec, body .fl-tip .cash { border-top-style: dashed; }
+body .fl-tip .br b { font-family: var(--mono); font-weight: 500; font-size: 12px; }
+body .fl-tip .fl-dv, body .fl-tip .fl-dv i, body .fl-tip .fl-sl, body .fl-tip .fl-sk i { border-radius: 0; }
+body .fl-tip .fl-sl i.a, body .fl-tip .fl-sk i.a { background: var(--px-you); }
+body .fl-tip .fl-sl i.b, body .fl-tip .fl-sk i.b { background: repeating-linear-gradient(90deg, var(--px-rival) 0 3px, transparent 3px 5px); }
+
+/* the answer page and the "if you do nothing" card: same paper vocabulary, no soft boxes */
+.fl .am-paper { border-radius: 10px; border: 2px solid var(--px-hard); box-shadow: 6px 6px 0 var(--px-hard); }
+.fl .am-badge { border-radius: 0; font-family: var(--mono); font-weight: 500; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 7px; }
+.fl .am-head .am-badge { background: rgba(255, 255, 255, 0.14); color: #fff; border: 1px solid rgba(255, 255, 255, 0.5); }
+.fl .am-big b { font-size: clamp(38px, 6vw, 54px); line-height: 1; }
+.fl .am-kpis, .fl .am-sec, .fl .am-fold { border-bottom-style: dashed; }
+.fl .am-kpi { border-right-style: dashed; }
+.fl .am-kpi b { font-size: 24px; }
+.fl .am-sec > h2, .fl .am-twocol > div > h2, .fl .am-fold summary { font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: 0.08em; }
+.fl .am-wk { font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: 0.06em; }
+.fl .am-box { border-radius: 0; border: 2px solid var(--px-hard); }
+.fl .am-bul li::before { border-radius: 0; }
+.fl .am-steps li { border-top-style: dashed; }
+.fl .am-foot { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.01em; border-top: 1px dashed var(--fl-line-2); }
+.fl .am-src q { border-left: 2px solid var(--fl-line-2); padding-left: 8px; }
+/* the formula callout ("Beans +30% x 60% of your cost...") and any amber note: dashed paper, mono text */
+.fl .fl-note { border-radius: 0; background: var(--fl-sunk); color: var(--fl-ink-2); border: 1px dashed var(--fl-ink-3); font-family: var(--mono); font-size: 12px; letter-spacing: 0.01em; line-height: 1.55; }
+/* skill vs luck */
+.fl .am-luck { padding: 10px 12px; background: var(--fl-sunk); border: 1px dashed var(--fl-ink-3); border-left: 3px solid var(--fl-accent); font-size: 13px; }
+/* how it compares: heatmap colours, accent bar on the recommended row, pixel-block bars */
+.fl .am-tbl th { font-family: var(--mono); font-weight: 500; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fl-ink-2); }
+.fl .am-tbl td { font-variant-numeric: tabular-nums; border-top-style: dashed; }
+.fl .am-tbl td.c { font-weight: 700; color: var(--fl-ink); }
+.fl .am-tbl td.c.pos { background: var(--g1); color: var(--fl-ink); }
+.fl .am-tbl td.c.neg { background: var(--r1); color: var(--fl-ink); }
+.fl .am-tbl td.c i { height: 6px; bottom: 4px; border-radius: 0; opacity: 1; background-image: none;
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 6px); mask: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 6px); }
+.fl .am-tbl tr.rec td { background: var(--fl-accent-soft); }
+.fl .am-tbl tr.rec td.c.pos, .fl .am-tbl tr.rec td.c.neg { background: var(--fl-accent-soft); }
+.fl .am-tbl tr.rec td:first-child { box-shadow: inset 3px 0 0 var(--fl-accent); padding-left: 10px; }
+.fl .am-tbl .tag { border-radius: 0; background: var(--fl-accent); color: #fff; font-family: var(--mono); font-weight: 500; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 5px; margin-left: 8px; vertical-align: 2px; }
+.fl .am-tbl tr.base td { color: var(--fl-ink-3); background: transparent; border-top: 2px dashed var(--fl-line-2); font-style: normal; }
+.fl .am-tbl tr.base td:first-child { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+/* buttons on the answer page */
+.fl .fl-btn2 { border-radius: 6px; border: 2px solid var(--px-hard); background: var(--fl-card); box-shadow: 3px 3px 0 var(--px-hard); transition: transform 0.12s steps(2), box-shadow 0.12s steps(2); }
+.fl .fl-btn2:hover:not(:disabled) { background: var(--fl-card); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--px-hard); }
+.fl .fl-btn2:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--px-hard); }
+.fl .fl-btn2:disabled { box-shadow: none; }
+.fl .am-toast { font-family: var(--mono); font-size: 11.5px; }
