@@ -1,7 +1,7 @@
 # Render Blueprint: free Docker web service. Add the two secrets in the Render dashboard (sync: false).
 services:
   - type: web
-    name: market-digital-twin
+    name: dryrun
     runtime: docker
     plan: free
     healthCheckPath: /health
