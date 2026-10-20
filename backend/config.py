@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     model_fast_fallback: str = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
     daily_spend_cap_usd: float = 1.00
     public_live_daily_cap_usd: float = 0.20
+    # Public demo kill switch: LIVE_ENABLED=false in the host's env turns every paid Nemotron call off (replays still work).
+    live_enabled: bool = True
+    max_live_analyses: int = 1  # LIVE runs at once; the spend guard only sees a run's cost after it is spent
     tavily_daily_credit_cap: int = 30  # public "Check live news" button, SPEC §6
     # Serverless Job "mc-10k" (T09, docs/DEPLOY.md). job_backend: "" = not deployed, "local" = subprocess, "nebius" = CLI.
     job_backend: str = ""

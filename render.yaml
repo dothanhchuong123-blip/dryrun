@@ -11,3 +11,6 @@ services:
         sync: false
       - key: TAVILY_API_KEY
         sync: false
+      # Kill switch: set to false in the dashboard (Environment) to stop every paid Nemotron call; replays keep working.
+      - key: LIVE_ENABLED
+        value: "true"

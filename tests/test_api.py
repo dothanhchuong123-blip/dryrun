@@ -34,7 +34,7 @@ class Clock:
         return self.t
 
 
-def make_app(tmp_path, *, guard=None, cap=30, clock=None, **kw):
+def make_app(tmp_path, *, guard=None, cap=30, clock=None, settings_kw=None, **kw):
     scouts = []
 
     def scout():
@@ -52,7 +52,7 @@ def make_app(tmp_path, *, guard=None, cap=30, clock=None, **kw):
 
     router.call = counted
     app = create_app(
-        settings=Settings(tavily_daily_credit_cap=cap, _env_file=None),
+        settings=Settings(tavily_daily_credit_cap=cap, _env_file=None, **(settings_kw or {})),
         router=router, scout_factory=scout,
         guard=guard or Guard(), clock=clock or Clock(), replay_speed=1000.0, telemetry_dir=tmp_path / "tel",
         serve_frontend=False, **kw,
@@ -173,7 +173,7 @@ async def test_live_example_downgrades_to_replay_with_a_mode_event(tmp_path):
 
 async def test_per_ip_live_limit_and_window(tmp_path):
     clock = Clock()
-    app = make_app(tmp_path, clock=clock)
+    app = make_app(tmp_path, clock=clock, settings_kw={"max_live_analyses": 3})
     async with client(app) as c:
         for _ in range(2):
             r = await c.post("/api/analyses", json={"profile": PROFILE})
@@ -188,14 +188,34 @@ async def test_per_ip_live_limit_and_window(tmp_path):
     await asyncio.sleep(0)  # let the background runs start; they are cancelled with the loop
 
 
-async def test_max_three_live_analyses_running(tmp_path):
+async def test_one_live_analysis_running_by_default(tmp_path):
     app = make_app(tmp_path)
+    async with client(app) as c:
+        codes = []
+        for ip in ("1.1.1.1", "2.2.2.2"):
+            r = await c.post("/api/analyses", json={"profile": PROFILE}, headers={"x-forwarded-for": ip})
+            codes.append(r.status_code)
+    assert codes == [200, 429]
+
+
+async def test_max_live_analyses_setting(tmp_path):
+    app = make_app(tmp_path, settings_kw={"max_live_analyses": 3})
     async with client(app) as c:
         codes = []
         for ip in ("1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"):
             r = await c.post("/api/analyses", json={"profile": PROFILE}, headers={"x-forwarded-for": ip})
             codes.append(r.status_code)
     assert codes == [200, 200, 200, 429]
+
+
+async def test_live_switch_off_blocks_paid_calls_but_not_replays(tmp_path):
+    app = make_app(tmp_path, settings_kw={"live_enabled": False})
+    async with client(app) as c:
+        assert (await c.post("/api/analyses", json={"profile": PROFILE})).status_code == 429
+        assert (await c.post("/api/profile/parse", json={"text": "I sell coffee."})).status_code == 429
+        r = await c.post("/api/analyses", json={"example_id": "coffee_austin", "mode": "live"})
+        assert r.status_code == 200 and r.json()["mode"] == "replay"
+    assert app.state.router.n_calls == 0
 
 
 async def test_profile_parse_limit_per_ip(tmp_path):

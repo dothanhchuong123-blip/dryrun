@@ -100,7 +100,7 @@ Then (optional, advice only): Argon review **A2** (prompt red-team on the analys
 | Done | Task | Builder | File |
 |---|---|---|---|
 | [x] | T08 API v2, SSE, replay, spend guard | Claude Sonnet 5.5 | `prompts/4_oct19-20_in-order/T08-api-sse-replay.md` |
-| [~] | T09 Nebius Endpoint + 10,000-per-cell Job | Claude Sonnet 5.5 **+ you** (console, billing) | `prompts/4_oct19-20_in-order/T09-nebius-deploy.md` |
+| [x] | T09 Nebius Endpoint + 10,000-per-cell Job | Claude Sonnet 5.5 **+ you** (console, billing) | `prompts/4_oct19-20_in-order/T09-nebius-deploy.md` |
 | | **CHECKPOINT (2026-10-15), T09 paused for UI/UX work** | | **Done and pushed:** job service (`backend/services/nebius_jobs.py`, local + Nebius backends, tested), multi-stage `Dockerfile`, `jobs/mc_worker/Dockerfile`, `render.yaml`, `scripts/bench_serverless.py`, `docs/DEPLOY.md`. Public repo: github.com/dothanhchuong123-blip/market-digital-twin. **Decisions:** no Nebius compute (projects suspended until a $25 top-up; 24/7 CPU ≈ $90-195) and no Hugging Face (Docker Spaces need PRO), so the public demo goes on **Render free**. Nebius CLI + Docker are installed and logged in. **Still to do:** (1) after the UI work, connect the repo in Render (New → Blueprint), add `NEBIUS_API_KEY` + `TAVILY_API_KEY`; (2) test the URL (`/health`, SSE) and add an uptime ping; (3) optional: top up Nebius, run `scripts/bench_serverless.py` for the feedback report; (4) tick T09 when 1-2 are done. |
 
 ### Oct 21–24 · connect, polish, review (no new prompt files)

@@ -36,7 +36,7 @@ from backend.sim.replay_cell import play_cell
 log = logging.getLogger(__name__)
 
 TTL_S = 2 * 3600
-MAX_LIVE_ANALYSES = 3            # running at once; REPLAY is unlimited
+LIVE_OFF = "Live analyses are switched off on this demo right now. Pick an example to see a recorded run."
 LIVE_PER_IP_HOUR = 2
 PARSE_PER_IP_HOUR = 5
 NEWS_CHECK_PER_IP_MINUTE = 1
@@ -241,6 +241,8 @@ def create_app(
     @app.post("/api/profile/parse")
     async def profile_parse(body: ParseRequest, request: Request) -> Any:
         ip = client_ip(request)
+        if not s.live_enabled:
+            return JSONResponse({"reason": LIVE_OFF}, 429)
         if parse_hits.full(ip):
             return JSONResponse({"reason": "You have read a few businesses already. Try again in an hour, or pick an example."}, 429)
         if not guard.allow():
@@ -285,11 +287,13 @@ def create_app(
 
         running = sum(1 for e in analyses.values() if e.live and not e.finished)
         blocked: str | None = None
-        if live_hits.full(ip):
+        if not s.live_enabled:
+            blocked = LIVE_OFF
+        elif live_hits.full(ip):
             blocked = "You have used your live analyses for this hour. Try again later, or pick an example."
         elif not guard.allow():
             blocked = "Today's free live budget is used up. Pick an example, or try again tomorrow."
-        elif running >= MAX_LIVE_ANALYSES:
+        elif running >= s.max_live_analyses:
             blocked = "Live analyses are busy right now. Try again in a few minutes, or pick an example."
 
         wants_live = profile is not None or body.mode == "live"

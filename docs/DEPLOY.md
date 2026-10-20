@@ -10,7 +10,9 @@
 2. render.com → New → Blueprint → pick the repo. Add secrets `NEBIUS_API_KEY` and `TAVILY_API_KEY` when asked.
 3. The image builds the frontend itself, serves it, and runs the 10k verify job in-process (`JOB_BACKEND=local`, ~140 MB peak).
 4. Free services sleep after 15 min idle (first visit ~50 s). Ping `GET /health` every 10 min with a free monitor (UptimeRobot).
-5. Test from a logged-out browser and check that SSE streams (`curl -N <url>/api/analyses/<id>/events`).
+5. **Live (2026-10-20):** https://market-digital-twin.onrender.com, branch `ui/guided-flow`, autoDeploy on push. Uptime: https://stats.uptimerobot.com/6CwXtkPMBX (pings `/health` every 5 min).
+6. **Spend safety:** `LIVE_ENABLED=false` (Render → Environment) stops every paid Nemotron call without a deploy; examples still replay. Only 1 LIVE run at a time (`MAX_LIVE_ANALYSES`). The daily cap file lives on Render's ephemeral disk and resets on every restart or redeploy, so the switch plus a key-level limit in the Token Factory console are the real backstops.
+7. Test from a logged-out browser and check that SSE streams (`curl -N <url>/api/analyses/<id>/events`).
 
 ---
 
