@@ -129,33 +129,62 @@ function Shoppers({ shown }: { shown: Shown }) {
   const crowd = useMarketStore((s) => s.crowdByPlan);
   const plan = useHeld(shown.crowd[shown.crowd.length - 1], 1800);
   const arch: CrowdArchetype[] = plan ? (crowd[plan] ?? []) : [];
-  const toYou = arch.filter((a) => a.mu[0] > 0.02).length;
-  const away = arch.filter((a) => a.mu[0] < -0.02).length;
+  const [open, setOpen] = useState(false);
+  const [sel, setSel] = useState<number | null>(null);
+  useEffect(() => setSel(null), [plan]);
+  const lean = (a: CrowdArchetype) => (a.mu[0] > 0.02 ? 1 : a.mu[0] < -0.02 ? -1 : 0);
+  const toYou = arch.filter((a) => lean(a) > 0).length;
+  const away = arch.filter((a) => lean(a) < 0).length;
+  const same = arch.length - toYou - away;
+  const picked = arch.find((a) => a.id === sel);
   return (
-    <div className="fl-card">
+    <div className="fl-card ts-shop">
       <div className="fl-ch">
         <div>
           <h2>The shoppers</h2>
-          <p className="fl-sub">{plan ? <>{arch.length} kinds of customer react to “{plan}”</> : "Each kind of customer is played by Nemotron Lightning."}</p>
+          <p className="fl-sub">
+            {plan ? (
+              <>
+                <b className="ts-n">{arch.length} shopper types</b> react to “{plan}”
+              </>
+            ) : (
+              "Each kind of customer is played by Nemotron Lightning."
+            )}
+          </p>
         </div>
         <span className="fl-pill" style={{ color: "#4b7500" }}>
           Lightning
         </span>
       </div>
-      <div className="fl-tiles" key={plan ?? "none"}>
+      {arch.length > 0 && (
+        <div className="ts-sum">
+          <div className="ts-bar" role="img" aria-label={`${toYou} lean to you, ${same} don't mind, ${away} lean away`}>
+            <i className="u" style={{ flexGrow: toYou }} />
+            <i className="z" style={{ flexGrow: same }} />
+            <i className="d" style={{ flexGrow: away }} />
+          </div>
+          <p className="fl-sub" style={{ margin: "6px 0 0" }}>
+            <b className="pos">{toYou}</b> lean to you · <b>{same}</b> don&apos;t mind · <b className="neg">{away}</b> lean away
+          </p>
+        </div>
+      )}
+      <div className="fl-tiles ts-tiles" key={plan ?? "none"}>
         {(arch.length ? arch : Array.from({ length: 12 }, () => null)).map((a, i) =>
           a ? (
-            <div
+            <button
+              type="button"
               key={a.id}
-              className={`fl-tile pop${a.mu[0] > 0.02 ? " up" : a.mu[0] < -0.02 ? " down" : ""}`}
+              className={`fl-tile ts-tile pop${lean(a) > 0 ? " up" : lean(a) < 0 ? " down" : ""}${sel === a.id ? " sel" : ""}`}
               style={{ ["--i" as string]: i }}
               title={`${a.label}: “${a.bubble}”`}
+              aria-pressed={sel === a.id}
+              onClick={() => setSel((c) => (c === a.id ? null : a.id))}
             >
               <span className="e" aria-hidden>
-                {a.mu[0] > 0.02 ? "↑" : a.mu[0] < -0.02 ? "↓" : "·"}
+                {lean(a) > 0 ? "↑" : lean(a) < 0 ? "↓" : "·"}
               </span>
               {a.label}
-            </div>
+            </button>
           ) : (
             <div key={i} className="fl-tile" aria-hidden />
           ),
@@ -163,16 +192,42 @@ function Shoppers({ shown }: { shown: Shown }) {
       </div>
       {arch.length > 0 ? (
         <>
-          <p className="fl-sub" style={{ marginTop: 10 }}>
-            <b className="pos">{toYou}</b> lean to you · <b className="neg">{away}</b> lean away · {arch.length - toYou - away} don&apos;t mind
-          </p>
-          <div className="fl-bubs">
-            {topBubbles(arch).map((a) => (
-              <div key={a.id} className="fl-bub">
-                <b>{a.label}:</b> “{a.bubble}”
+          {picked ? (
+            <div className="fl-bubs">
+              <div className="fl-bub">
+                <b>{picked.label}:</b> “{picked.bubble}”
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="fl-bubs">
+              {topBubbles(arch).map((a) => (
+                <div key={a.id} className="fl-bub">
+                  <b>{a.label}:</b> “{a.bubble}”
+                </div>
+              ))}
+            </div>
+          )}
+          <button type="button" className="ts-more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            {open ? "Hide the list" : `See what all ${arch.length} said`}
+            <span aria-hidden>{open ? " ↑" : " ↓"}</span>
+          </button>
+          {open && (
+            <ul className="ts-react">
+              {[...arch]
+                .sort((x, y) => y.mu[0] - x.mu[0])
+                .map((a) => (
+                  <li key={a.id} className={lean(a) > 0 ? "up" : lean(a) < 0 ? "down" : ""}>
+                    <span className="e" aria-hidden>
+                      {lean(a) > 0 ? "↑" : lean(a) < 0 ? "↓" : "·"}
+                    </span>
+                    <span>
+                      <b>{a.label}</b>
+                      <em>“{a.bubble}”</em>
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          )}
         </>
       ) : (
         <p className="fl-sub" style={{ marginTop: 10 }}>
@@ -186,7 +241,8 @@ function Shoppers({ shown }: { shown: Shown }) {
 
 /** The earlier plans the shoppers reacted to, newest first: how they split and the strongest line. */
 function ShopperHistory({ plans, crowd }: { plans: string[]; crowd: Record<string, CrowdArchetype[]> }) {
-  const rows = plans.filter((p) => (crowd[p]?.length ?? 0) > 0).slice(0, 4);
+  const all = plans.filter((p) => (crowd[p]?.length ?? 0) > 0);
+  const rows = all.slice(0, 6);
   if (!rows.length) return null;
   return (
     <div className="fl-hist">
@@ -216,6 +272,7 @@ function ShopperHistory({ plans, crowd }: { plans: string[]; crowd: Record<strin
           );
         })}
       </ul>
+      {all.length > rows.length && <p className="ts-moretx">+ {all.length - rows.length} earlier plans</p>}
     </div>
   );
 }
@@ -330,7 +387,7 @@ function Simulator({ shown }: { shown: Shown }) {
                 <b style={{ color: "var(--fl-ink)", fontWeight: 600 }}>{cell.plan_name}</b> · {shock?.label}
               </>
             ) : (
-              "Runs every plan in every future, 1,000 times each. No AI, just math."
+              "Each plan is simulated 1,000 times in every future, using the same random draws, so the comparison is fair."
             )}
           </p>
         </div>
@@ -530,6 +587,11 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
   const anchor = useRef<DOMRect | null>(null);
   const tipH = useRef(420);
   const hideT = useRef<number>();
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [edge, setEdge] = useState({ up: false, down: 0, left: false, right: 0 });
+  const userAt = useRef(-1e9);
+  const autoDone = useRef(false);
 
   const rows: PlanRow[] = plans.filter((x) => shown.plans.has(x.name));
   const visible = new Set(shown.cells);
@@ -576,6 +638,90 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
   }, [scroller]);
   useEffect(() => () => window.clearTimeout(hideT.current), []);
 
+  // how much of the grid is hidden past each edge: counts whole plans (rows) and futures (columns)
+  const measure = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const headH = el.querySelector("thead")?.getBoundingClientRect().height ?? 0;
+    const headW = el.querySelector("tbody th")?.getBoundingClientRect().width ?? 0;
+    const view = el.getBoundingClientRect();
+    wrapRef.current?.style.setProperty("--ts-head", `${Math.round(headH)}px`);
+    wrapRef.current?.style.setProperty("--ts-col", `${Math.round(headW)}px`);
+    let down = 0,
+      right = 0;
+    el.querySelectorAll("tbody tr").forEach((tr) => {
+      if (tr.getBoundingClientRect().top > view.bottom - 12) down++;
+    });
+    el.querySelectorAll("thead th:not(:first-child)").forEach((th) => {
+      if (th.getBoundingClientRect().left > view.right - 12) right++;
+    });
+    const next = {
+      up: el.scrollTop > headH * 0.25,
+      left: el.scrollLeft > headW * 0.1,
+      down: el.scrollHeight - el.scrollTop - el.clientHeight > 6 ? Math.max(down, 1) : 0,
+      right: el.scrollWidth - el.scrollLeft - el.clientWidth > 6 ? Math.max(right, 1) : 0,
+    };
+    setEdge((e) => (e.up === next.up && e.left === next.left && e.down === next.down && e.right === next.right ? e : next));
+  }, []);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    const t = el.querySelector("table");
+    if (t) ro.observe(t);
+    const off = () => hide(0);
+    el.addEventListener("scroll", off, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", measure);
+      el.removeEventListener("scroll", off);
+      ro.disconnect();
+    };
+  }, [measure, shocks.length]);
+  useEffect(measure, [measure, rows.length, shown.cells.length, adding]);
+
+  // note when the person last scrolled themselves, so the auto-scroll never fights them
+  useEffect(() => {
+    const mark = () => {
+      userAt.current = performance.now();
+    };
+    const evs = ["wheel", "touchstart", "touchmove", "keydown", "pointerdown"] as const;
+    evs.forEach((e) => window.addEventListener(e, mark, { passive: true }));
+    return () => evs.forEach((e) => window.removeEventListener(e, mark));
+  }, []);
+
+  // once the grid has finished filling, glide it into view (one time)
+  useEffect(() => {
+    if (!shown.done || autoDone.current) return;
+    const t = window.setTimeout(() => {
+      autoDone.current = true;
+      const w = wrapRef.current;
+      if (!w || performance.now() - userAt.current < 4000) return;
+      // aim just under the sticky stepper; show the whole card if it fits, else the grid itself
+      const box = scroller?.getBoundingClientRect() ?? { top: 0, bottom: window.innerHeight, height: window.innerHeight };
+      const bar = box.top + (document.querySelector<HTMLElement>(".fl-stepper")?.offsetHeight ?? 0);
+      const card = w.closest(".fl-card") ?? w;
+      const aim = card.getBoundingClientRect().height + bar + 90 <= box.bottom ? card : w;
+      const r = aim.getBoundingClientRect();
+      const dy = r.top - Math.max(bar, box.top) - 12;
+      // already in place: leave it alone
+      if (Math.abs(dy) < 24) return;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (scroller) scroller.scrollTo({ top: scroller.scrollTop + dy, behavior: reduce ? "auto" : "smooth" });
+      else aim.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    }, 500);
+    return () => window.clearTimeout(t);
+  }, [shown.done, scroller]);
+
+  const nudge = (dx: number, dy: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: dx, top: dy, behavior: reduce ? "auto" : "smooth" });
+  };
+
   const srcNames = (c: ShockCase) =>
     c.source_ids.map((id) => news.find((n) => n.id === id)?.source).filter((x): x is string => !!x);
 
@@ -595,7 +741,8 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
           <AddPlanPanel profile={p} onClose={() => setAdding(false)} />
         </div>
       )}
-      <div className="fl-gridw">
+      <div className="ts-wrap" ref={wrapRef}>
+      <div className="fl-gridw ts-scroll" ref={scrollRef} tabIndex={-1}>
         <table className="fl-grid">
           <thead>
             <tr>
@@ -674,6 +821,21 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
             ))}
           </tbody>
         </table>
+      </div>
+      <span className={`ts-fade b${edge.down ? " on" : ""}`} aria-hidden />
+      <span className={`ts-fade r${edge.right ? " on" : ""}`} aria-hidden />
+      <span className={`ts-fade t${edge.up ? " on" : ""}`} aria-hidden />
+      <span className={`ts-fade l${edge.left ? " on" : ""}`} aria-hidden />
+      {edge.down > 0 && (
+        <button type="button" className="ts-more-pill down" onClick={() => nudge(0, (scrollRef.current?.clientHeight ?? 300) * 0.8)}>
+          {edge.down} more {edge.down === 1 ? "plan" : "plans"} <span aria-hidden>↓</span>
+        </button>
+      )}
+      {edge.right > 0 && (
+        <button type="button" className="ts-more-pill right" onClick={() => nudge((scrollRef.current?.clientWidth ?? 300) * 0.7, 0)}>
+          {edge.right === 1 ? "1 more future" : `${edge.right} more futures`} <span aria-hidden>→</span>
+        </button>
+      )}
       </div>
       <div className="fl-gfoot">
         <span>Bad case = 1 run in 20 is worse. Green beats doing nothing, red loses to it.</span>

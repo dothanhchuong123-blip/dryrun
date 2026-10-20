@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { reducedMotion } from "../../lib/follow";
+import { formatDelta, formatPrice } from "../../lib/format";
 import { useMarketStore } from "../../lib/store";
 import { usePacer, useTimeline } from "../../lib/timeline";
 import { ReplayDrawer } from "../replay/ReplayDrawer";
@@ -19,6 +20,14 @@ const STEPS = [
   { title: "Your answer", sub: "what to do" },
 ];
 const AUTO_MS = 4000;
+const SAMPLE_PLACEHOLDER =
+  "e.g. I run a small bakery-café in Austin, Texas and sell about 600 pastries a week at $4.50 each. Ingredients cost me about $1.80 each. My main rival is a Starbucks two blocks away…";
+const HOW = [
+  { t: "Describe your business", d: "A few sentences: what you sell, price, cost, main rival." },
+  { t: "We search the news", d: "Tavily finds this week's news that actually hits your costs and customers." },
+  { t: "An AI analyst proposes plans", d: "Nemotron suggests moves; a simulator stress-tests each across possible futures." },
+  { t: "You get a decision memo", d: "The plan that holds up best, with the numbers and sources behind it." },
+];
 
 /** Critically damped spring scroll: glides to a target, gives way the moment the user scrolls. */
 function useSpringScroll(scroller: React.RefObject<HTMLDivElement>) {
@@ -110,7 +119,7 @@ export function Flow() {
   const { outer, inner } = useEasedHeight();
   const [view, setView] = useState(-1);
   const [reached, setReached] = useState(-1);
-  const [auto, setAuto] = useState(false);
+  const [auto, setAuto] = useState<boolean | null>(null); // null = follow the example
   const [autoLeft, setAutoLeft] = useState(AUTO_MS);
   const [sc, setSc] = useState<HTMLElement | null>(null);
 
@@ -175,15 +184,20 @@ export function Flow() {
     setReached(-1);
   };
   const up = view >= 0;
+  const [showFull, setShowFull] = useState(false);
+  const exReplay = !!s.examples.find((e) => e.id === (s.exampleId ?? s.analysis.exampleId))?.has_replay || s.analysis.mode === "replay";
+  const autoEff = auto ?? exReplay;
+  const sample = s.examples.find((e) => e.has_replay)?.text;
+  const placeholder = sample ? `e.g. ${sample.length > 220 ? `${sample.slice(0, 220).trim()}…` : sample}` : SAMPLE_PLACEHOLDER;
   const offline = s.backend === "mock";
 
   // ---- gates --------------------------------------------------------------------------------------
   const frontier = view === reached;
   const nNews = s.news.length,
     nShocks = s.shocks.length;
-  let gate: { title: string; sub: string; btn: string; ready: boolean; act: () => void; autoOk: boolean } | null = null;
+  let gate: { title: string; sub: string; btn: string; ready: boolean; act: () => void; autoOk: boolean; ms: number; hero?: string; gain?: string } | null = null;
   if (view >= 0 && !frontier) {
-    gate = { title: `Looking back at “${STEPS[view].title}”`, sub: "Nothing is lost. The run keeps going.", btn: `Back to ${STEPS[reached].title}`, ready: true, act: () => setView(reached), autoOk: false };
+    gate = { title: `Looking back at “${STEPS[view].title}”`, sub: "Nothing is lost. The run keeps going.", btn: `Back to ${STEPS[reached].title}`, ready: true, act: () => setView(reached), autoOk: false, ms: AUTO_MS };
   } else if (view === 0) {
     const ok = !!p && s.profileStatus === "ready" && !profileInvalid(p) && s.analysis.status !== "starting";
     gate = {
@@ -195,7 +209,8 @@ export function Flow() {
         void s.startAnalysis();
         go(1);
       },
-      autoOk: !!s.examples.find((e) => e.id === s.exampleId)?.has_replay,
+      autoOk: exReplay,
+      ms: 1200,
     };
   } else if (view === 1) {
     const ok = nShocks > 0;
@@ -206,31 +221,38 @@ export function Flow() {
       ready: ok,
       act: () => go(2),
       autoOk: true,
+      ms: exReplay ? 2500 : AUTO_MS,
     };
   } else if (view === 2) {
     const ok = shown.done;
     const nPlans = shown.plans.size;
+    const best = s.summary?.best_today ?? s.memo?.plan_name ?? "";
+    const d = s.memo?.numbers.mean_delta_usd;
     gate = {
       title: ok ? `Tested ${nPlans} plans in ${nShocks} futures` : `Testing plans… ${nPlans ? `${nPlans} so far` : ""}`,
-      sub: ok ? `Best today: ${s.summary?.best_today ?? s.memo?.plan_name ?? ""}. Hover any box to see why.` : "Watch the analyst think, the shoppers react and the grid fill in.",
+      sub: ok ? "Hover any box in the grid to see why." : "Watch the analyst think, the shoppers react and the grid fill in.",
+      hero: ok && best ? best : undefined,
+      gain: ok && d != null && Number.isFinite(d) ? `${formatDelta(d)} vs doing nothing` : undefined,
       btn: "See your answer",
       ready: ok,
       act: () => go(3),
       autoOk: true,
+      ms: exReplay ? 9000 : AUTO_MS,
     };
   }
 
   // auto-continue: a gate that is ready moves on by itself after a few seconds
-  const autoOn = auto && !!gate?.ready && !!gate.autoOk && frontier;
+  const gateMs = gate?.ms ?? AUTO_MS;
+  const autoOn = autoEff && !!gate?.ready && !!gate.autoOk && frontier;
   const gateAct = gate?.act;
   useEffect(() => {
     if (!autoOn || !gateAct) {
-      setAutoLeft(AUTO_MS);
+      setAutoLeft(gateMs);
       return;
     }
     const t0 = performance.now();
     const id = window.setInterval(() => {
-      const left = AUTO_MS - (performance.now() - t0);
+      const left = gateMs - (performance.now() - t0);
       setAutoLeft(Math.max(0, left));
       if (left <= 0) {
         window.clearInterval(id);
@@ -283,7 +305,7 @@ export function Flow() {
             <b>{calls}</b> Nemotron calls · <b>${s.telemetry.cost_usd.toFixed(2)}</b>
           </span>
         )}
-        <button type="button" role="switch" aria-checked={auto} aria-label="Auto-continue" className="fl-auto" onClick={() => setAuto((a) => !a)}>
+        <button type="button" role="switch" aria-checked={autoEff} aria-label="Auto-continue" className="fl-auto" onClick={() => setAuto(!autoEff)}>
           <span className="fl-sw" aria-hidden />
           <span className="l">Auto-continue</span>
         </button>
@@ -292,21 +314,61 @@ export function Flow() {
 
       <div className="fl-scroll" ref={scroller}>
         <main className="fl-main">
-          <div className={`fl-hero${up ? " up" : ""}`} style={{ paddingTop: up ? 8 : "min(12vh, 110px)" }}>
-            <h1>Let&apos;s test your business</h1>
-            <p>Tell us what you sell. We find the news that hits it, test a few plans against good and bad futures, and tell you which one holds up.</p>
+          <div className={`fl-hero${up ? " up" : ""}`} style={{ paddingTop: up ? 8 : "min(6vh, 48px)" }}>
+            <h1>Test your business plans against today&apos;s news</h1>
+            <p>Describe your business. We find the news that hits it, stress-test a few plans against good and bad futures, and tell you which one holds up.</p>
           </div>
+
+          {!up && (
+            <ol className="fl-how" aria-label="How it works">
+              {HOW.map((h, i) => (
+                <li key={h.t}>
+                  <span className="n">{i + 1}</span>
+                  <b>{h.t}</b>
+                  <small>{h.d}</small>
+                </li>
+              ))}
+            </ol>
+          )}
 
           <div className={`fl-box${up ? " up" : ""}`}>
             {up ? (
-              <div className="fl-said">
-                <span className="q" aria-hidden>
-                  You
-                </span>
-                <p>{s.profileText}</p>
-                <button type="button" className="fl-btn2" onClick={restart}>
-                  Edit
-                </button>
+              <div className="fl-sum">
+                <div className="head">
+                  <b>{p ? p.business_name : "Your business"}</b>
+                  <span className="sp" />
+                  <button type="button" className="fl-btn2" onClick={restart}>
+                    Edit
+                  </button>
+                </div>
+                {p ? (
+                  <div className="chips">
+                    {[
+                      p.country && ["Where", p.country.replace(/\b\w/g, (c) => c.toUpperCase())],
+                      p.product_unit && ["Sells", p.product_unit],
+                      ["Price → cost", `${formatPrice(p.price)} → ${formatPrice(p.unit_cost)}`],
+                      ["Weekly sales", p.weekly_sales.toLocaleString("en-US")],
+                      p.rival_name && ["Rival", `${p.rival_name} at ${formatPrice(p.rival_price)}`],
+                    ]
+                      .filter((c): c is string[] => Array.isArray(c))
+                      .map(([k, v]) => (
+                        <span className="chip" key={k}>
+                          <small>{k}</small>
+                          {v}
+                        </span>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="trunc">{s.profileText}</p>
+                )}
+                {p && (
+                  <>
+                    <button type="button" className="more" aria-expanded={showFull} onClick={() => setShowFull((v) => !v)}>
+                      {showFull ? "Hide full text" : "Show full text"}
+                    </button>
+                    {showFull && <p className="full">{s.profileText}</p>}
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -318,10 +380,10 @@ export function Flow() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) read(s.profileText);
                   }}
-                  placeholder="e.g. I roast coffee in Ho Chi Minh City and sell about 280 bags a week to cafés at $11 a bag. Beans cost me about $6.50 a bag…"
+                  placeholder={placeholder}
                 />
                 <div className="fl-boxbar">
-                  <span>Helps to include: what you sell, your price, your cost, your main rival</span>
+                  <span>Helps to include: what you sell, price, cost, main rival · <kbd>⌘</kbd> <kbd>Enter</kbd> to start</span>
                   <button type="button" className="fl-btn" disabled={!s.profileText.trim() || s.profileStatus === "reading"} onClick={() => read(s.profileText)}>
                     Test my business
                     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
@@ -335,7 +397,7 @@ export function Flow() {
 
           {!up && s.examples.length > 0 && (
             <div className="fl-ex">
-              <p>Or start from a real example. It replays instantly and costs nothing.</p>
+              <p>No business in mind? Pick one. One click runs it end to end, free.</p>
               <div className="fl-exg">
                 {s.examples.map((e) => {
                   // offline, only recorded examples have data; the others would replay someone else's run
@@ -344,7 +406,7 @@ export function Flow() {
                     <button key={e.id} type="button" className="fl-exb" disabled={blocked} onClick={() => pickExample(e.id)}>
                       <b>{e.title}</b>
                       <span>{e.subtitle}</span>
-                      <small className={e.has_replay ? undefined : "live"}>{e.has_replay ? "Instant replay" : blocked ? "Needs the live server" : "Runs live · about 2 min"}</small>
+                      <small className={e.has_replay ? undefined : "live"}>{e.has_replay ? "Run this example →" : blocked ? "Needs the live server" : "Runs live · about 2 min"}</small>
                     </button>
                   );
                 })}
@@ -390,31 +452,38 @@ export function Flow() {
             </div>
           </div>
 
-          {gate && (
-            <div className="fl-gate">
-              <div className="fl-gatein" key={`${view}-${frontier}`}>
-                <div className="tx" aria-live="polite">
-                  <b>{gate.title}</b>
-                  <span>{gate.sub}</span>
-                </div>
-                {!gate.ready && (
-                  <span className="wait">
-                    <span className="fl-spin" />
-                  </span>
-                )}
-                <button type="button" className="go" disabled={!gate.ready} onClick={gate.act}>
-                  {gate.btn}
-                  {autoOn ? ` · ${Math.ceil(autoLeft / 1000)}` : ""}
-                  <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden>
-                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {autoOn && <span className="fill" style={{ width: `${100 * (1 - autoLeft / AUTO_MS)}%` }} />}
-                </button>
-              </div>
-            </div>
-          )}
         </main>
       </div>
+
+      {gate && (
+        <div className="fl-bar">
+          <div className="fl-barin" key={`${view}-${frontier}`}>
+            <div className="tx" aria-live="polite">
+              <b>{gate.title}</b>
+              {gate.hero && (
+                <span className="best">
+                  Best plan: <em>{gate.hero}</em>
+                  {gate.gain && <i>{gate.gain}</i>}
+                </span>
+              )}
+              <span>{gate.sub}</span>
+            </div>
+            {!gate.ready && (
+              <span className="wait">
+                <span className="fl-spin" />
+              </span>
+            )}
+            <button type="button" className="go" disabled={!gate.ready} onClick={gate.act}>
+              {gate.btn}
+              {autoOn ? ` · ${Math.ceil(autoLeft / 1000)}` : ""}
+              <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden>
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {autoOn && <span className="fill" style={{ width: `${100 * (1 - autoLeft / gateMs)}%` }} />}
+            </button>
+          </div>
+        </div>
+      )}
 
       {s.replay.open && (
         <>

@@ -1,0 +1,64 @@
+{
+  "id": "coffee_austin",
+  "title": "Coffee roaster in Austin, Texas",
+  "subtitle": "Sells 12 oz bags to cafés and grocers; tariffs on Brazilian beans are in the news",
+  "text": "I run a small specialty coffee roastery in Austin, Texas, buying green beans from Brazil and selling 12 oz bags to about 45 local cafés and grocers, around 300 bags a week. A bag sells for $13 wholesale and the beans, roasting and packaging cost me about $7.80. Beans take about 5 weeks to arrive by sea; I keep about 3 weeks of stock and could put about $12,000 into more. My main rival, Capital City Coffee, charges $12.50 a bag.",
+  "scenario_id": "commodity_war",
+  "seed_queries": [
+    "tariff Brazil coffee imports US roasters prices",
+    "arabica coffee futures price US importers tariff",
+    "Brazil coffee export shipping delays US ports"
+  ],
+  "fallback_shock": {
+    "delta_c_raw": 0.3,
+    "delta_lead_time": 1,
+    "demand_shock": -0.05,
+    "severity": 0.65,
+    "evidence": [
+      {
+        "quote": "green coffee import costs are up about 30% since the new tariff took effect",
+        "url": "https://example.com/fallback/coffee-tariff"
+      }
+    ]
+  },
+  "profile": {
+    "business_name": "Lone Star Roasting",
+    "product_unit": "12 oz bag of roasted coffee",
+    "price": 13.0,
+    "unit_cost": 7.8,
+    "weekly_sales": 300.0,
+    "lead_time_weeks": 5,
+    "stock_weeks": 3.0,
+    "rival_name": "Capital City Coffee",
+    "rival_price": 12.5,
+    "supplier_region": "Brazil",
+    "customers": "local cafés and grocery stores",
+    "search_terms": [
+      "tariff Brazil coffee imports US roasters",
+      "arabica coffee futures price record"
+    ],
+    "country": "united states",
+    "market_terms": [
+      "new coffee chain opening Austin Texas",
+      "Texas coffee roasters wholesale prices"
+    ],
+    "exposed_cost_share": 0.6,
+    "cash_available": 12000.0,
+    "guessed_fields": [
+      "exposed_cost_share"
+    ]
+  },
+  "gut_plans": [
+    {
+      "name": "Raise price 8% now",
+      "price_change_pct": 8
+    },
+    {
+      "name": "Stock up 6 weeks now",
+      "extra_stock_weeks": 6
+    },
+    {
+      "name": "Wait and see"
+    }
+  ]
+}

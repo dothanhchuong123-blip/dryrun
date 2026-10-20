@@ -150,7 +150,9 @@ def client_ip(request: Request) -> str:
 
 def _examples() -> list[dict]:
     out = []
-    for path in sorted(EXAMPLES_DIR.glob("*.json")):
+    # the US demo first, the Ho Chi Minh City roaster second as the alternative, then the rest by name
+    order = {"coffee_austin": 0, "coffee_hcmc": 1}
+    for path in sorted(EXAMPLES_DIR.glob("*.json"), key=lambda p: (order.get(p.stem, 99), p.stem)):
         ex = json.loads(path.read_text(encoding="utf-8"))
         out.append({
             "id": ex["id"], "title": ex["title"], "subtitle": ex.get("subtitle", ""), "text": ex["text"],

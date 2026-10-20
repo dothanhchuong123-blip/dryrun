@@ -1,9 +1,10 @@
 /**
- * Offline mock backend for the v2 contract (docs/EVENTS.md v2.1), for the coffee_hcmc example.
+ * Offline mock backend for the v2 contract (docs/EVENTS.md v2.1). Plays two recorded examples:
+ * coffee_austin (the US demo, default) and coffee_hcmc (the Ho Chi Minh City alternative).
  *
  * All numbers come from the real planner via `scripts/make_mock_stream.py`
- * (coffee_hcmc.json, coffee_hcmc_replays.json). Only the wording (headlines, agent text, crowd mood)
- * is scripted here. Re-run the script after any engine change.
+ * (<id>.json, <id>_replays.json). The wording (headlines, agent text, crowd mood) is scripted in
+ * `scripts/mock_wording.py` and shipped inside the JSON as `script`. Re-run the script after any engine change.
  *
  * The mock emits the same typed events the SSE client would, so the store cannot tell the difference.
  */
@@ -31,7 +32,8 @@ import type {
 } from "../lib/events";
 import { labels } from "../lib/labels";
 import { formatDelta, formatMoney } from "../lib/format";
-import data from "./coffee_hcmc.json";
+import austinData from "./coffee_austin.json";
+import hcmcData from "./coffee_hcmc.json";
 
 // ---- typed view of the generated JSON ----------------------------------------------------------
 
@@ -54,7 +56,26 @@ interface RecordedReplay {
   markers: MarkerData[];
   cum_profit_usd: { U1: number; U2: number };
 }
+interface MockScript {
+  mode_reason: string;
+  scenario_thought: string;
+  scenario_reasoning: string[];
+  unmodelled: { text: string; source_id: string | null }[];
+  round_reasoning: Record<string, string[]>;
+  rounds: { round: number; think: string; test: string; shoppers: string; result_for: string[] }[];
+  over_cash_plan: string;
+  memo_headlines: Record<string, string>;
+  memo_headline_default: string;
+  news_phrase: string;
+  fall_phrase: string;
+  rival_phrase: string;
+  recheck_when: string;
+  not_modelled_fixed: string[];
+  news_check: Omit<NewsItem, "id" | "kind" | "impact_usd" | "impact_p5_usd" | "live" | "applied">;
+}
 interface MockData {
+  example_id: string;
+  script: MockScript;
   examples: (ExamplesResponse[number] & { profile: BusinessProfile })[];
   profile: BusinessProfile;
   news: NewsItem[];
@@ -70,7 +91,30 @@ interface MockData {
   library: LibEntry[];
   n_shoppers: number;
 }
-const D = data as unknown as MockData;
+const DATA: Record<string, MockData> = {
+  coffee_austin: austinData as unknown as MockData,
+  coffee_hcmc: hcmcData as unknown as MockData,
+};
+const DEFAULT_EXAMPLE = "coffee_austin";
+
+/** The example being played. Set by `mockCreateAnalysis` (or `mockParseProfile` for a known text). */
+let D: MockData = DATA[DEFAULT_EXAMPLE];
+let cellMap: Map<string, GridCellData>;
+let planNames: string[];
+let shockById: Map<string, ShockCase>;
+let baseline: Record<string, number>;
+
+const cellKey = (p: string, s: string) => `${p}|${s}`;
+
+/** Point every helper at one example's data. Unknown ids fall back to the default (US) example. */
+function selectExample(id: string | null | undefined): void {
+  D = DATA[id ?? ""] ?? DATA[DEFAULT_EXAMPLE];
+  cellMap = new Map(D.cells.map((c) => [cellKey(c.plan_name, c.shock_id), c]));
+  planNames = D.plans.map((p) => p.name);
+  shockById = new Map(D.shocks.map((s) => [s.id, s]));
+  baseline = D.baseline_profit_usd;
+}
+selectExample(DEFAULT_EXAMPLE);
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -80,31 +124,25 @@ export function mockExamples(): ExamplesResponse {
   return D.examples.map(({ profile: _profile, ...rest }) => rest);
 }
 
-/** Returns the matching example's profile after 1.5 s; anything else gets the coffee profile. */
+/** Returns the matching example's profile after 1.5 s; anything else gets the current example's profile. */
 export async function mockParseProfile(text: string): Promise<ParseProfileResponse> {
   await sleep(1500);
   const hit = D.examples.find((e) => e.text.trim() === text.trim());
+  if (hit) selectExample(hit.id);
   return { profile: structuredClone(hit?.profile ?? D.profile), fallback_used: false };
 }
 
-export function mockCreateAnalysis(_req: CreateAnalysisRequest): CreateAnalysisResponse {
+export function mockCreateAnalysis(req: CreateAnalysisRequest): CreateAnalysisResponse {
+  selectExample(req.example_id);
   return { analysis_id: `mock-${Date.now().toString(36)}`, mode: "replay" };
 }
 
 // ---- helpers -----------------------------------------------------------------------------------
 
-const cellKey = (p: string, s: string) => `${p}|${s}`;
-const cellMap = new Map(D.cells.map((c) => [cellKey(c.plan_name, c.shock_id), c]));
-const planNames = D.plans.map((p) => p.name);
-const shockById = new Map(D.shocks.map((s) => [s.id, s]));
-
 function sumBridge(b: CellBridge): number {
   return b.cost_usd + b.price_usd + b.volume_usd + b.marketing_usd + b.holding_usd;
 }
 const r2 = (x: number) => Math.round(x * 100) / 100;
-
-/** What "Do nothing" earns in a column, e.g. for the headline. */
-const baseline = D.baseline_profit_usd;
 
 // ---- the scripted analysis ---------------------------------------------------------------------
 
@@ -121,38 +159,8 @@ function step(
   return { event: "agent_step", data: { round, kind, text, plan_name: plan, tier, latency_ms: latency } };
 }
 
-const SCENARIO_THOUGHT =
-  "Beans +31% is the news column. Two bigger worries for a small roaster: the dry spell could push beans to +45% " +
-  "with slower shipping, and Highland has said it will protect its cafés, so a 5% price cut is realistic. " +
-  "A new chain with 40 outlets could pull 8% of cafés. One column for a bean price fall, marked unlikely.";
-
-const SCENARIO_REASONING = [
-  "news n1: robusta +31% in 4 wk. your beans = 85% of cost → cost +26%\n",
-  "6.50 × 0.85 × 0.31 = $1.71 a bag. margin 11.00 − 6.50 = $4.50 → 4.50 − 1.71 = $2.79\n",
-  "n2: dry spell, harvest −10% → could extend the spike. try +45%, shipping +2 wk\n",
-  "m2: Highland 'will not pass it all on' → rival price −5% is plausible\n",
-  "m1: 40-outlet chain, own roasting → share shift ~8% of cafés from wk 4\n",
-  "also one downside column: beans −12%, unlikely but plans must not rely on a spike\n",
-];
-
-const UNMODELLED = [
-  { text: "A new tax on imported coffee equipment is being discussed", source_id: "m2" },
-  { text: "Your larger cafés may ask for credit terms when prices rise", source_id: null },
-];
-
 function roundReasoning(round: number): string[] {
-  if (round === 1)
-    return [
-      "seed results: stock 4 wk covers the spike but is tied to cash ($7.3k of $8,000)\n",
-      "price +4% alone: little cash, good in news column, loses in 'beans −12%'\n",
-      "try: stock 3 wk + raise 3% wk 3 → less cash, keeps the volume\n",
-      "try: stock 6 wk → big gain but cash > $8,000 → will show 'Over your cash'\n",
-    ];
-  return [
-    "best so far: stock 3 wk + raise 3% wk 3. more stock helps while cash allows\n",
-    "stock 4 wk fits the $8,000 (peak cash $7.3k) → combine with +3% wk 3\n",
-    "marketing +20% costs money now and brings little back → test it once\n",
-  ];
+  return D.script.round_reasoning[String(round)] ?? [];
 }
 
 function cellEvent(plan: string, shock: string): AnalysisEvent {
@@ -185,17 +193,18 @@ function buildMemo(verified = false, cells: Map<string, GridCellData> = cellMap)
   const s2 = cells.get(cellKey(plan, "s2"))!;
   const s4 = cells.get(cellKey(plan, "s4"))!;
   const bridge = c.bridge;
+  const sc = D.script;
   return {
     plan_name: plan,
-    headline: "Stock up 4 weeks now and raise your price 3% in week 3",
+    headline: sc.memo_headlines[plan] ?? sc.memo_headline_default,
     why:
-      `If beans keep their ${"+31%"} jump, this plan earns ${formatDelta(c.mean_delta_usd)} more than doing nothing. ` +
+      `If ${sc.news_phrase}, this plan earns ${formatDelta(c.mean_delta_usd)} more than doing nothing. ` +
       `Cheaper stock is worth ${formatDelta(bridge.cost_usd)} and the small rise adds ${formatDelta(bridge.price_usd)}, ` +
       `less ${formatMoney(-bridge.volume_usd)} from customers who leave.`,
     watch_out:
-      `It ties up about ${formatMoney(c.peak_cash_usd)} of your $8,000 and only loses if beans fall back (` +
-      `${formatDelta(s4.mean_delta_usd)}). If Highland cuts 5% it still earns ${formatDelta(s2.mean_delta_usd)}.`,
-    recheck_when: "Beans move more than 10% either way, or Highland changes its price.",
+      `It ties up about ${formatMoney(c.peak_cash_usd)} of your ${formatMoney(D.profile.cash_available)} and only loses if ${sc.fall_phrase} (` +
+      `${formatDelta(s4.mean_delta_usd)}). If ${sc.rival_phrase} it still earns ${formatDelta(s2.mean_delta_usd)}.`,
+    recheck_when: sc.recheck_when,
     numbers: {
       ...D.memo.numbers,
       mean_delta_usd: c.mean_delta_usd,
@@ -215,16 +224,8 @@ function buildMemo(verified = false, cells: Map<string, GridCellData> = cellMap)
       { title: D.news[1].title, url: D.news[1].url, quote: D.news[1].quote },
     ],
     not_modelled: {
-      fixed: [
-        "Fixed costs such as rent and salaries (profit here is gross profit)",
-        "Taxes",
-        "Payment terms: we assume you pay suppliers when you order and customers pay when they buy",
-        "Seasonality",
-        "Your other products",
-        "Warehouse space limits",
-        "How other rivals react (we model one main rival)",
-      ],
-      found: UNMODELLED,
+      fixed: sc.not_modelled_fixed,
+      found: sc.unmodelled,
     },
     fallback_used: false,
   };
@@ -296,13 +297,13 @@ export function buildAnalysisScript(): Timed[] {
     data: {
       analysis_id: "mock",
       mode: "replay",
-      example_id: "coffee_hcmc",
+      example_id: D.example_id,
       profile: D.profile,
       horizon_weeks: 24,
       n_paths: 1000,
     },
   });
-  at(0.2, { event: "mode", data: { mode: "replay", reason: "Offline demo: the recorded coffee example is playing." } });
+  at(0.2, { event: "mode", data: { mode: "replay", reason: D.script.mode_reason } });
   calls.super += 1;
   tele(0.3);
 
@@ -313,40 +314,24 @@ export function buildAnalysisScript(): Timed[] {
 
   // 0b futures
   at(0.8, step(0, "think", "Futures to test: reading the news and your market to pick the futures to run.", "ultra", null, 2100));
-  for (const chunk of SCENARIO_REASONING) at(0.25, { event: "reasoning", data: { role: "scenarios", round: 0, delta: chunk } });
+  for (const chunk of D.script.scenario_reasoning) at(0.25, { event: "reasoning", data: { role: "scenarios", round: 0, delta: chunk } });
   at(0.2, { event: "reasoning_done", data: { role: "scenarios", round: 0 } });
   calls.ultra += 1;
   at(0.3, {
     event: "scenarios",
-    data: { thought: SCENARIO_THOUGHT, unmodelled: UNMODELLED, fallback_used: false },
+    data: { thought: D.script.scenario_thought, unmodelled: D.script.unmodelled, fallback_used: false },
   });
   at(0.1, { event: "shocks", data: { cases: D.shocks } });
   tele();
 
   // rounds: 0 = seed plans, 1 and 2 = Ultra's
-  const rounds: { round: number; think: string; test: string; shoppers: string; resultFor: string[] }[] = [
-    {
-      round: 0,
-      think: "Starting with three simple plans: buy more stock, raise the price, or switch supplier.",
-      test: `Testing 3 starter plans against ${D.shocks.length} futures, 1,000 runs per cell.`,
-      shoppers: "Asked the shopper groups how each starter plan feels to them.",
-      resultFor: ["Stock up 4 weeks", "Raise price 4% from week 2"],
-    },
-    {
-      round: 1,
-      think: "Stock helps but cash is tight. Trying a smaller stock-up with a price rise, and a bigger one.",
-      test: "Testing 2 new plans against all futures.",
-      shoppers: "Shoppers: price-hunting cafés dislike a rise more than loyal regulars.",
-      resultFor: ["Stock 3 wk + raise 3% wk 3", "Stock up 6 weeks"],
-    },
-    {
-      round: 2,
-      think: "Combining what worked: 4 weeks of stock fits your cash, plus a small rise. One marketing test.",
-      test: "Testing the last 2 plans.",
-      shoppers: "Shoppers: a small rise after a stock-up reads as fair when everyone's costs jump.",
-      resultFor: ["Stock 4 wk + raise 3% wk 3"],
-    },
-  ];
+  const rounds = D.script.rounds.map((r) => ({
+    round: r.round,
+    think: r.think,
+    test: r.test.replace("{n_shocks}", String(D.shocks.length)),
+    shoppers: r.shoppers,
+    resultFor: r.result_for,
+  }));
 
   for (const r of rounds) {
     const roundPlans = D.plans.filter((p) => p.round === r.round);
@@ -376,7 +361,9 @@ export function buildAnalysisScript(): Timed[] {
   }
 
   // the over-cash plan is called out in the last result
-  at(0.5, step(2, "result", `Stock up 6 weeks looks best on paper (${formatDelta(cellMap.get(cellKey("Stock up 6 weeks", "news"))!.mean_delta_usd)}) but needs ${formatMoney(cellMap.get(cellKey("Stock up 6 weeks", "news"))!.peak_cash_usd)} of cash, more than you have.`, "engine", "Stock up 6 weeks"));
+  const overPlan = D.script.over_cash_plan;
+  const overCell = cellMap.get(cellKey(overPlan, "news"))!;
+  at(0.5, step(2, "result", `${overPlan} adds ${formatDelta(overCell.mean_delta_usd)} in today's news case but needs ${formatMoney(overCell.peak_cash_usd)} of cash, more than you have.`, "engine", overPlan));
   const best = D.best_today;
   at(0.5, step(2, "finish", `Recommending ${best}: ${newsCardText(best).split(": ")[1]}`, "ultra", best, 1900));
   calls.ultra += 1;
@@ -453,13 +440,7 @@ export function runMockAnalysis(emit: (ev: AnalysisEvent) => void): MockAnalysis
       const item: NewsItem = {
         id: `n${Date.now() % 1000}`,
         kind: "supply",
-        title: "Vietnamese exporters report robusta stocks at a three-year low",
-        url: "https://example.com/news/live-robusta-stocks",
-        source: "Nikkei Asia",
-        published: "2026-10-15",
-        quote: "exporters' robusta stocks are the lowest in three years heading into the new crop",
-        shock: { delta_c_raw: 0.12, delta_lead_time: 0, demand_shock: 0 },
-        cost_line: "Beans +12% × 85% of your cost is beans = your cost +10% (+$0.66 a bag)",
+        ...D.script.news_check,
         impact_usd: null,
         impact_p5_usd: null,
         live: true,
@@ -524,10 +505,17 @@ function nearestLibrary(spec: PlanSpec): LibEntry {
 // ---- replay ------------------------------------------------------------------------------------
 
 type ReplayFile = Record<string, RecordedReplay>;
-let replayFile: Promise<ReplayFile> | null = null;
+const replayFiles = new Map<string, Promise<ReplayFile>>();
 function loadReplays(): Promise<ReplayFile> {
-  replayFile ??= import("./coffee_hcmc_replays.json").then((m) => (m.default ?? m) as unknown as ReplayFile);
-  return replayFile;
+  const id = D.example_id;
+  let p = replayFiles.get(id);
+  if (!p) {
+    const load =
+      id === "coffee_hcmc" ? import("./coffee_hcmc_replays.json") : import("./coffee_austin_replays.json");
+    p = load.then((m) => (m.default ?? m) as unknown as ReplayFile);
+    replayFiles.set(id, p);
+  }
+  return p;
 }
 
 /** Streams one recorded cell (the nearest recorded plan for user-added ones) in about a second. */

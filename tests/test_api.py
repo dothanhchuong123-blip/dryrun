@@ -123,8 +123,10 @@ async def test_examples_and_health(tmp_path):
     async with client(make_app(tmp_path)) as c:
         assert (await c.get("/health")).json() == {"status": "ok"}
         ex = (await c.get("/api/examples")).json()
-        assert {e["id"] for e in ex} == {"coffee_hcmc", "furniture_eu", "pc_parts"}
-        assert all(e["has_replay"] and e["text"] for e in ex)
+        assert {e["id"] for e in ex} == {"coffee_austin", "coffee_hcmc", "furniture_eu", "pc_parts"}
+        assert ex[0]["id"] == "coffee_austin" and ex[1]["id"] == "coffee_hcmc"  # US demo first, then the alternative
+        assert all(e["text"] for e in ex)
+        assert all(e["has_replay"] for e in ex)
 
 
 async def test_example_in_replay_streams_first_events(tmp_path):
