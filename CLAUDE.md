@@ -43,6 +43,7 @@
 - **Gemini 4 Argon** (Gemini app, 3 Pro accounts, no repo access) built T01–T03, T10–T12 and the D1–D7 mockups. **Since 2026-10-15 every build task is a Claude prompt.** Argon only runs reviews (A2–A9) on finished work or gives advice, and a Claude session decides what to act on. Guide: `prompts/argon/HOW-TO.md` → "Run a review".
 - **Config:** read keys, model IDs and the base URL only via `backend.config.get_settings()`. Keys are `SecretStr`.
 - **Dev commands:** `uv sync` · `uv run pytest -q` · `uv run ruff check backend tests` · `uv run uvicorn backend.main:app --reload`
+- **Run the app locally:** `./dev.sh` = offline demo on http://localhost:3000, free (frontend only, replays the coffee run). `./dev.sh --live` = backend on :8000 + frontend, spends Token Factory credit. In the desktop app, `preview_start` with `frontend` or `live` (`.claude/launch.json`) runs the same script. `PORT=3005 ./dev.sh` for a second checkout or worktree.
 
 ## Guardrails for coding agents
 - LLMs output **decisions only** (P, Q, M, ω, sentiment μ/σ, shock vector). Revenue, demand, profit and stats always come from `backend/engine/`.
