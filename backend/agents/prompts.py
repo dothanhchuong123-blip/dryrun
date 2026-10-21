@@ -10,10 +10,22 @@ state_summary keys (all optional, rendered defensively):
 from __future__ import annotations
 
 import json
+from datetime import date
 
 from backend.agents import wording
 
 HISTORY_ROWS = 8
+
+
+def as_of_line(as_of: date | None) -> str:
+    """The date line every backtest prompt starts with (B1): the model is told what "today" is."""
+    if as_of is None:
+        return ""
+    return f"Today's date is {as_of:%d %B %Y}. You know nothing after this date. Use only the news below.\n\n"
+
+
+def _system(text: str, as_of: date | None) -> dict:
+    return {"role": "system", "content": as_of_line(as_of) + text}
 
 _CEO_SYSTEM = """You are the CEO of Firm {firm} in a two-firm market (Firm A vs Firm B), run over a finite horizon of ticks.
 Objective: maximise YOUR cumulative profit over the whole horizon and survive supply shocks.
@@ -101,12 +113,12 @@ Rules:
 Reply with JSON only."""
 
 
-def shock_parser_messages(articles: list[dict], scenario_hint: str = "") -> list[dict]:
+def shock_parser_messages(articles: list[dict], scenario_hint: str = "", as_of: date | None = None) -> list[dict]:
     blocks = []
     for i, a in enumerate(articles, 1):
         blocks.append(f"[{i}] url: {a.get('url', '')}\ntitle: {a.get('title', '')}\ntext:\n{str(a.get('content', ''))[:6000]}")
     user = (f"Scenario: {scenario_hint}\n\n" if scenario_hint else "") + "Articles:\n\n" + "\n\n".join(blocks)
-    return [{"role": "system", "content": _SHOCK_SYSTEM}, {"role": "user", "content": user}]
+    return [_system(_SHOCK_SYSTEM, as_of), {"role": "user", "content": user}]
 
 
 _INV_SYSTEM = """You are the inventory manager of Firm {firm}. You set omega, a behavioural risk factor in [-0.5, 2.0] that scales safety stock:
@@ -194,7 +206,7 @@ def profile_parser_messages(text: str, page: dict | None = None) -> list[dict]:
 
 _ANALYST_SYSTEM = """You are a careful analyst advising a small business. A simulator is your tool: it tests business plans against several news-shock cases and reports the results in a table. You decide which plans to test and which one to recommend. You never compute outcomes yourself.
 
-Each plan is a few knobs: price_change_pct (-20..20) from price_change_week (0..23); extra_stock_weeks (0..8), one extra raw-material order placed in stock_week (0..23); marketing_change_pct (-50..100); switch_supplier (bool) with alt_cost_change_pct (0..50: no cheaper supplier is known, so a switch never costs less than today; a plan below 0 is not tested), alt_lead_time_weeks (1..16) and alt_shock_exposure (0..1, how much of the news shock also hits the alternative supplier, default 0.3). Give each plan a short, descriptive name (<=32 chars). "Do nothing" is always the reference and is not a choice.
+Each plan is a few knobs: price_change_pct (-20..20) from price_change_week (0..23), lasting until price_end_week (1..24; 24 = to the end of the 24 weeks; a smaller number makes it a temporary surcharge or discount that you lift once the news fades); extra_stock_weeks (0..8), one extra raw-material order placed in stock_week (0..23); marketing_change_pct (-50..100); switch_supplier (bool) with alt_cost_change_pct (0..50: no cheaper supplier is known, so a switch never costs less than today; a plan below 0 is not tested), alt_lead_time_weeks (1..16) and alt_shock_exposure (0..1, how much of the news shock also hits the alternative supplier, default 0.3). Give each plan a short, descriptive name (<=32 chars). "Do nothing" is always the reference and is not a choice.
 
 How to work:
 - Propose AT MOST 3 NEW, DIFFERENT plans per round. Never re-test a name that is already in the tested list. Ideas to try across rounds (suggestions, not rules):
@@ -266,6 +278,7 @@ def analyst_messages(
     tested_names: list[str],
     futures_block: str = "",
     owner_idea: str | None = None,
+    as_of: date | None = None,
 ) -> list[dict]:
     """`owner_idea` is the row name of the owner's own gut-call plan, if they gave one."""
     parts = [
@@ -284,7 +297,7 @@ def analyst_messages(
             "say why in plain words in why; if it is the best plan, pick it and say so."
         )
     parts.append("Decide now.")
-    return [{"role": "system", "content": _ANALYST_SYSTEM}, {"role": "user", "content": "\n\n".join(parts)}]
+    return [_system(_ANALYST_SYSTEM, as_of), {"role": "user", "content": "\n\n".join(parts)}]
 
 
 _SCENARIO_SYSTEM = """You are a careful analyst helping a small business prepare for what could happen next. A simulator will test the owner's plans against every future you list, so each future must be expressed ONLY with these knobs:
@@ -326,6 +339,7 @@ def scenario_messages(
     cost_line: str,
     supply_items: list[dict],
     market_items: list[dict],
+    as_of: date | None = None,
 ) -> list[dict]:
     """Step 0b (SPEC §15.6): Ultra proposes the grid's other futures. Returns a ScenarioSet."""
     supply = "\n".join(
@@ -345,7 +359,7 @@ def scenario_messages(
             "List the futures now.",
         ]
     )
-    return [{"role": "system", "content": _SCENARIO_SYSTEM}, {"role": "user", "content": user}]
+    return [_system(_SCENARIO_SYSTEM, as_of), {"role": "user", "content": user}]
 
 
 _MEMO_SYSTEM = """You write a short decision memo for a busy small-business owner, in plain words, no jargon.
@@ -362,6 +376,7 @@ def memo_messages(
     pick_spec: dict,
     numbers: dict,
     news_items: list[dict],
+    as_of: date | None = None,
 ) -> list[dict]:
     user = "\n\n".join(
         [
@@ -372,7 +387,7 @@ def memo_messages(
             "Write the memo.",
         ]
     )
-    return [{"role": "system", "content": _MEMO_SYSTEM}, {"role": "user", "content": user}]
+    return [_system(_MEMO_SYSTEM, as_of), {"role": "user", "content": user}]
 
 
 _PLAN_CROWD_SYSTEM = """You simulate groups of shoppers reacting to a business plan. The business is Firm A; its rival is Firm B.
@@ -389,6 +404,7 @@ def plan_crowd_messages(
     plan_spec: dict,
     rival_price: float,
     batch: int = 0,
+    as_of: date | None = None,
 ) -> list[dict]:
     price = float(profile.get("price", 0) or 0)
     new_price = price * (1 + float(plan_spec.get("price_change_pct", 0)) / 100)
@@ -404,6 +420,7 @@ def plan_crowd_messages(
         "marketing_change_pct": plan_spec.get("marketing_change_pct", 0),
         "extra_stock_weeks": plan_spec.get("extra_stock_weeks", 0),
         "switch_supplier": bool(plan_spec.get("switch_supplier", False)),
+        "until_week": plan_spec.get("price_end_week", 24),
     }
     lines = [
         f'id={a["id"]} {a["label"]}: {a["persona"]} (sensitivity={a.get("sensitivity")}, loyalty={a.get("loyalty")})'
@@ -414,4 +431,4 @@ def plan_crowd_messages(
         "Market view: " + json.dumps(view, separators=(",", ":"), ensure_ascii=False)
         + "\n\nArchetypes:\n" + "\n".join(lines)
     )
-    return [{"role": "system", "content": _PLAN_CROWD_SYSTEM}, {"role": "user", "content": user}]
+    return [_system(_PLAN_CROWD_SYSTEM, as_of), {"role": "user", "content": user}]

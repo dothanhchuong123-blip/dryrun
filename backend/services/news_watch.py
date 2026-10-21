@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from typing import Any
 from urllib.parse import urlparse
@@ -22,6 +22,7 @@ from backend.agents import wording
 from backend.agents.prompts import ASSUMPTION_SOURCE, shock_parser_messages
 from backend.agents.schemas import ShockVector
 from backend.engine import planner
+from backend.services import asof
 from backend.services.tavily_scout import verify_evidence
 
 log = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ IMPACT_PATHS = 500
 HORIZON = 24
 MAX_QUOTE = 300
 MAX_SNIPPET = 200
+ASOF_WINDOW_DAYS = 90     # a backtest reads the 90 days of news before its as-of date (B1)
 
 
 def _source(url: str) -> str:
@@ -160,10 +162,18 @@ class NewsWatch:
         self._live_n = 0
 
     # --- search ------------------------------------------------------------------------------
-    async def _search(self, query: str, *, time_range: str, topic: str, country: str, live: bool, fresh: bool = False) -> list[dict]:
+    async def _search(
+        self, query: str, *, time_range: str, topic: str, country: str, live: bool, fresh: bool = False,
+        as_of: date | None = None,
+    ) -> list[dict]:
+        dates: dict[str, Any] = {}
+        if as_of is not None:  # a backtest: the 90 days up to as_of, no time_range
+            dates = {"start_date": (as_of - timedelta(days=ASOF_WINDOW_DAYS)).isoformat(), "end_date": as_of.isoformat()}
+            time_range = None  # type: ignore[assignment]
         try:
             resp = await self.scout.search(
                 query, "basic", time_range, use_cache=not fresh, topic=topic, country=country, cache_only=not live,
+                **dates,
             )
         except Exception as e:  # noqa: BLE001  Tavily down, offline cache miss, timeout: the analysis goes on
             log.info("news search failed for %r: %s", query, e)
@@ -186,14 +196,14 @@ class NewsWatch:
             if e.get("raw_content")
         ]
 
-    async def _parse(self, article: dict, profile: dict) -> ShockVector | None:
+    async def _parse(self, article: dict, profile: dict, as_of: date | None = None) -> ShockVector | None:
         hint = (
             f'{profile.get("business_name", "")} sells {profile.get("product_unit", "")} '
             f'(supplier region: {profile.get("supplier_region", "")}). '
             "delta_c_raw is the change in the price of the main INPUT as the article reports it."
         )
         res = await self.router.call(
-            "super", shock_parser_messages([article], hint), ShockVector, thinking=False, role="shock_parser"
+            "super", shock_parser_messages([article], hint, as_of), ShockVector, thinking=False, role="shock_parser"
         )
         if res.parsed is None:
             return None
@@ -234,6 +244,7 @@ class NewsWatch:
     # --- public API --------------------------------------------------------------------------
     async def find(
         self, profile: dict, *, fallback_shock: dict, live: bool, fresh: bool = False, pin_assumption: bool = False,
+        as_of: date | None = None,
     ) -> dict:
         """`{items, used_for_grid, news_shock, credits, dropped}`; `items` match the `news` event (EVENTS v2.1).
 
@@ -241,6 +252,9 @@ class NewsWatch:
         `fresh=True` (with `live`) skips the cache and overwrites it with today's results.
         `pin_assumption=True` (the example recordings) always uses the example's labelled assumption for the `news`
         column; the articles found are still shown as cards, never applied.
+        `as_of` (a backtest, B1) searches only the 90 days before that date, and drops every result that has no
+        `published_date`, a later one, or a URL or title dated after it, plus every extracted article that names a
+        later date. `dropped_asof` counts those drops. Fresh searches are never a "Check live news" button there.
         """
         fresh = fresh and live
         before = self.scout.credits_used
@@ -256,11 +270,19 @@ class NewsWatch:
         supply_q = list(profile.get("search_terms", []))[:n_supply]
         market_q = list(profile.get("market_terms", []))[:n_market]
         supply_batches, market_batches = await asyncio.gather(
-            asyncio.gather(*(self._search(q, time_range="week", topic="news", country="", live=live, fresh=fresh) for q in supply_q)),
-            asyncio.gather(*(self._search(q, time_range="month", topic="general", country=country, live=live, fresh=fresh)
-                             for q in market_q)),
+            asyncio.gather(*(self._search(q, time_range="week", topic="news", country="", live=live, fresh=fresh, as_of=as_of)
+                             for q in supply_q)),
+            asyncio.gather(*(self._search(q, time_range="month", topic="general", country=country, live=live, fresh=fresh,
+                                          as_of=as_of) for q in market_q)),
         )
         supply_all, market_all = _merge(list(supply_batches)), _merge(list(market_batches))
+        dropped_asof = 0
+        if as_of is not None:
+            n_before = len(supply_all) + len(market_all)
+            supply_all = [r for r in supply_all if asof.usable_result(r, as_of)]
+            market_all = [r for r in market_all if asof.usable_result(r, as_of)]
+            dropped_asof = n_before - len(supply_all) - len(market_all)
+            market_all = [r for r in market_all if not asof.later_dated(str(r.get("content", "")), as_of)]
         supply = [r for r in supply_all if _usable(r)][:KEEP_SUPPLY]
         market = [r for r in market_all if _usable(r)][:KEEP_MARKET]
         dropped = (len(supply_all) - len([r for r in supply_all if _usable(r)])) + (
@@ -271,8 +293,12 @@ class NewsWatch:
 
         top = supply[:PARSE_TOP]
         articles = await self._articles(top, supply_q[0] if supply_q else "", live=live, fresh=fresh)
+        if as_of is not None:  # Extract reads the page as it is today, so an article that names a later date is out
+            kept = [a for a in articles if not asof.later_dated(a["content"], as_of)]
+            dropped_asof += len(articles) - len(kept)
+            articles = kept
         by_url = {r["url"]: r for r in top}
-        parsed = await asyncio.gather(*(self._parse(a, profile) for a in articles))
+        parsed = await asyncio.gather(*(self._parse(a, profile, as_of) for a in articles))
         items: list[dict] = []
         for article, shock in zip(articles, parsed, strict=True):
             if shock is None or _wrong_way(shock):
@@ -305,6 +331,7 @@ class NewsWatch:
             "news_shock": dict(used["shock"]),
             "credits": self.scout.credits_used - before,
             "dropped": dropped,
+            "dropped_asof": dropped_asof,
         }
 
     async def check(self, profile: dict) -> dict:

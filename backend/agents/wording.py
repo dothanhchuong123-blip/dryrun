@@ -6,6 +6,7 @@ real minus sign (`+$114k`, `−$8.2k`). The frontend copy uses the same rules, s
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import date, timedelta
 from typing import Any
 
 from backend.engine import planner
@@ -138,16 +139,40 @@ def _per_unit(profile: Mapping[str, Any]) -> str:
     return unit.split(" of ")[0].strip() or "unit"
 
 
-def cost_line(profile: Mapping[str, Any], case: Mapping[str, Any] | planner.ShockCase) -> str:
-    """"Beans +31% × 85% of your cost is beans = your cost +26% (+$1.71 a bag)". Same formula as the engine."""
+def _when(week: int, as_of: date | None) -> str:
+    """"July" for a week of a backtest (as_of + 7 x week days); "week 12" when there is no date."""
+    if as_of is None:
+        return f"week {week}"
+    return (as_of + timedelta(days=7 * week)).strftime("%B")
+
+
+def cost_line(
+    profile: Mapping[str, Any], case: Mapping[str, Any] | planner.ShockCase, as_of: date | None = None,
+    shift_weeks: int = 0,
+) -> str:
+    """"Beans +31% × 85% of your cost is beans = your cost +26% (+$1.71 a bag)". Same formula as the engine.
+
+    A case with a real `cost_path` (B1) reads "Cocoa +75% by July (+121% at the peak in April) × ...": the path's
+    end value drives the cost, and the peak is named when the path came back down. `as_of` turns weeks into months;
+    `shift_weeks` moves those months later (a duty paid on arrival: orders of week t pay the rate of week t + lead).
+    """
     change = planner.cost_change(profile, case)
     dc = float(case.delta_c_raw if isinstance(case, planner.ShockCase) else case.get("delta_c_raw", 0.0))
+    path = list(case.cost_path if isinstance(case, planner.ShockCase) else case.get("cost_path") or [])
     lead, mid = _input_words(profile)
     share = round(100 * float(profile.get("exposed_cost_share", 1.0) or 1.0))
     per_unit = change["usd_per_unit"]
     dollars = _signed(per_unit, f"${abs(per_unit):.2f}") if round(per_unit, 2) else "$0.00"
+    if path:
+        last = len(path) - 1
+        head = f"{lead} {_pct(change['input_end_pct'])} by {_when(last + shift_weeks, as_of)}"
+        peak_week = int(change["peak_week"])
+        if peak_week < last and abs(change["input_peak_pct"] - change["input_end_pct"]) >= 1:
+            head += f" ({_pct(change['input_peak_pct'])} at the peak in {_when(peak_week + shift_weeks, as_of)})"
+    else:
+        head = f"{lead} {_pct(100 * dc)}"
     return (
-        f"{lead} {_pct(100 * dc)} × {share}% of your cost is {mid} = your cost {_pct(change['pct'])} "
+        f"{head} × {share}% of your cost is {mid} = your cost {_pct(change['pct'])} "
         f"({dollars} a {_per_unit(profile)})"
     )
 
@@ -197,6 +222,11 @@ def input_changes_line(profile: Mapping[str, Any], case: Mapping[str, Any]) -> s
     )
 
 
+def plan_label_suffix(spec: planner.PlanSpec) -> str:
+    """" until wk 12" for a price change that ends before the horizon, else ""."""
+    return f" until wk {spec.price_end_week}" if spec.has_surcharge_end else ""
+
+
 def plan_actions(
     plan: planner.PlanSpec | Mapping[str, Any], profile: Mapping[str, Any], cell: Mapping[str, Any] | None = None
 ) -> list[dict[str, Any]]:
@@ -234,9 +264,12 @@ def plan_actions(
     if spec.price_change_pct:
         new_price = price * (1 + spec.price_change_pct / 100)
         verb = "Raise" if spec.price_change_pct > 0 else "Cut"
+        until = f" until week {spec.price_end_week}" if spec.has_surcharge_end else ""
         steps.append(
             {"week": spec.price_change_week,
-             "text": f"{verb} price {abs(spec.price_change_pct):g}% (${price:.2f} → ${new_price:.2f})"}
+             "text": f"{verb} price {abs(spec.price_change_pct):g}%{until} (${price:.2f} → ${new_price:.2f})"}
         )
+        if spec.has_surcharge_end:
+            steps.append({"week": spec.price_end_week, "text": f"Price goes back to ${price:.2f}"})
     steps.sort(key=lambda s: s["week"])  # stable: same-week steps keep the order above
     return steps or [{"week": 0, "text": "Change nothing"}]

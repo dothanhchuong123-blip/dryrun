@@ -177,6 +177,12 @@ class PlanSpecModel(BaseModel):
     alt_cost_change_pct: float = Field(ge=-30, le=50)
     alt_lead_time_weeks: int = Field(ge=1, le=16)
     alt_shock_exposure: float = Field(ge=0, le=1)
+    # Default 24 so older plans and recordings validate; the strict schema still lists it as required (the router
+    # makes every property required) and drops the "default" keyword, which strict mode may not accept.
+    price_end_week: int = Field(
+        default=24, ge=1, le=24, description="The price change lasts until this week; 24 = to the end",
+        json_schema_extra=lambda schema: schema.pop("default", None),
+    )
 
     def to_engine(self) -> dict:
         """Plain dict for the engine's `PlanSpec(**d)` (P2)."""

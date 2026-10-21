@@ -1,0 +1,82 @@
+{
+  "id": "bt_robusta_2024",
+  "title": "Robusta roaster in Ho Chi Minh City",
+  "subtitle": "Coffee roaster selling to cafés, as of 1 Feb 2024",
+  "as_of": "2024-02-01",
+  "horizon_weeks": 24,
+  "text": "I roast robusta in Ho Chi Minh City and sell 1 kg bags to about 60 independent cafés, around 280 bags a week. A bag sells for $8.30 and the green beans plus packaging cost me about $4.90. Beans from the Central Highlands take about 3 weeks to arrive; I keep about 2 weeks of stock and could put about $6,000 into more. My main rival is Highland Supply, who charge $7.90 a bag.",
+  "profile": {
+    "business_name": "Ho Chi Minh Robusta Roaster",
+    "product_unit": "bag of roasted robusta coffee",
+    "price": 8.3,
+    "unit_cost": 4.93,
+    "weekly_sales": 280.0,
+    "lead_time_weeks": 3,
+    "stock_weeks": 2.0,
+    "rival_name": "Highland Supply",
+    "rival_price": 7.9,
+    "supplier_region": "Central Highlands Vietnam",
+    "customers": "independent cafés",
+    "search_terms": [
+      "robusta coffee price Vietnam Central Highlands",
+      "coffee futures robusta record high"
+    ],
+    "country": "vietnam",
+    "market_terms": [],
+    "exposed_cost_share": 0.8,
+    "cash_available": 6000.0,
+    "guessed_fields": [
+      "exposed_cost_share"
+    ]
+  },
+  "series": {
+    "file": "coffee_robusta.csv",
+    "column": "value",
+    "unit": "$/kg",
+    "label": "World robusta coffee price",
+    "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+    "licence": "CC BY 4.0"
+  },
+  "path_index": "spot_week",
+  "what_happened": [
+    {
+      "date": "2024-04-25",
+      "text": "London robusta futures hit $4,546 a tonne, the peak of the spring run-up; the International Coffee Organization called April's level a 45-year high.",
+      "url": "https://www.ice.it/it/news/notizie-dal-mondo/262368"
+    },
+    {
+      "date": "2024-04",
+      "text": "Robusta reached its highest price since 1979 as a drought cut Vietnam's 2023/24 harvest.",
+      "url": "https://www.teaandcoffee.net/news/34183/robusta-prices-reach-45-year-high-in-april/"
+    },
+    {
+      "date": "2024-06",
+      "text": "Reuters-credited reporting: robusta futures had hit records earlier in the year, mostly after an underwhelming Vietnam harvest and fears over the next one after the drought.",
+      "url": "https://www.nst.com.my/amp/world/region/2024/06/1067539/some-vietnam-coffee-farms-thrive-despite-drought-may-not-stop-espresso"
+    },
+    {
+      "date": "2024-07",
+      "text": "The ICO reported robusta at a 47-year high for two months in a row, averaging 214.7 US cents a pound in July.",
+      "url": "https://www.gcrmag.com/robustas-reach-47-year-high-for-two-consecutive-months-ico-report"
+    }
+  ],
+  "spoiler_terms": [
+    "45-year",
+    "47-year",
+    "4,546",
+    "since 1979",
+    "peaked in April",
+    "4.73"
+  ],
+  "claim_words": [
+    "coffee",
+    "robusta",
+    "bean",
+    "beans"
+  ],
+  "caveats": [
+    "Prices are the example roaster's (the coffee_hcmc example) scaled to early-2024 bean prices. A kilo of roasted coffee needs about 1.19 kg of green beans (a 16% roasting loss), so at 3.33 $/kg that is $3.96 of beans; $0.97 is packaging and other cost. Beans are then 80% of the unit cost, and the price keeps the example's markup. These are a made-up owner's numbers, not a real roaster's.",
+    "The price series is the world robusta price (Pink Sheet, monthly, $/kg). A Vietnamese roaster pays farm-gate prices in dong, which follow it with a lag and a spread. Each monthly value is treated as the month's mid-point, with straight lines between them.",
+    "Search results are the news before 1 Feb 2024 on robusta and Vietnam's harvest."
+  ]
+}

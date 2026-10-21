@@ -103,6 +103,12 @@ Then (optional, advice only): Argon review **A2** (prompt red-team on the analys
 | [x] | T09 Nebius Endpoint + 10,000-per-cell Job | Claude Sonnet 5.5 **+ you** (console, billing) | `prompts/4_oct19-20_in-order/T09-nebius-deploy.md` |
 | | **CHECKPOINT (2026-10-15), T09 paused for UI/UX work** | | **Done and pushed:** job service (`backend/services/nebius_jobs.py`, local + Nebius backends, tested), multi-stage `Dockerfile`, `jobs/mc_worker/Dockerfile`, `render.yaml`, `scripts/bench_serverless.py`, `docs/DEPLOY.md`. Public repo: github.com/dothanhchuong123-blip/market-digital-twin. **Decisions:** no Nebius compute (projects suspended until a $25 top-up; 24/7 CPU ≈ $90-195) and no Hugging Face (Docker Spaces need PRO), so the public demo goes on **Render free**. Nebius CLI + Docker are installed and logged in. **Still to do:** (1) after the UI work, connect the repo in Render (New → Blueprint), add `NEBIUS_API_KEY` + `TAVILY_API_KEY`; (2) test the URL (`/health`, SSE) and add an uptime ping; (3) optional: top up Nebius, run `scripts/bench_serverless.py` for the feedback report; (4) tick T09 when 1-2 are done. |
 
+### Backtest · Oct 22–24 · `prompts/oct22-24_backtest/`. Two sessions, run in order: **B1a first, then B1b.** The contract changes were approved on 2026-10-21.
+| Done | Task | Builder | Start |
+|---|---|---|---|
+| [x] | B1a backtest backend: engine knobs, 4 cases, as-of news, scoring, recordings | Claude Sonnet 5.5 (effort high) | `Do Parts A–C (B1a) of prompts/oct22-24_backtest/B1-backtest.md` |
+| [ ] | B1b backtest frontend: real-case cards, "What actually happened" reveal | Claude Sonnet 5.5 (effort medium) | `Do Part D (B1b) of prompts/oct22-24_backtest/B1-backtest.md` |
+
 ### Oct 21–24 · connect, polish, review (no new prompt files)
 - Point the frontend at the deployed backend (`NEXT_PUBLIC_API_BASE`) and fix whatever the real stream shows that the mock didn't.
 - Run a LIVE analysis on a business you type in yourself. Is the memo something an owner would act on?

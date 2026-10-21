@@ -76,9 +76,10 @@ async def run(tmp_path, **kw):
 
 # Keys per docs/EVENTS.md v2.1
 SHOCK_KEYS = {"id", "label", "delta_c_raw", "delta_lead_time", "demand_shock", "onset_week", "ramp_weeks",
-              "rival_price_change_pct", "share_shift_pct", "likelihood", "why", "source_ids", "origin", "cost_line"}
+              "rival_price_change_pct", "share_shift_pct", "likelihood", "why", "source_ids", "origin", "cost_line",
+              "cost_path"}
 KEYS = {
-    "analysis": {"analysis_id", "mode", "example_id", "profile", "horizon_weeks", "n_paths"},
+    "analysis": {"analysis_id", "mode", "example_id", "profile", "horizon_weeks", "n_paths", "as_of", "backtest_id"},
     "news": {"items", "used_for_grid"},
     "scenarios": {"thought", "unmodelled", "fallback_used"},
     "shocks": {"cases"},

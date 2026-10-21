@@ -8,6 +8,9 @@
     --fresh-news                  re-run the Tavily searches (about 4 credits) instead of reading the cache
     --gut NAME | none             the owner's gut call, from the example's `gut_plans` (default: the first one)
     --replay-cell PLAN SHOCK      replay one cell of the last analysis week by week
+    --backtest ID                 a real case (fixtures/backtests/<ID>.json): run as of its date with only the news
+                                  before it, then score the advice against the real prices. With --record it writes
+                                  backtest_<ID>.jsonl and the pick's cell in the `realized` column. About $0.33 live.
 
 Every run saves its stream to telemetry/last_analysis.jsonl (for --replay-cell) and its memo to
 telemetry/last_memo.md. LIVE runs spend real money: about $0.02 with --cheap, $0.08-0.12 at full cost.
@@ -24,6 +27,7 @@ from typing import Any
 from backend.agents import wording
 from backend.config import ROOT, get_settings
 from backend.services import replay
+from backend.sim import backtest as bt
 from backend.sim.analysis import Analysis, gut_preset, load_example, parse_profile
 from backend.sim.replay_cell import play_cell
 
@@ -52,9 +56,31 @@ def _printer(verbose: bool = True):
             print(f"[round {data['round']}] owner    (user)   “{data['name']}”")
         elif event == "agent_step" and verbose:
             print(f"[round {data['round']}] {data['kind']:<8} ({data['tier']:<6}) {data['text']}")
+        elif event == "backtest":
+            _print_backtest(data)
         elif event == "error":
             print(f"ERROR: {data['message']}", file=sys.stderr)
     return emit
+
+
+def _print_backtest(d: dict) -> None:
+    print(f"\n=== Backtest {d['backtest_id']} (as of {d['as_of']}, to {d['horizon_end']}) ===")
+    print(f"Real path: {d['realized_case']['label']} | {d['realized_case']['cost_line']}")
+    verdict = "beat" if d["beat_do_nothing"] else "did not beat"
+    print(f"Pick “{d['pick']}” {verdict} Do nothing: {wording.usd_k(d['pick_delta_usd'])} "
+          f"(rank {d['pick_rank']} of {d['n_plans']})")
+    hb = d["hindsight_best"]
+    print(f"Best in hindsight: “{hb['name']}” {wording.usd_k(hb['mean_delta_usd'])}; regret {wording.usd_k(d['regret_usd'], signed=False)}")
+    for b in d["baselines"]:
+        print(f"  baseline {b['name']:<22} {wording.usd_k(b['mean_delta_usd'])}")
+    fc = d["futures_cover"]
+    print(f"Futures covered input {fc['min']:+.0%} to {fc['max']:+.0%}; real peak {fc['realized_peak']:+.0%} "
+          f"({'inside' if fc['peak_inside'] else 'outside'}), real end {fc['realized_end']:+.0%} "
+          f"({'inside' if fc['end_inside'] else 'outside'})")
+    lk = d["leak_check"]
+    print(f"Leak check: {'clean' if lk['clean'] else str(len(lk['flags'])) + ' flag(s)'}; dropped news: {d['dropped_news']}")
+    for f in lk["flags"]:
+        print(f"  - {f['where']}: {f['text']}")
 
 
 def _print_result(a: Analysis) -> None:
@@ -75,12 +101,19 @@ async def record_files(a: Analysis, directory: Path | None = None) -> list[Path]
     """The analysis stream plus the memo plan's `news` cell, in the EVENTS.md replay format."""
     if not a.example_id or a.memo is None:
         raise ValueError("only a finished example analysis can be recorded")
-    paths = [replay.write(replay.analysis_path(a.example_id, directory), a.run_events)]
+    if a.case is not None:  # a backtest: the stream, and the pick on the real path
+        if a.backtest_result is None:
+            raise ValueError("the backtest was not scored")
+        first = replay.backtest_path(a.case["id"], directory)
+        shock = bt.REALIZED_ID
+    else:
+        first, shock = replay.analysis_path(a.example_id, directory), "news"
+    paths = [replay.write(first, a.run_events)]
     plan = a.memo["plan_name"]
     clock = replay.VirtualClock()
     rec = replay.Recorder(clock=clock.now)
-    await play_cell(a, plan, "news", rec, week_seconds=RECORD_WEEK_SECONDS, sleep=clock.sleep, use_recording=False)
-    paths.append(rec.save(replay.cell_path(a.example_id, plan, "news", directory)))
+    await play_cell(a, plan, shock, rec, week_seconds=RECORD_WEEK_SECONDS, sleep=clock.sleep, use_recording=False)
+    paths.append(rec.save(replay.cell_path(a.example_id, plan, shock, directory)))
     return paths
 
 
@@ -128,8 +161,11 @@ async def _run(args: argparse.Namespace) -> int:
         router = NemotronRouter(spend_guard=SpendGuard(get_settings().daily_spend_cap_usd))
     scout = TavilyScout(ROOT / "fixtures" / "tavily_cache", offline=args.offline, router=router)
 
+    case = bt.load_case(args.backtest) if args.backtest else None
     example = load_example(args.example) if args.example else None
-    if example is not None:
+    if case is not None:
+        profile = case["profile"]
+    elif example is not None:
         profile = example["profile"]
     else:
         if args.offline:
@@ -144,7 +180,7 @@ async def _run(args: argparse.Namespace) -> int:
     a = Analysis(
         profile=profile, example=example, mode="live", router=router, scout=scout, seed=args.seed,
         gut_plan=gut, n_paths=args.n_paths, cheap=args.cheap, fresh_news=args.fresh_news,
-        assumption_news=args.record or args.assumption_news,
+        assumption_news=(args.record or args.assumption_news) and case is None, backtest=case,
     )
     await a.run(_printer())
     _print_result(a)
@@ -161,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Run one analysis headless (profile -> news -> analyst -> memo).")
     who = ap.add_mutually_exclusive_group()
     who.add_argument("--example", help="fixtures/examples/<id>.json, e.g. coffee_hcmc")
+    who.add_argument("--backtest", help="fixtures/backtests/<id>.json, e.g. bt_cocoa_2024")
     who.add_argument("--text", help="describe the business in plain words (one Super call to parse it)")
     ap.add_argument("--cheap", action="store_true", help="send Ultra's calls to Super")
     ap.add_argument("--offline", action="store_true", help="cached Tavily and a scripted router, no network")
@@ -175,12 +212,12 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     if args.replay_cell:
         return asyncio.run(_replay_cell(*args.replay_cell))
-    if not (args.example or args.text):
-        ap.error("give --example or --text (or --replay-cell)")
+    if not (args.example or args.text or args.backtest):
+        ap.error("give --example, --backtest or --text (or --replay-cell)")
     if args.fresh_news and args.offline:
         ap.error("--fresh-news needs the network; drop --offline")
-    if args.record and (args.offline or args.cheap or not args.example):
-        ap.error("--record needs a full-cost live run of an --example (no --offline, no --cheap)")
+    if args.record and (args.offline or args.cheap or not (args.example or args.backtest)):
+        ap.error("--record needs a full-cost live run of an --example or --backtest (no --offline, no --cheap)")
     return asyncio.run(_run(args))
 
 

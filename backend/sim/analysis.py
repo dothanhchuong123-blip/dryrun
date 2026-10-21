@@ -20,6 +20,7 @@ import time
 import uuid
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import replace
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +38,7 @@ from backend.services import replay
 from backend.services.news_watch import NewsWatch
 from backend.services.router import DEFAULT_MAX_TOKENS, DEFAULT_TIMEOUT
 from backend.services.telemetry import CallRecord, TelemetryStore
+from backend.sim import backtest as bt
 
 log = logging.getLogger(__name__)
 
@@ -133,15 +135,28 @@ class Analysis:
         speed: float = 1.0,
         analysis_id: str | None = None,
         clock: Callable[[], float] = time.monotonic,
+        backtest: str | Mapping[str, Any] | None = None,
     ) -> None:
         """`example` is an example id or its loaded JSON; `profile` defaults to the example's. `mode` is "live" or
         "replay". In REPLAY, `recording` (default: the example's `analysis_<id>.jsonl`) is played if it exists;
         otherwise the analysis is computed with cached news only. `fresh_news` (LIVE) re-runs the Tavily searches
         instead of reading the cache, and overwrites the cache with the new results. `assumption_news` puts the example's
         labelled assumption in the `news` column even when articles are found (used for the recordings). `telemetry` is this analysis's own HUD store
-        (default: a fresh in-memory one; the router keeps logging every call to disk as usual)."""
+        (default: a fresh in-memory one; the router keeps logging every call to disk as usual).
+        `backtest` (B1) is a case id from `fixtures/backtests` or its loaded JSON: the analysis then runs as of the case's
+        date, with only the news before it, and ends with a `backtest` event that scores the advice against what
+        really happened. Its profile is the case's; its recording is `backtest_<id>.jsonl`."""
+        self.case: dict | None = None
+        if backtest is not None:
+            self.case = bt.load_case(backtest) if isinstance(backtest, str) else dict(backtest)
+            self.case.setdefault("as_of_date", date.fromisoformat(self.case["as_of"]))
+            profile = profile if profile is not None else self.case["profile"]
+        self.as_of: date | None = self.case["as_of_date"] if self.case else None
+        self.backtest_id: str | None = self.case["id"] if self.case else None
         self.example = load_example(example) if isinstance(example, str) else (dict(example) if example else None)
         self.example_id: str | None = self.example["id"] if self.example else None
+        if self.case is not None:  # a backtest has no example; its replay files are named backtest_<id>
+            self.example_id = f"backtest_{self.case['id']}"
         if profile is None and self.example is None:
             raise ValueError("give a profile or an example")
         self.profile: dict = dict(profile if profile is not None else self.example["profile"])  # type: ignore[index]
@@ -159,7 +174,9 @@ class Analysis:
         self.assumption_news = assumption_news
         self.telemetry = telemetry if telemetry is not None else TelemetryStore(persist=False)
         if recording is None and self.mode == "replay" and self.example_id:
-            recording = replay.analysis_path(self.example_id)
+            recording = (
+                replay.backtest_path(self.case["id"]) if self.case is not None else replay.analysis_path(self.example_id)
+            )
         self.recording = recording
         self._clock = clock
         self._news_watch = NewsWatch(scout, self.router) if scout is not None else None
@@ -180,6 +197,9 @@ class Analysis:
         self.cost_usd = 0.0
         self.user_plans = 0
         self.from_recording = False
+        self.backtest_result: dict | None = None      # the `backtest` event, once scored or replayed
+        self.realized: ShockCase | None = None        # its `realized` column (a backtest only)
+        self._reasoning: dict[tuple[str, int], str] = {}
         self.run_events: list[dict] = []              # run()'s stream as replay lines ({t, event, data})
         self._t0 = clock()
         self._recording_run = False
@@ -191,8 +211,12 @@ class Analysis:
         """Rebuild an analysis's state from a recorded stream without playing it (e.g. the CLI's last run)."""
         lines = list(lines)
         first = next(line for line in lines if line["event"] == "analysis")["data"]
-        example = kw.pop("example", None) or first.get("example_id")
         kw.setdefault("mode", "replay")
+        if first.get("backtest_id") and "backtest" not in kw:
+            kw["backtest"] = first["backtest_id"]
+            example = None
+        else:
+            example = kw.pop("example", None) or first.get("example_id")
         a = cls(profile=first["profile"], example=example, analysis_id=first.get("analysis_id"), **kw)
         for line in lines:
             a._absorb(line["event"], line["data"])
@@ -215,6 +239,12 @@ class Analysis:
                 self.news = {"items": list(data.get("items", [])), "used_for_grid": data.get("used_for_grid")}
             else:
                 self.live_news.extend(data.get("items", []))
+        elif event == "reasoning":
+            key = (str(data.get("role", "")), int(data.get("round", 0)))
+            self._reasoning[key] = self._reasoning.get(key, "") + str(data.get("delta", ""))
+        elif event == "backtest":
+            self.backtest_result = dict(data)
+            self.realized = ShockCase.from_dict(data["realized_case"])
         elif event == "scenarios":
             self.scenarios = dict(data)
         elif event == "shocks":
@@ -243,6 +273,8 @@ class Analysis:
         return PlanSpec.from_dict(self.plans[name]["spec"])
 
     def shock(self, shock_id: str) -> ShockCase:
+        if shock_id == bt.REALIZED_ID and self.realized is not None:
+            return self.realized
         for c in self.shocks:
             if c.id == shock_id:
                 return c
@@ -327,6 +359,7 @@ class Analysis:
         await send("analysis", {
             "analysis_id": self.analysis_id, "mode": self.mode, "example_id": self.example_id,
             "profile": self.profile, "horizon_weeks": HORIZON, "n_paths": self.n_paths,
+            "as_of": self.as_of.isoformat() if self.as_of else None, "backtest_id": self.backtest_id,
         })
         self._cal = await asyncio.to_thread(planner.calibrate, self.profile, self.seed)
         if self._news_watch is None:
@@ -334,7 +367,7 @@ class Analysis:
         live_news = self.mode == "live" and not getattr(self.scout, "offline", False)
         news = await self._news_watch.find(
             self.profile, fallback_shock=self.fallback_shock, live=live_news, fresh=self.fresh_news,
-            pin_assumption=self.assumption_news
+            pin_assumption=self.assumption_news, as_of=self.as_of,
         )
         await send("news", {"items": news["items"], "used_for_grid": news["used_for_grid"]})
         if self.router is None:
@@ -342,10 +375,56 @@ class Analysis:
         analyst = Analyst(
             self.router, self.cal, self.profile, news, None, send,
             max_rounds=self.max_rounds, n_paths=self.n_paths, seed=self.seed, gut_plan=self.gut_plan,
+            as_of=self.as_of,
         )
         await analyst.run()
+        if self.case is not None:
+            await self._score_backtest(send, analyst, news)
         await self._emit_telemetry(send)
         await send("done", {"analysis_id": self.analysis_id, "cost_usd": round(self.telemetry_snapshot()["cost_usd"], 6)})
+
+    # --- backtest ----------------------------------------------------------------------------
+    def llm_texts(self) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+        """Everything the models wrote in this run, for the leak check: `(texts, claim_texts)`. The futures' labels
+        and reasons are in `texts` only: they are scenarios the models chose, not claims about what happens."""
+        claims: list[tuple[str, str]] = []
+        for (role, rnd), text in self._reasoning.items():
+            claims.append((f"Ultra reasoning ({role}, round {rnd})", text))
+        for st in self.steps:
+            if st.get("kind") in ("think", "test", "finish", "shoppers"):
+                claims.append((f"agent step ({st['kind']}, round {st.get('round', 0)})", str(st.get("text", ""))))
+        sc = self.scenarios or {}
+        if sc.get("thought"):
+            claims.append(("futures: thought", str(sc["thought"])))
+        claims += [("futures: not modelled", str(u["text"])) for u in sc.get("unmodelled", [])]
+        for name, rows in self.crowd_rows.items():
+            claims += [(f"shopper bubble ({name})", str(r["bubble"])) for r in rows if r.get("bubble")]
+        if self.memo:
+            for key in ("headline", "why", "watch_out", "recheck_when"):
+                claims.append((f"memo: {key}", str(self.memo.get(key, ""))))
+            claims += [("memo: not modelled", str(f["text"])) for f in (self.memo.get("not_modelled") or {}).get("found", [])]
+        texts = list(claims)
+        for c in self.shock_events:
+            texts.append((f"future {c['id']}: label", str(c.get("label", ""))))
+            if c.get("why"):
+                texts.append((f"future {c['id']}: why", str(c["why"])))
+        texts += [(f"plan name ({n})", n) for n in self.plans]
+        return texts, claims
+
+    async def _score_backtest(self, send: Callable[[str, dict], Any], analyst: Any, news: Mapping[str, Any]) -> None:
+        """After the memo: score the advice against the real path and send the `backtest` event (SPEC §15.12)."""
+        assert self.case is not None and self.memo is not None
+        scored = await asyncio.to_thread(
+            bt.score, case=self.case, cal=self.cal, plans={s.name: s for s in analyst.specs},
+            crowd_for=lambda n: analyst._sent.get(n), pick=self.memo["plan_name"], seed=self.seed,
+        )
+        texts, claims = self.llm_texts()
+        leak = bt.leak_check(texts, self.case, scored["realized"].cost_path, news.get("items", []), claims)
+        data = bt.event(
+            case=self.case, scored=scored, columns=analyst.shocks, leak=leak,
+            dropped_news=int(news.get("dropped_asof", 0)), profile=self.profile, plans=analyst.specs,
+        )
+        await send("backtest", data)
 
     async def _play_recording(self, send: Callable[[str, dict], Any]) -> None:
         recorded_done: dict = {}
@@ -425,6 +504,8 @@ class Analysis:
     # --- live news ---------------------------------------------------------------------------
     async def news_check(self, emit: Emit) -> dict:
         """"Check live news" (SPEC §6, §15.7): one fresh search; the card arrives as a `news` event."""
+        if self.case is not None:
+            return {"accepted": False, "reason": "A backtest only sees the news from before its date."}
         if self._news_watch is None:
             return {"accepted": False, "reason": "Live news is not available here."}
         res = await self._news_watch.check(self.profile)

@@ -37,6 +37,12 @@ def cell_path(example_id: str, plan_name: str, shock_id: str, directory: Path | 
     return (directory or REPLAY_DIR) / f"cell_{example_id}_{slug(plan_name)}_{slug(shock_id)}.jsonl"
 
 
+def backtest_path(case_id: str, directory: Path | None = None) -> Path:
+    """`backtest_<id>.jsonl`: the recorded analysis of a backtest case (B1). Its cell replays are
+    `cell_backtest_<id>_<plan-slug>_realized.jsonl`, i.e. `cell_path(f"backtest_{id}", plan, "realized")`."""
+    return (directory or REPLAY_DIR) / f"backtest_{case_id}.jsonl"
+
+
 def has_replay(example_id: str, directory: Path | None = None) -> bool:
     return analysis_path(example_id, directory).exists()
 

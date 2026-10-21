@@ -1,0 +1,86 @@
+{
+  "id": "bt_eggs_2025",
+  "title": "US breakfast diner",
+  "subtitle": "Eggs on most plates, as of 15 Dec 2024",
+  "as_of": "2024-12-15",
+  "horizon_weeks": 24,
+  "text": "I run a breakfast diner in the US and sell about 900 plates a week. A plate sells for $12.50 and the food on it costs about $4.40; the average plate uses about 3 eggs, counting omelets and pancakes. Our distributor delivers weekly and we keep about a week of stock. The diner down the road charges $12. I could put about $4,000 into stocking up.",
+  "profile": {
+    "business_name": "Main Street Breakfast Diner",
+    "product_unit": "breakfast plate",
+    "price": 12.5,
+    "unit_cost": 4.4,
+    "weekly_sales": 900.0,
+    "lead_time_weeks": 1,
+    "stock_weeks": 1.0,
+    "rival_name": "Corner Diner",
+    "rival_price": 12.0,
+    "supplier_region": "United States",
+    "customers": "local breakfast regulars",
+    "search_terms": [
+      "egg prices bird flu",
+      "wholesale egg prices restaurants"
+    ],
+    "country": "united states",
+    "market_terms": [],
+    "exposed_cost_share": 0.24,
+    "cash_available": 4000.0,
+    "guessed_fields": [
+      "exposed_cost_share"
+    ]
+  },
+  "series": {
+    "file": "eggs_bls.csv",
+    "column": "value",
+    "unit": "$/dozen",
+    "label": "US retail price, eggs, grade A large",
+    "source_url": "https://data.bls.gov/timeseries/APU0000708111",
+    "licence": "US Government work, public domain"
+  },
+  "path_index": "spot_week",
+  "what_happened": [
+    {
+      "date": "2025-02-03",
+      "text": "Waffle House added a temporary 50-cent surcharge per egg to all menus.",
+      "url": "https://www.yahoo.com/news/waffle-house-adds-50-cent-013414532.html"
+    },
+    {
+      "date": "2025-02-25",
+      "text": "Denny's said some restaurants would temporarily add a surcharge to every meal that includes eggs.",
+      "url": "https://abc17news.com/money/cnn-business-consumer/2025/02/25/dennys-reportedly-adds-egg-surcharge-amid-rising-prices-and-bird-flu-shortages/"
+    },
+    {
+      "date": "2025-03",
+      "text": "The BLS average for a dozen grade A large eggs reached a record $6.23.",
+      "url": "https://www.nbcchicago.com/news/national-international/egg-prices-record-high-march-2025-donald-trump-bird-flu/3719119/"
+    },
+    {
+      "date": "2025-05-13",
+      "text": "Egg prices fell for the first time in months, to $5.12 in April, though they stayed near record highs.",
+      "url": "https://www.clickondetroit.com/business/2025/05/13/us-egg-prices-fall-for-the-first-time-in-months-but-remain-near-record-highs/"
+    },
+    {
+      "date": "2025-07-01",
+      "text": "Waffle House dropped its 50-cent egg surcharge as prices stabilised. The BLS average had fallen to $3.78 in June.",
+      "url": "https://www.fox35orlando.com/news/egg-prices-waffle-house-surcharge-ends"
+    }
+  ],
+  "spoiler_terms": [
+    "6.23",
+    "Waffle House",
+    "Denny's",
+    "record $6",
+    "5.12",
+    "3.78",
+    "March 2025"
+  ],
+  "claim_words": [
+    "egg",
+    "eggs"
+  ],
+  "caveats": [
+    "The series is the BLS retail price of eggs. A diner buys wholesale, which swung harder than retail in this episode, so the real swing was bigger than the one scored here. We did not swap in a wholesale source we could not cite.",
+    "Eggs are set at 24% of a plate's food cost: about 3 eggs a plate at the BLS price of $4.15 a dozen in December 2024 is $1.04 of $4.40. We found no published share for diners (a Spokane diner manager called eggs the restaurant's biggest expense), so the 3 eggs a plate is the made-up owner's figure.",
+    "Each monthly value is treated as the month's mid-point, with straight lines between them. BLS did not publish October 2025, which is outside this case's window."
+  ]
+}

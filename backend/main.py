@@ -32,6 +32,7 @@ from backend.config import ROOT, Settings, get_settings
 from backend.engine.planner import PlanSpec
 from backend.services import benchmark, replay
 from backend.services.telemetry import SpendGuard
+from backend.sim import backtest as bt
 from backend.sim.analysis import EXAMPLES_DIR, Analysis, load_example, parse_profile
 from backend.sim.replay_cell import play_cell
 
@@ -126,6 +127,7 @@ class CreateAnalysis(BaseModel):
     profile: dict | None = None
     mode: str = "replay"
     gut_plan: dict | None = None
+    backtest_id: str | None = None   # a real case from fixtures/backtests; REPLAY only (B1)
 
 
 class ParseRequest(BaseModel):
@@ -317,9 +319,15 @@ def create_app(
         return {"profile": profile, "fallback_used": fallback, "source": source}
 
     # --- analyses ---------------------------------------------------------------------------
+    @app.get("/api/backtests")
+    def backtests() -> list[dict]:
+        return bt.list_cases()
+
     @app.post("/api/analyses")
     async def create_analysis(body: CreateAnalysis, request: Request) -> Any:
         sweep()
+        if body.backtest_id is not None:
+            return start_backtest(body.backtest_id)
         if (body.example_id is None) == (body.profile is None):
             raise HTTPException(422, {"reason": "Give either an example or a business profile."})
         ip = client_ip(request)
@@ -387,6 +395,31 @@ def create_app(
 
         entry.task = asyncio.create_task(run())
         return {"analysis_id": a.analysis_id, "mode": mode}
+
+    def start_backtest(backtest_id: str) -> dict:
+        """A backtest plays its recording (`backtest_<id>.jsonl`). There is no LIVE mode: it costs real money and the
+        recording is the one run that was checked against the real prices."""
+        try:
+            case = bt.load_case(backtest_id)
+        except KeyError as e:
+            raise HTTPException(404, {"reason": "Unknown backtest."}) from e
+        if not replay.backtest_path(case["id"]).exists():
+            raise HTTPException(409, {"reason": "That backtest has no recording yet."})
+        a = Analysis(
+            backtest=case, mode="replay", router=get_router(), scout=make_scout(), speed=replay_speed,
+        )
+        stream = Stream()
+        entry = AnalysisEntry(a, stream, clock(), live=False)
+        analyses[a.analysis_id] = entry
+
+        async def run() -> None:
+            try:
+                await a.run(stream.emit)
+            finally:
+                entry.finished = True
+
+        entry.task = asyncio.create_task(run())
+        return {"analysis_id": a.analysis_id, "mode": "replay"}
 
     @app.get("/api/analyses/{analysis_id}/events")
     async def analysis_events(analysis_id: str) -> EventSourceResponse:

@@ -23,7 +23,7 @@ FAIL = object()  # a script entry that makes the call fail (parsed = None)
 def _plan(name: str, **kw: Any) -> dict:
     base = {"name": name, "price_change_pct": 0, "price_change_week": 0, "extra_stock_weeks": 0, "stock_week": 0,
             "marketing_change_pct": 0, "switch_supplier": False, "alt_cost_change_pct": 0, "alt_lead_time_weeks": 3,
-            "alt_shock_exposure": 0.3}
+            "alt_shock_exposure": 0.3, "price_end_week": 24}
     return {**base, **kw}
 
 

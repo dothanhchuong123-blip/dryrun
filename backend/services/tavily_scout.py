@@ -170,11 +170,16 @@ class TavilyScout:
         self, query: str, depth: str = "advanced", time_range: str | None = "week",
         include_domains: list[str] | None = None, *, use_cache: bool = True,
         topic: str = "news", country: str = "", cache_only: bool = False,
+        start_date: str | None = None, end_date: str | None = None,
     ) -> dict:
         """`country` boosts local results and is only sent with `topic="general"` (Tavily ignores it for news).
         `time_range=None` leaves the field out (page lookups, not news).
+        `start_date` / `end_date` (YYYY-MM-DD) are a backtest's window (B1): pass `time_range=None` with them. They
+        are part of the cache key, so a dated search never reads an undated one.
         `cache_only` raises OfflineCacheMiss instead of spending a credit when the cache has no answer."""
         req: dict[str, Any] = {"query": query, "depth": depth, "time_range": time_range, "include_domains": include_domains or []}
+        if start_date or end_date:  # keep the cache keys of undated searches unchanged
+            req["start_date"], req["end_date"] = start_date, end_date
         if topic != "news":  # keep the cache keys of plain news searches unchanged
             req["topic"] = topic
         if topic == "general" and country:
@@ -188,6 +193,10 @@ class TavilyScout:
                 kw["include_domains"] = include_domains
             if topic == "general" and country:
                 kw["country"] = country
+            if start_date:
+                kw["start_date"] = start_date
+            if end_date:
+                kw["end_date"] = end_date
             return await self.client.search(**kw)
 
         return await self._cached("search", req, CREDITS_SEARCH[depth], fetch, use_cache, cache_only)

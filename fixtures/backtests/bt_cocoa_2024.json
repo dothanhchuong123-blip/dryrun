@@ -1,0 +1,80 @@
+{
+  "id": "bt_cocoa_2024",
+  "title": "Small US chocolate maker",
+  "subtitle": "Dark chocolate bars and boxes, as of 15 Jan 2024",
+  "as_of": "2024-01-15",
+  "horizon_weeks": 24,
+  "text": "We are a small chocolate maker in the US. We make dark chocolate bars and sell about 500 a week, to shops and online. A 100 g bar sells for $6.20 and costs us about $2.60 to make. Beans come through an importer and take about 4 weeks to arrive; we keep about 6 weeks of stock and could put about $12,000 into more. Our nearest rival, a larger craft brand, sells for $5.90.",
+  "profile": {
+    "business_name": "Small-Batch Chocolate Co.",
+    "product_unit": "100 g dark chocolate bar",
+    "price": 6.2,
+    "unit_cost": 2.6,
+    "weekly_sales": 500.0,
+    "lead_time_weeks": 4,
+    "stock_weeks": 6.0,
+    "rival_name": "Larger craft brand",
+    "rival_price": 5.9,
+    "supplier_region": "Ghana and Ecuador",
+    "customers": "specialty shops and online buyers",
+    "search_terms": [
+      "cocoa price",
+      "cocoa futures Ivory Coast Ghana supply"
+    ],
+    "country": "united states",
+    "market_terms": [],
+    "exposed_cost_share": 0.3,
+    "cash_available": 12000.0,
+    "guessed_fields": [
+      "exposed_cost_share"
+    ]
+  },
+  "series": {
+    "file": "cocoa.csv",
+    "column": "value",
+    "unit": "$/kg",
+    "label": "World cocoa price",
+    "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+    "licence": "CC BY 4.0"
+  },
+  "path_index": "spot_week",
+  "what_happened": [
+    {
+      "date": "2024-03-12",
+      "text": "Cocoa rose above $7,000 a ton in New York for the first time.",
+      "url": "https://www.bloomberg.com/news/articles/2024-03-12/cocoa-rises-above-7-000-a-ton-for-first-time-in-new-york"
+    },
+    {
+      "date": "2024-03-28",
+      "text": "Bloomberg reported record cocoa prices hurting chocolate makers such as Nestlé and Hershey.",
+      "url": "https://www.bloomberg.com/news/articles/2024-03-28/nestle-hershey-take-hit-from-surging-cocoa-prices"
+    },
+    {
+      "date": "2024-04-19",
+      "text": "Cocoa hit an all-time high: $12,567 a tonne in London and $11,878 in New York. By the end of April it was 15% lower.",
+      "url": "https://www.icco.org/cocoa-market-report-for-april-2024/"
+    },
+    {
+      "date": "2024-05",
+      "text": "Prices moved sideways, rallied about 9% by mid-May, then eased after rain in Côte d'Ivoire improved the outlook.",
+      "url": "https://icco.org/wp-content/uploads/Cocoa-Market-Report-May-2024.pdf"
+    }
+  ],
+  "spoiler_terms": [
+    "12,567",
+    "11,878",
+    "9.74",
+    "peaked in April",
+    "all-time high of",
+    "10,000 a ton",
+    "121%"
+  ],
+  "claim_words": [
+    "cocoa"
+  ],
+  "caveats": [
+    "Cocoa's share of this maker's cost is set at 30%. A UK trade analysis puts cocoa at 30–35% of the production cost of a chocolate bar (mass market, about the 2013/14 season; thegrocer.co.uk/analysis-and-features/cocoa-butter-hikes-add-6p-to-a-chocolate-bar/350125.article). A craft maker's labour and packaging share is larger, so this may overstate it. We found no figure for small bean-to-bar makers.",
+    "The series is the world cocoa bean price (Pink Sheet, monthly, $/kg). Makers also buy cocoa butter and powder, which moved differently, and many hedge or buy forward through an importer, so they did not pay the spot price.",
+    "Each monthly value is treated as the month's mid-point, with straight lines between them. The monthly average peaked at 9.74 $/kg in April; daily highs were higher."
+  ]
+}

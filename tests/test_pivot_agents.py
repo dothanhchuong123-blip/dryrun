@@ -17,6 +17,7 @@ EXAMPLES = {p.stem: json.loads(p.read_text()) for p in sorted((ROOT / "fixtures"
 PLAN_FIELDS = {
     "name", "price_change_pct", "price_change_week", "extra_stock_weeks", "stock_week", "marketing_change_pct",
     "switch_supplier", "alt_cost_change_pct", "alt_lead_time_weeks", "alt_shock_exposure",
+    "price_end_week",
 }
 
 

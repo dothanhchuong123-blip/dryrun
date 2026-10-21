@@ -62,10 +62,17 @@ _PIPE_PAD = 40                 # pipeline slots past the horizon (max lead 16 + 
 _CHUNK_PATHS = 2000            # keeps a 10k-path job well under 2 GB
 
 _LIKELIHOODS = ("likely", "possible", "unlikely")
-_ORIGINS = ("news", "ai", "default")
+_ORIGINS = ("news", "ai", "default", "realized")
+END_OF_HORIZON = 24            # price_end_week default: the price change lasts to the end (B1)
+_PATH_BOUNDS = (-0.9, 3.0)     # cost_path values: the input price vs week 0
+_PATH_MAX_LEN = 24
+_PATH_START = 0.02             # a real cost path "starts rising" once it moves 2% (B1 markers)
+_PATH_FALL = 0.10              # a fall of this many points from the peak gets a marker
 
 # product word -> (plural label, adjective) for shock labels and markers
 _INPUT_WORDS: tuple[tuple[tuple[str, ...], str, str], ...] = (
+    (("egg", "breakfast", "omelet", "omelette"), "Eggs", "Egg"),
+    (("kitchen", "utensil", "cookware", "tableware"), "Duties", "Duty"),
     (("coffee", "espresso", "robusta", "arabica"), "Beans", "Bean"),
     (("cocoa", "chocolate"), "Cocoa", "Cocoa"),
     (("tea",), "Tea", "Tea"),
@@ -108,6 +115,7 @@ class PlanSpec:
     alt_cost_change_pct: float = 0.0
     alt_lead_time_weeks: int = 3
     alt_shock_exposure: float = 0.3
+    price_end_week: int = END_OF_HORIZON  # the price change lasts while price_change_week <= t < price_end_week
 
     @classmethod
     def do_nothing(cls) -> PlanSpec:
@@ -131,7 +139,18 @@ class PlanSpec:
             alt_cost_change_pct=_clip(self.alt_cost_change_pct, -30.0, 50.0),
             alt_lead_time_weeks=_clip_int(self.alt_lead_time_weeks, 1, 16),
             alt_shock_exposure=_clip(self.alt_shock_exposure, 0.0, 1.0),
+            price_end_week=self._end_week(),
         )
+
+    def _end_week(self) -> int:
+        """1..24; an end at or before the start means "no end" (SPEC §15.4)."""
+        end = round(float(self.price_end_week))
+        return END_OF_HORIZON if end <= _clip_int(self.price_change_week, 0, 23) else min(end, END_OF_HORIZON)
+
+    @property
+    def has_surcharge_end(self) -> bool:
+        """A price change that ends before the horizon does (a surcharge)."""
+        return self.price_change_pct != 0.0 and self.price_end_week < END_OF_HORIZON
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -169,6 +188,7 @@ class ShockCase:
     why: str = ""
     source_ids: list[str] = field(default_factory=list)
     origin: str = "default"
+    cost_path: list[float] = field(default_factory=list)  # B1: the news input's real price vs week 0, per week
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> ShockCase:
@@ -191,6 +211,7 @@ class ShockCase:
             why=str(self.why)[:120],
             source_ids=[str(s) for s in list(self.source_ids)[:3]],
             origin=self.origin if self.origin in _ORIGINS else "default",
+            cost_path=[_clip(v, *_PATH_BOUNDS) for v in list(self.cost_path)[:_PATH_MAX_LEN]],
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -239,14 +260,33 @@ def _cost_factor(exposed: float, delta_c_raw: float | np.ndarray, level: float |
     return 1.0 + exposed * delta_c_raw * level
 
 
+def _path_peak(path: Sequence[float]) -> tuple[int, float]:
+    """(week, value) of the largest absolute move in a cost path."""
+    week = int(np.argmax(np.abs(np.asarray(path, dtype=np.float64))))
+    return week, float(path[week])
+
+
 def cost_change(profile: Mapping[str, Any], case: ShockCase | Mapping[str, Any]) -> dict[str, float]:
     """Change in the unit cost once the shock is fully in (SPEC §15.5.1).
 
-    `wording.cost_line` builds its sentence from this, so the words and the engine agree.
+    With a `cost_path` (a backtest's real price history) the "fully in" value is the path's END value, and
+    `peak_pct` / `peak_week` say how far and when it went at the most. `wording.cost_line` builds its sentence
+    from this, so the words and the engine agree.
     """
+    path = list(case.cost_path if isinstance(case, ShockCase) else case.get("cost_path") or [])
+    share = _exposed_share(profile)
+    cost = float(profile["unit_cost"])
+    if path:
+        frac = share * float(path[-1])
+        week, peak = _path_peak(path)
+        return {
+            "pct": 100.0 * frac, "usd_per_unit": cost * frac,
+            "peak_pct": 100.0 * share * peak, "peak_week": float(week),
+            "input_end_pct": 100.0 * float(path[-1]), "input_peak_pct": 100.0 * peak,
+        }
     dc = float(case.delta_c_raw if isinstance(case, ShockCase) else case.get("delta_c_raw", 0.0))
-    frac = _cost_factor(_exposed_share(profile), dc, 1.0) - 1.0
-    return {"pct": 100.0 * frac, "usd_per_unit": float(profile["unit_cost"]) * frac}
+    frac = _cost_factor(share, dc, 1.0) - 1.0
+    return {"pct": 100.0 * frac, "usd_per_unit": cost * frac}
 
 
 def _ramp(t: int, onset: int, ramp_weeks: int) -> float:
@@ -546,6 +586,8 @@ def _simulate(
     plan_idx = per_row(range(P), np.int64)
     price_mult = per_row([1.0 + p.price_change_pct / 100.0 for p in plans])
     price_week = per_row([p.price_change_week for p in plans], np.int64)
+    # 24 means "to the end", whatever the horizon, so a plan without an end behaves exactly as before.
+    price_end = per_row([p.price_end_week if p.price_end_week < END_OF_HORIZON else 1 << 30 for p in plans], np.int64)
     extra_qty = per_row([p.extra_stock_weeks * cal.d0 for p in plans])
     stock_week = per_row([p.stock_week if p.extra_stock_weeks > 0 else -1 for p in plans], np.int64)
     mkt_mult = per_row([1.0 + p.marketing_change_pct / 100.0 for p in plans])
@@ -575,6 +617,7 @@ def _simulate(
     h, z, mult = float(prm.holding_cost), float(prm.z_alpha), float(prm.order_up_to_mult)
 
     dc, dsh = shock.delta_c_raw, shock.demand_shock
+    path = np.asarray(shock.cost_path, dtype=np.float64) if shock.cost_path else None
     dlead_b = np.rint(shock.delta_lead_time * scale).astype(np.int64)
     dlead_a = np.rint(shock.delta_lead_time * scale * alt_exposure).astype(np.int64)
     exp_a = exposed * alt_exposure  # the alternative supplier only feels part of the news (§15.4)
@@ -622,13 +665,20 @@ def _simulate(
         raw_val = raw_val + arr_v
         pipe_total = np.maximum(pipe_total - arr_q, 0.0)
         extra_transit = np.where(extra_arrival == t, 0.0, extra_transit)
-        pre_shock = lvl == 0.0 or dc == 0.0  # orders placed now are at the pre-shock cost
+        # A real cost path replaces the ramp and the per-path shock size: it really happened, so it is the
+        # same on every path (B1). The last value holds for any later week.
+        dc_t = None if path is None else float(path[min(t, path.shape[0] - 1)])
+        pre_shock = (dc_t == 0.0) if path is not None else (lvl == 0.0 or dc == 0.0)  # orders now are at the old cost
         if record:
             raw_old = raw_old + pipe_old[:, t, :]
 
         # 2. Active shock: spot order costs, lead times, demand multipliers
-        spot_b = c0 * np.maximum(_cost_factor(exposed, dc * scale, lvl), 0.01)
-        spot_a = c0 * cost_mult_a * np.maximum(_cost_factor(exp_a, dc * scale, lvl), 0.01)
+        if dc_t is None:
+            spot_b = c0 * np.maximum(_cost_factor(exposed, dc * scale, lvl), 0.01)
+            spot_a = c0 * cost_mult_a * np.maximum(_cost_factor(exp_a, dc * scale, lvl), 0.01)
+        else:
+            spot_b = np.full(S, c0 * max(1.0 + exposed * dc_t, 0.01))
+            spot_a = c0 * cost_mult_a * np.maximum(1.0 + exp_a * dc_t, 0.01)
         spot = np.column_stack([spot_a, spot_b])
         lead_hat = np.column_stack(
             [np.maximum(1, base_lead_a + on * dlead_a), np.maximum(1, prm.lead_time0 + on * dlead_b)]
@@ -641,7 +691,7 @@ def _simulate(
         # Prices: yours from the plan; the rival keeps its markup and follows your cuts (§15.4)
         units = raw + inv
         wac = np.where(units > _EPS, (raw_val + fg_val) / np.maximum(units, _EPS), spot)
-        p_a = np.where(t >= price_week, _ENGINE_PRICE * price_mult, _ENGINE_PRICE)
+        p_a = np.where((t >= price_week) & (t < price_end), _ENGINE_PRICE * price_mult, _ENGINE_PRICE)
         p_a = np.where(textbook, wac[:, 0] * (1.0 + own_markup), p_a)
         rule_b = wac[:, 1] * (1.0 + rival_markup)
         # `anchor` keeps a pricier rival at its usual premium; it is 1 when the rival starts cheaper.
@@ -1071,6 +1121,22 @@ def simulate_detail(
     }
 
 
+def _path_markers(path: Sequence[float], adjective: str, add: Any) -> None:
+    """Markers for a real cost path (B1): costs start moving, the peak, and a fall of 10+ points from it."""
+    vals = np.asarray(path, dtype=np.float64)
+    name = "Input" if adjective == "Your" else adjective
+    start = next((t for t, v in enumerate(vals) if abs(v) >= _PATH_START), None)
+    if start is None:
+        return
+    add(start, "shock", None, f"{name} costs start {'rising' if vals[start] > 0 else 'falling'}")
+    peak_week, peak = _path_peak(vals)
+    if peak > 0 and peak_week < len(vals) - 1:  # a path still climbing at the end has no peak to show
+        add(peak_week, "shock", None, f"{name} price peaks: {_pct(peak)}")
+        fall = next((t for t in range(peak_week + 1, len(vals)) if vals[t] <= peak - _PATH_FALL), None)
+        if fall is not None:
+            add(fall, "shock", None, f"{name} price falls back to {_pct(float(vals[fall]))}")
+
+
 def _markers(
     cal: Calibration, plan: PlanSpec, case: ShockCase, tr: Mapping[str, np.ndarray], horizon: int
 ) -> list[dict[str, Any]]:
@@ -1085,7 +1151,9 @@ def _markers(
             marks.append({"week": int(week), "kind": kind, "firm": firm, "text": _words(text)})
 
     onset = case.onset_week
-    if case.delta_c_raw:
+    if case.cost_path:
+        _path_markers(case.cost_path, adjective, add)
+    elif case.delta_c_raw:
         add(onset, "shock", None, f"{adjective} costs start {'rising' if case.delta_c_raw > 0 else 'falling'}")
     if case.delta_lead_time:
         n = abs(case.delta_lead_time)
@@ -1113,6 +1181,10 @@ def _markers(
         arrival = int(tr["extra_arrival"][-1, 0])
         if arrival >= 0:
             add(arrival, "stock_arrives", "A", f"Extra stock arrives ({worth})")
+    if plan.has_surcharge_end and not plan.is_textbook:
+        what = "Surcharge" if plan.price_change_pct > 0 else "Discount"
+        add(plan.price_end_week, "price_change", "A",
+            f"{what} ends, price back to ${float(prof['price']):.2f}")
     sold_out = tr["unmet"][:, 0, :] > _SOLD_OUT_FRAC * np.maximum(tr["demand"][:, 0, :], _EPS)
     follow = tr["follow"][:, 0]
     for t in range(horizon):

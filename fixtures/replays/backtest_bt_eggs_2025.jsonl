@@ -1,0 +1,1189 @@
+{"t": 0.0, "event": "analysis", "data": {"analysis_id": "f20c9288266a", "mode": "live", "example_id": "backtest_bt_eggs_2025", "profile": {"business_name": "Main Street Breakfast Diner", "product_unit": "breakfast plate", "price": 12.5, "unit_cost": 4.4, "weekly_sales": 900.0, "lead_time_weeks": 1, "stock_weeks": 1.0, "rival_name": "Corner Diner", "rival_price": 12.0, "supplier_region": "United States", "customers": "local breakfast regulars", "search_terms": ["egg prices bird flu", "wholesale egg prices restaurants"], "country": "united states", "market_terms": [], "exposed_cost_share": 0.24, "cash_available": 4000.0, "guessed_fields": ["exposed_cost_share"]}, "horizon_weeks": 24, "n_paths": 1000, "as_of": "2024-12-15", "backtest_id": "bt_eggs_2025"}}
+{"t": 5.81, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 0, "tokens_in": 0, "tokens_out": 0, "p50_ttft_ms": null, "tok_per_s": null, "errors": 0}, "super": {"calls": 1, "tokens_in": 835, "tokens_out": 116, "p50_ttft_ms": 1753.2, "tok_per_s": 225.9, "errors": 0}, "fast": {"calls": 0, "tokens_in": 0, "tokens_out": 0, "p50_ttft_ms": null, "tok_per_s": null, "errors": 0}}, "call_share": {"ultra": 0.0, "super": 100.0, "fast": 0.0}, "token_share": {"ultra": 0.0, "super": 100.0, "fast": 0.0}, "cost_usd": 0.000355, "cost_all_ultra_usd": 0.001183, "savings_pct": 70.0, "job": {"id": null, "status": "idle"}}}
+{"t": 7.196, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 0, "tokens_in": 0, "tokens_out": 0, "p50_ttft_ms": null, "tok_per_s": null, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 0, "tokens_in": 0, "tokens_out": 0, "p50_ttft_ms": null, "tok_per_s": null, "errors": 0}}, "call_share": {"ultra": 0.0, "super": 100.0, "fast": 0.0}, "token_share": {"ultra": 0.0, "super": 100.0, "fast": 0.0}, "cost_usd": 0.001052, "cost_all_ultra_usd": 0.003506, "savings_pct": 70.0, "job": {"id": null, "status": "idle"}}}
+{"t": 7.317, "event": "news", "data": {"items": [{"id": "n1", "kind": "supply", "title": "Rising egg prices linked to bird flu’s impact on supply chain", "url": "https://thehill.com/business/4905382-bird-flu-eggs-prices", "source": "thehill.com", "published": "2024-09-28", "quote": "Eggs’ price tag has gone up by 28.1 percent in the last 12 months", "shock": {"delta_c_raw": 0.28, "delta_lead_time": 0, "demand_shock": 0.0}, "cost_line": "Eggs +28% × 24% of your cost is eggs = your cost +7% (+$0.30 a breakfast plate)", "impact_usd": 4706.99, "impact_p5_usd": 1253.22, "live": false, "applied": false}, {"id": "n2", "kind": "supply", "title": "Why egg prices may soon ‘flirt with record highs': supplier", "url": "https://www.cnbc.com/2024/12/12/why-egg-prices-may-soon-flirt-with-record-highs-supplier.html", "source": "cnbc.com", "published": "2024-12-12", "quote": "The average retail price of eggs in the U.S. has risen 38% since November 2023, according to consumer price index data issued Wednesday.", "shock": {"delta_c_raw": 0.38, "delta_lead_time": 0, "demand_shock": 0.0}, "cost_line": "Eggs +38% × 24% of your cost is eggs = your cost +9% (+$0.40 a breakfast plate)", "impact_usd": 5081.62, "impact_p5_usd": 716.8, "live": false, "applied": true}, {"id": "n3", "kind": "supply", "title": "Avian Influenza Hits Turkeys and Eggs Hardest | Farm Bureau Intel Markets | American Farm Bureau Federation", "url": "https://www.fb.org/intel/markets/avian-influenza-hits-turkeys-and-eggs-hardest", "source": "fb.org", "published": "2024-11-14", "quote": "the January-September 2024 average retail price for eggs is $2.99 per dozen, up 7% from 2023.", "shock": {"delta_c_raw": 0.07, "delta_lead_time": 0, "demand_shock": 0.0}, "cost_line": "Eggs +7% × 24% of your cost is eggs = your cost +2% (+$0.07 a breakfast plate)", "impact_usd": 1280.49, "impact_p5_usd": 371.0, "live": false, "applied": false}], "used_for_grid": "n2"}}
+{"t": 8.274, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "The"}}
+{"t": 8.281, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " user wants me to generate"}}
+{"t": 8.294, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 2-5 additional futures"}}
+{"t": 8.308, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " for a small business (Main"}}
+{"t": 8.32, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " Street Breakfast Diner)"}}
+{"t": 8.332, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " based on the news"}}
+{"t": 8.345, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " provided. The headline future is"}}
+{"t": 8.359, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " already given"}}
+{"t": 8.37, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ": Eggs +38"}}
+{"t": 8.385, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "% (today's news)"}}
+{"t": 8.395, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " with delta_c_raw:"}}
+{"t": 8.408, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 0.38."}}
+{"t": 8.42, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n\nI need to create futures"}}
+{"t": 8.434, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " that are"}}
+{"t": 8.447, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ":\n-"}}
+{"t": 8.459, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " At least one milder than"}}
+{"t": 8.476, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " headline,"}}
+{"t": 8.579, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " one worse\n- At least"}}
+{"t": 8.579, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " one not about cost (r"}}
+{"t": 8.58, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ival, new"}}
+{"t": 8.58, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " player, demand, delays"}}
+{"t": 8.588, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ") when local market news gives"}}
+{"t": 8.588, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " reason (but there's no"}}
+{"t": 8.588, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " local market news found"}}
+{"t": 8.589, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ")\n- Each different from others"}}
+{"t": 8.589, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n- Use"}}
+{"t": 8.598, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " only the"}}
+{"t": 8.61, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " kn"}}
+{"t": 8.627, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "obs provided"}}
+{"t": 8.649, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n- Include"}}
+{"t": 8.661, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " likelihood,"}}
+{"t": 8.676, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " why, source_ids\n\nNews"}}
+{"t": 8.686, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " items"}}
+{"t": 8.701, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ":\n- n1: Egg"}}
+{"t": 8.712, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "s up"}}
+{"t": 8.724, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 28.1%"}}
+{"t": 8.738, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " in last 12 months"}}
+{"t": 8.75, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n- n2: Egg"}}
+{"t": 8.762, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "s up 38%"}}
+{"t": 8.776, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " since Nov"}}
+{"t": 8.788, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 2023 ("}}
+{"t": 8.8, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "headline uses"}}
+{"t": 8.812, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " this)\n- n3:"}}
+{"t": 8.826, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " Jan-S"}}
+{"t": 8.838, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ep 2024"}}
+{"t": 8.852, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " average"}}
+{"t": 8.864, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " retail price $2.9"}}
+{"t": 8.877, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "9/dozen, up"}}
+{"t": 8.889, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 7% from 2"}}
+{"t": 8.901, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "023\n\nThe business"}}
+{"t": 8.914, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " uses"}}
+{"t": 8.927, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " eggs as"}}
+{"t": 8.942, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " main"}}
+{"t": 8.953, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " input (exposed_cost_sh"}}
+{"t": 8.97, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "are 0.24"}}
+{"t": 8.978, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "). Supplier"}}
+{"t": 8.993, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " region is US."}}
+{"t": 9.091, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n\nPossible"}}
+{"t": 9.091, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " futures:\n1. M"}}
+{"t": 9.091, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ilder cost"}}
+{"t": 9.092, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " increase: Eggs +1"}}
+{"t": 9.092, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "5% (based on n"}}
+{"t": 9.092, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "3"}}
+{"t": 9.092, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "'s 7% annual"}}
+{"t": 9.092, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " but"}}
+{"t": 9.106, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " could"}}
+{"t": 9.117, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " be higher short"}}
+{"t": 9.131, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "-term)\n2. Worse"}}
+{"t": 9.143, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " cost increase: Eggs +"}}
+{"t": 9.156, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "50% (bird"}}
+{"t": 9.168, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " flu worsening"}}
+{"t": 9.182, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ")\n3. Cost up"}}
+{"t": 9.194, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " + demand down: Eggs"}}
+{"t": 9.207, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " +30% and"}}
+{"t": 9.22, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " demand -"}}
+{"t": 9.233, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "0.2"}}
+{"t": 9.247, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " ("}}
+{"t": 9.26, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "bird flu sc"}}
+{"t": 9.273, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ares customers"}}
+{"t": 9.285, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ")\n4. Rival"}}
+{"t": 9.302, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " price cut"}}
+{"t": 9.312, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ": Corner Diner cuts"}}
+{"t": 9.324, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " price 5% (r"}}
+{"t": 9.337, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ival_price_change_pct -"}}
+{"t": 9.35, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "5)\n5. Supply"}}
+{"t": 9.363, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " delay: delta"}}
+{"t": 9.376, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "_lead_time +4"}}
+{"t": 9.39, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " weeks (bird flu disrupt"}}
+{"t": 9.401, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "s supply chain"}}
+{"t": 9.413, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ")\n6. False alarm:"}}
+{"t": 9.426, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " Eggs -5"}}
+{"t": 9.439, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "% (pr"}}
+{"t": 9.452, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ices normalize)"}}
+{"t": 9.467, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n\nNeed at"}}
+{"t": 9.478, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " least one non"}}
+{"t": 9.491, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "-cost future"}}
+{"t": 9.504, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ". Since no local market news"}}
+{"t": 9.52, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", but I"}}
+{"t": 9.622, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " can still create rival"}}
+{"t": 9.623, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " or"}}
+{"t": 9.623, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " demand futures"}}
+{"t": 9.623, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " as"}}
+{"t": 9.623, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " standard stress tests.\n\nLet me"}}
+{"t": 9.623, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " create 4 futures"}}
+{"t": 9.624, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ":\n1. \""}}
+{"t": 9.624, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "Eggs +15"}}
+{"t": 9.633, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "% (milder trend"}}
+{"t": 9.648, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ")\" - mil"}}
+{"t": 9.659, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "der, based"}}
+{"t": 9.678, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " on n3's"}}
+{"t": 9.685, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 7% annualized"}}
+{"t": 9.697, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " but recent"}}
+{"t": 9.71, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " acceleration"}}
+{"t": 9.723, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n2. \"Egg"}}
+{"t": 9.737, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "s +55"}}
+{"t": 9.751, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "% (bird flu wors"}}
+{"t": 9.765, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ens)\" - worse, based"}}
+{"t": 9.777, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " on n1/n"}}
+{"t": 9.789, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "2 trend"}}
+{"t": 9.803, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " continuing"}}
+{"t": 9.816, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n3. \"Egg"}}
+{"t": 9.829, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "s +30%,"}}
+{"t": 9.842, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " demand -1"}}
+{"t": 9.855, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "5%\" - cost"}}
+{"t": 9.869, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " up demand"}}
+{"t": 9.881, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " down, bird"}}
+{"t": 9.894, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " flu reduces"}}
+{"t": 9.907, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " breakfast"}}
+{"t": 9.921, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " demand\n4. \"Corner"}}
+{"t": 9.933, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " Diner cuts 5%\""}}
+{"t": 9.945, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " - rival price"}}
+{"t": 9.958, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " change"}}
+{"t": 9.972, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", standard"}}
+{"t": 9.984, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " stress test\n5. \""}}
+{"t": 9.997, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "Egg supply"}}
+{"t": 10.01, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " delay +"}}
+{"t": 10.023, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "4 weeks\" - supply"}}
+{"t": 10.037, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " chain"}}
+{"t": 10.138, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " disruption from"}}
+{"t": 10.139, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " bird flu\n\nCheck"}}
+{"t": 10.139, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " constraints:\n- delta"}}
+{"t": 10.139, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "_c_raw: -0."}}
+{"t": 10.14, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "5 to 1.0"}}
+{"t": 10.14, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n- delta_lead_time"}}
+{"t": 10.14, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ": -2 to 1"}}
+{"t": 10.141, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "0\n- demand_shock"}}
+{"t": 10.15, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ": -0.5 to"}}
+{"t": 10.162, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 0.5\n-"}}
+{"t": 10.175, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " rival_price_change_pct:"}}
+{"t": 10.188, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " -20 to 2"}}
+{"t": 10.199, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "0\n- share_shift_p"}}
+{"t": 10.213, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ct: 0 to"}}
+{"t": 10.224, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 30\n- onset"}}
+{"t": 10.238, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "_week: 0-1"}}
+{"t": 10.251, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "2\n- ramp_weeks"}}
+{"t": 10.263, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ": 1-8"}}
+{"t": 10.276, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n\nAll futures"}}
+{"t": 10.288, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " must have onset"}}
+{"t": 10.3, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "_week and ramp_weeks."}}
+{"t": 10.337, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n\nLet me draft"}}
+{"t": 10.337, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ":"}}
+{"t": 10.339, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n\n1"}}
+{"t": 10.35, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ". M"}}
+{"t": 10.363, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ilder: \""}}
+{"t": 10.376, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "Eggs +15"}}
+{"t": 10.391, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "% (milder trend)\","}}
+{"t": 10.753, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " delta_c_raw: 0"}}
+{"t": 10.753, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ".15, others"}}
+{"t": 10.753, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 0, onset 2"}}
+{"t": 10.753, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", ramp 4,"}}
+{"t": 10.753, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " likely,"}}
+{"t": 10.753, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " why"}}
+{"t": 10.754, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ": \""}}
+{"t": 10.754, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "n3 shows 7%"}}
+{"t": 10.754, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " annual rise;"}}
+{"t": 10.755, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " recent months"}}
+{"t": 10.755, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " faster"}}
+{"t": 10.755, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " but may"}}
+{"t": 10.755, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " ease\", source"}}
+{"t": 10.756, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "_ids: [n3"}}
+{"t": 10.756, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "]\n\n2. Worse:"}}
+{"t": 10.756, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " \"Eggs +5"}}
+{"t": 10.757, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "5% (bird flu wors"}}
+{"t": 10.757, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ens)\", delta_c_raw:"}}
+{"t": 10.757, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 0.55,"}}
+{"t": 10.758, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " onset"}}
+{"t": 10.758, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 1"}}
+{"t": 10.758, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", ramp 3, possible"}}
+{"t": 10.758, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", why: \"n"}}
+{"t": 10.758, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "1+n"}}
+{"t": 10.758, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "2 show accelerating"}}
+{"t": 10.759, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " trend; bird flu could deep"}}
+{"t": 10.759, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "en\", source_ids: ["}}
+{"t": 10.759, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "n1,n2]\n\n3"}}
+{"t": 10.759, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ". Cost up"}}
+{"t": 10.765, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " demand down: \"Egg"}}
+{"t": 10.778, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "s +30%, demand"}}
+{"t": 10.79, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " -15%\", delta_c"}}
+{"t": 10.803, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "_raw: 0.3"}}
+{"t": 10.82, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "0, demand_shock:"}}
+{"t": 10.828, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " -0.15,"}}
+{"t": 10.841, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " onset 3"}}
+{"t": 10.853, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", ramp 4"}}
+{"t": 10.87, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", possible, why: \""}}
+{"t": 10.877, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "Bird"}}
+{"t": 10.976, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " flu news"}}
+{"t": 10.976, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " may scare din"}}
+{"t": 10.976, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ers away"}}
+{"t": 10.976, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " from egg"}}
+{"t": 10.976, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " dishes\", source_ids: ["}}
+{"t": 10.976, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "n1,n2]\n\n4"}}
+{"t": 10.976, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ". Rival cut"}}
+{"t": 10.977, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ": \"Corner Diner cuts"}}
+{"t": 10.978, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 5%\", rival"}}
+{"t": 11.003, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "_price_change_pct: -"}}
+{"t": 11.003, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "5, onset 4"}}
+{"t": 11.012, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", ramp 3"}}
+{"t": 11.024, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", possible"}}
+{"t": 11.035, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", why: \"Standard stress"}}
+{"t": 11.048, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " test:"}}
+{"t": 11.06, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " rival may absorb"}}
+{"t": 11.073, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " cost to keep"}}
+{"t": 11.082, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " share\", source_ids: []"}}
+{"t": 11.094, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n\n5. Delay: \"E"}}
+{"t": 11.185, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "gg supply delay +4 w"}}
+{"t": 11.187, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ks\", delta_lead_time"}}
+{"t": 11.187, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ": 4, onset"}}
+{"t": 11.187, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " 2, ramp 3,"}}
+{"t": 11.187, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " possible"}}
+{"t": 11.187, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ", why: \"Bird flu"}}
+{"t": 11.188, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " disrupts flock"}}
+{"t": 11.188, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " replen"}}
+{"t": 11.198, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ishment and"}}
+{"t": 11.211, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " logistics\", source_ids: ["}}
+{"t": 11.224, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "n1]"}}
+{"t": 11.233, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n\nAll have"}}
+{"t": 11.245, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " onset"}}
+{"t": 11.257, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "_week and ramp_weeks."}}
+{"t": 11.269, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "\n\nUnmodelled risks"}}
+{"t": 11.28, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ": maybe"}}
+{"t": 11.291, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " \"Bird"}}
+{"t": 11.302, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " flu jumps"}}
+{"t": 11.314, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " to humans ("}}
+{"t": 11.326, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "health scare"}}
+{"t": 11.337, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ")\""}}
+{"t": 11.348, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " or \"New"}}
+{"t": 11.36, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " regulation"}}
+{"t": 11.371, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " on egg sour"}}
+{"t": 11.383, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "cing\". But keep"}}
+{"t": 11.395, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " to 0-4 items"}}
+{"t": 11.406, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": ".\n\nTh"}}
+{"t": 11.418, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": "ought: short"}}
+{"t": 11.429, "event": "reasoning", "data": {"role": "scenarios", "round": 0, "delta": " reasoning.\n\nNow produce JSON."}}
+{"t": 15.175, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 1, "tokens_in": 1109, "tokens_out": 1833, "p50_ttft_ms": 955.1, "tok_per_s": 265.6, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 0, "tokens_in": 0, "tokens_out": 0, "p50_ttft_ms": null, "tok_per_s": null, "errors": 0}}, "call_share": {"ultra": 25.0, "super": 75.0, "fast": 0.0}, "token_share": {"ultra": 51.1, "super": 48.9, "fast": 0.0}, "cost_usd": 0.00766, "cost_all_ultra_usd": 0.010114, "savings_pct": 24.3, "job": {"id": null, "status": "idle"}}}
+{"t": 15.176, "event": "reasoning_done", "data": {"role": "scenarios", "round": 0}}
+{"t": 15.176, "event": "scenarios", "data": {"thought": "Headline uses +38% from n2. n3 shows slower 7% annual rise suggesting possible easing. n1+n2 indicate bird flu driving acceleration. No local market news, so non-cost futures are standard stress tests: rival price cut, supply delay, and cost+demand combo.", "unmodelled": [{"text": "Bird flu jumps to humans causing health scare", "source_id": "n1"}, {"text": "New USDA rule mandates cage-free eggs raising cost", "source_id": null}], "fallback_used": false}}
+{"t": 15.176, "event": "shocks", "data": {"cases": [{"id": "news", "label": "Eggs +38% (today's news)", "delta_c_raw": 0.38, "delta_lead_time": 0, "demand_shock": 0.0, "onset_week": 2, "ramp_weeks": 3, "rival_price_change_pct": 0.0, "share_shift_pct": 0.0, "likelihood": "likely", "why": "", "source_ids": ["n2"], "origin": "news", "cost_path": [], "cost_line": "Eggs +38% × 24% of your cost is eggs = your cost +9% (+$0.40 a breakfast plate)"}, {"id": "s1", "label": "Eggs +15% (milder trend)", "delta_c_raw": 0.15, "delta_lead_time": 0, "demand_shock": 0.0, "onset_week": 2, "ramp_weeks": 4, "rival_price_change_pct": 0.0, "share_shift_pct": 0.0, "likelihood": "likely", "why": "n3 shows 7% annual rise; recent months faster but may ease as flocks recover", "source_ids": ["n3"], "origin": "ai", "cost_path": [], "cost_line": "Eggs +15% × 24% of your cost is eggs = your cost +4% (+$0.16 a breakfast plate)"}, {"id": "s2", "label": "Eggs +55% (bird flu worsens)", "delta_c_raw": 0.55, "delta_lead_time": 0, "demand_shock": 0.0, "onset_week": 1, "ramp_weeks": 3, "rival_price_change_pct": 0.0, "share_shift_pct": 0.0, "likelihood": "possible", "why": "n1+n2 show accelerating trend; bird flu could deepen cutting supply further", "source_ids": ["n1", "n2"], "origin": "ai", "cost_path": [], "cost_line": "Eggs +55% × 24% of your cost is eggs = your cost +13% (+$0.58 a breakfast plate)"}, {"id": "s3", "label": "Eggs +30%, demand -15%", "delta_c_raw": 0.3, "delta_lead_time": 0, "demand_shock": -0.15, "onset_week": 3, "ramp_weeks": 4, "rival_price_change_pct": 0.0, "share_shift_pct": 0.0, "likelihood": "possible", "why": "Bird flu news may scare diners away from egg-heavy breakfast plates", "source_ids": ["n1", "n2"], "origin": "ai", "cost_path": [], "cost_line": "Eggs +30% × 24% of your cost is eggs = your cost +7% (+$0.32 a breakfast plate)"}, {"id": "s4", "label": "Corner Diner cuts 5%", "delta_c_raw": 0.0, "delta_lead_time": 0, "demand_shock": 0.0, "onset_week": 4, "ramp_weeks": 3, "rival_price_change_pct": -5.0, "share_shift_pct": 0.0, "likelihood": "possible", "why": "Standard stress test: rival may absorb cost to keep share while we raise", "source_ids": [], "origin": "ai", "cost_path": [], "cost_line": "Eggs 0% × 24% of your cost is eggs = your cost 0% ($0.00 a breakfast plate)"}, {"id": "s5", "label": "Egg supply delay +4 wks", "delta_c_raw": 0.0, "delta_lead_time": 4, "demand_shock": 0.0, "onset_week": 2, "ramp_weeks": 3, "rival_price_change_pct": 0.0, "share_shift_pct": 0.0, "likelihood": "possible", "why": "Bird flu disrupts flock replenishment and logistics per n1", "source_ids": ["n1"], "origin": "ai", "cost_path": [], "cost_line": "Eggs 0% × 24% of your cost is eggs = your cost 0% ($0.00 a breakfast plate)"}]}}
+{"t": 15.177, "event": "plan", "data": {"name": "Raise price 5% now", "source": "seed", "round": 0, "spec": {"name": "Raise price 5% now", "price_change_pct": 5.0, "price_change_week": 0, "extra_stock_weeks": 0.0, "stock_week": 0, "marketing_change_pct": 0.0, "switch_supplier": false, "alt_cost_change_pct": 0.0, "alt_lead_time_weeks": 3, "alt_shock_exposure": 0.3, "price_end_week": 24}}}
+{"t": 15.177, "event": "plan", "data": {"name": "Stock up 4 weeks now", "source": "seed", "round": 0, "spec": {"name": "Stock up 4 weeks now", "price_change_pct": 0.0, "price_change_week": 0, "extra_stock_weeks": 4.0, "stock_week": 0, "marketing_change_pct": 0.0, "switch_supplier": false, "alt_cost_change_pct": 0.0, "alt_lead_time_weeks": 3, "alt_shock_exposure": 0.3, "price_end_week": 24}}}
+{"t": 24.398, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 1, "tokens_in": 1109, "tokens_out": 1833, "p50_ttft_ms": 955.1, "tok_per_s": 265.6, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 1, "tokens_in": 645, "tokens_out": 418, "p50_ttft_ms": 1493.2, "tok_per_s": 54.1, "errors": 0}}, "call_share": {"ultra": 20.0, "super": 60.0, "fast": 20.0}, "token_share": {"ultra": 43.1, "super": 41.3, "fast": 15.6}, "cost_usd": 0.007799, "cost_all_ultra_usd": 0.012013, "savings_pct": 35.1, "job": {"id": null, "status": "idle"}}}
+{"t": 24.46, "event": "crowd", "data": {"plan_name": "Raise price 5% now", "archetypes": [{"id": 1, "label": "Low-income · price-hunter · A-loyal", "mu": [-1.0, 0.0], "sigma": [0.5, 0.5], "bubble": "5% hike? I'm switching to B today."}, {"id": 2, "label": "Low-income · price-hunter · B-loyal", "mu": [-1.0, 1.0], "sigma": [0.5, 0.5], "bubble": "A raised price, B stays cheaper—B it is."}, {"id": 3, "label": "Low-income · moderate · A-loyal", "mu": [-1.0, 0.0], "sigma": [0.5, 0.5], "bubble": "Another increase? I'll stick with A, but it's frustrating."}, {"id": 4, "label": "Low-income · moderate · B-loyal", "mu": [-1.0, 0.0], "sigma": [0.5, 0.5], "bubble": "Raising prices again hurts; I hope B stays reliable."}, {"id": 5, "label": "Mid-income · price-hunter · A-loyal", "mu": [-1.0, 1.0], "sigma": [0.5, 0.5], "bubble": "5% more? I'm jumping to B—price matters most."}, {"id": 6, "label": "Mid-income · price-hunter · B-loyal", "mu": [-1.0, 1.0], "sigma": [0.5, 0.5], "bubble": "A's price up, B still cheaper—B wins again."}, {"id": 7, "label": "Mid-income · moderate · A-loyal", "mu": [0.65, -1.0], "sigma": [0.5, 0.5], "bubble": "5% extra? I can wait for a better deal."}, {"id": 8, "label": "Mid-income · moderate · B-loyal", "mu": [-1.0, 0.6], "sigma": [0.5, 0.5], "bubble": "They raised price? Must be a mistake."}, {"id": 9, "label": "High-income · price-hunter · A-loyal", "mu": [0.85, -1.0], "sigma": [0.5, 0.5], "bubble": "5% higher? Still cheaper than rivals."}, {"id": 10, "label": "High-income · price-hunter · B-loyal", "mu": [-1.0, 0.8], "sigma": [0.5, 0.5], "bubble": "A's price jump? Not worth switching."}, {"id": 11, "label": "High-income · moderate · A-loyal", "mu": [0.75, -1.0], "sigma": [0.5, 0.5], "bubble": "15% threshold not crossed; fine."}, {"id": 12, "label": "High-income · moderate · B-loyal", "mu": [-1.0, 0.7], "sigma": [0.5, 0.5], "bubble": "They raised price? I'll stick with B."}]}}
+{"t": 24.46, "event": "agent_step", "data": {"round": 0, "kind": "shoppers", "text": "Low-income · price-hunter · A-loyal: “5% hike? I'm switching to B today.”", "plan_name": "Raise price 5% now", "tier": "fast", "latency_ms": null}}
+{"t": 24.46, "event": "crowd", "data": {"plan_name": "Stock up 4 weeks now", "archetypes": [{"id": 1, "label": "Low-income · price-hunter · A-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 2, "label": "Low-income · price-hunter · B-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 3, "label": "Low-income · moderate · A-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 4, "label": "Low-income · moderate · B-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 5, "label": "Mid-income · price-hunter · A-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 6, "label": "Mid-income · price-hunter · B-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 7, "label": "Mid-income · moderate · A-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 8, "label": "Mid-income · moderate · B-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 9, "label": "High-income · price-hunter · A-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 10, "label": "High-income · price-hunter · B-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 11, "label": "High-income · moderate · A-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}, {"id": 12, "label": "High-income · moderate · B-loyal", "mu": [0.0, 0.0], "sigma": [0.1, 0.1], "bubble": ""}]}}
+{"t": 24.46, "event": "agent_step", "data": {"round": 0, "kind": "shoppers", "text": "No price or marketing change, so shoppers see nothing new: counted as neutral.", "plan_name": "Stock up 4 weeks now", "tier": "engine", "latency_ms": null}}
+{"t": 24.88, "event": "grid_cell", "data": {"plan_name": "Raise price 5% now", "shock_id": "news", "n": 1000, "mean_delta_usd": -40621.79622070707, "p5_delta_usd": -46272.40196733852, "p_better": 0.0, "mean_profit_usd": 129118.62862897685, "bridge": {"cost_usd": 439.97654278665027, "price_usd": 10251.85376586424, "volume_usd": -51555.240784598085, "marketing_usd": 0.0, "holding_usd": 241.6142552401395}, "steady_rival_delta_usd": -40991.08666680544, "peak_cash_usd": 40621.79622070703, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 24.88, "event": "grid_cell", "data": {"plan_name": "Raise price 5% now", "shock_id": "s1", "n": 1000, "mean_delta_usd": -40844.244860257386, "p5_delta_usd": -45524.487088238035, "p_better": 0.0, "mean_profit_usd": 126455.48803593991, "bridge": {"cost_usd": 129.6031971697993, "price_usd": 9868.965706813158, "volume_usd": -51075.036909122115, "marketing_usd": 0.0, "holding_usd": 232.2231448817615}, "steady_rival_delta_usd": -41234.6031510025, "peak_cash_usd": 40844.244860257386, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 24.88, "event": "grid_cell", "data": {"plan_name": "Raise price 5% now", "shock_id": "s2", "n": 1000, "mean_delta_usd": -35223.80750383546, "p5_delta_usd": -39738.477501027206, "p_better": 0.0, "mean_profit_usd": 131088.15270468098, "bridge": {"cost_usd": 881.5186809759223, "price_usd": 10548.7074546229, "volume_usd": -46881.49536448756, "marketing_usd": 0.0, "holding_usd": 227.46172505327706}, "steady_rival_delta_usd": -35614.18970126053, "peak_cash_usd": 35223.80750383544, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 24.88, "event": "grid_cell", "data": {"plan_name": "Raise price 5% now", "shock_id": "s3", "n": 1000, "mean_delta_usd": -36018.30915937682, "p5_delta_usd": -40626.204755891915, "p_better": 0.0, "mean_profit_usd": 109949.64527384289, "bridge": {"cost_usd": 163.45243373743858, "price_usd": 8747.489290735897, "volume_usd": -45152.02776599173, "marketing_usd": 0.0, "holding_usd": 222.7768821415801}, "steady_rival_delta_usd": -36358.57719885194, "peak_cash_usd": 36018.309159376855, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 24.88, "event": "grid_cell", "data": {"plan_name": "Raise price 5% now", "shock_id": "s4", "n": 1000, "mean_delta_usd": -36492.81952725661, "p5_delta_usd": -38645.5551420767, "p_better": 0.0, "mean_profit_usd": 119644.84809392045, "bridge": {"cost_usd": -1.9337517189609689e-13, "price_usd": 9267.976092036684, "volume_usd": -45980.804158131126, "marketing_usd": 0.0, "holding_usd": 220.00853883782867}, "steady_rival_delta_usd": -36921.803899333274, "peak_cash_usd": 36492.819527256564, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 24.88, "event": "grid_cell", "data": {"plan_name": "Raise price 5% now", "shock_id": "s5", "n": 1000, "mean_delta_usd": -20549.791389183963, "p5_delta_usd": -38649.42309671244, "p_better": 0.017, "mean_profit_usd": 137190.64738074722, "bridge": {"cost_usd": 3.053756387675252e-13, "price_usd": 10572.800506235586, "volume_usd": -31276.779224387312, "marketing_usd": 0.0, "holding_usd": 154.18732896775953}, "steady_rival_delta_usd": -27739.299057615888, "peak_cash_usd": 20549.79138918396, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 24.88, "event": "agent_step", "data": {"round": 0, "kind": "result", "text": "“Raise price 5% now”: −$40.6k on average · bad case −$46.3k", "plan_name": "Raise price 5% now", "tier": "engine", "latency_ms": null}}
+{"t": 25.259, "event": "grid_cell", "data": {"plan_name": "Stock up 4 weeks now", "shock_id": "news", "n": 1000, "mean_delta_usd": 948.1570678353338, "p5_delta_usd": 618.0185734941562, "p_better": 1.0, "mean_profit_usd": 170688.58191751927, "bridge": {"cost_usd": 1188.7092521065829, "price_usd": 0.0, "volume_usd": 0.0, "marketing_usd": 0.0, "holding_usd": -240.55218427124905}, "steady_rival_delta_usd": 948.2330992490862, "peak_cash_usd": 15839.999999999689, "payback_week": 6, "over_cash": true, "source": "local"}}
+{"t": 25.259, "event": "grid_cell", "data": {"plan_name": "Stock up 4 weeks now", "shock_id": "s1", "n": 1000, "mean_delta_usd": 142.4745431053061, "p5_delta_usd": 3.898357797081793, "p_better": 0.951, "mean_profit_usd": 167442.20743930255, "bridge": {"cost_usd": 382.5136416199403, "price_usd": 0.0, "volume_usd": 0.0, "marketing_usd": 0.0, "holding_usd": -240.03909851463592}, "steady_rival_delta_usd": 142.5463327074573, "peak_cash_usd": 15839.999999999689, "payback_week": 9, "over_cash": true, "source": "local"}}
+{"t": 25.259, "event": "grid_cell", "data": {"plan_name": "Stock up 4 weeks now", "shock_id": "s2", "n": 1000, "mean_delta_usd": 1838.7744287968312, "p5_delta_usd": 1450.6200492689914, "p_better": 1.0, "mean_profit_usd": 168150.73463731326, "bridge": {"cost_usd": 2076.447577117361, "price_usd": 0.0, "volume_usd": 0.0, "marketing_usd": 0.0, "holding_usd": -237.67314832053054}, "steady_rival_delta_usd": 1839.1732436385228, "peak_cash_usd": 15839.999999999689, "payback_week": 5, "over_cash": true, "source": "local"}}
+{"t": 25.259, "event": "grid_cell", "data": {"plan_name": "Stock up 4 weeks now", "shock_id": "s3", "n": 1000, "mean_delta_usd": 316.16662386191825, "p5_delta_usd": 98.42557416538651, "p_better": 0.996, "mean_profit_usd": 146284.12105708165, "bridge": {"cost_usd": 563.8770705045081, "price_usd": 0.0, "volume_usd": 0.0, "marketing_usd": 0.0, "holding_usd": -247.7104466425897}, "steady_rival_delta_usd": 316.2966674190785, "peak_cash_usd": 15839.999999999689, "payback_week": 9, "over_cash": true, "source": "local"}}
+{"t": 25.259, "event": "grid_cell", "data": {"plan_name": "Stock up 4 weeks now", "shock_id": "s4", "n": 1000, "mean_delta_usd": -237.47586424516825, "p5_delta_usd": -342.8953238962668, "p_better": 0.0, "mean_profit_usd": 155900.1917569319, "bridge": {"cost_usd": 1.8570150084478444e-13, "price_usd": 0.0, "volume_usd": 0.0, "marketing_usd": 0.0, "holding_usd": -237.47586424516896}, "steady_rival_delta_usd": -237.30882655123722, "peak_cash_usd": 15839.999999999689, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 25.259, "event": "grid_cell", "data": {"plan_name": "Stock up 4 weeks now", "shock_id": "s5", "n": 1000, "mean_delta_usd": 14410.659105029174, "p5_delta_usd": -425.07079121009804, "p_better": 0.697, "mean_profit_usd": 172151.09787496037, "bridge": {"cost_usd": 4.153602308914067e-13, "price_usd": 0.0, "volume_usd": 14729.30093928057, "marketing_usd": 0.0, "holding_usd": -318.6418342514}, "steady_rival_delta_usd": 12435.15061685789, "peak_cash_usd": 15839.999999999689, "payback_week": 6, "over_cash": true, "source": "local"}}
+{"t": 25.259, "event": "agent_step", "data": {"round": 0, "kind": "result", "text": "“Stock up 4 weeks now”: +$948 on average · bad case +$618", "plan_name": "Stock up 4 weeks now", "tier": "engine", "latency_ms": null}}
+{"t": 25.259, "event": "grid_summary", "data": {"baseline_profit_usd": {"news": 169740.4248496839, "s1": 167299.7328961973, "s2": 166311.96020851648, "s3": 145967.9544332197, "s4": 156137.66762117704, "s5": 157740.43876993118}, "best_today": "Stock up 4 weeks now", "safest": "Stock up 4 weeks now", "verified": false}}
+{"t": 27.782, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "The"}}
+{"t": 27.79, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " user wants me to analyze"}}
+{"t": 27.802, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " the simulation"}}
+{"t": 27.815, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " results and propose up"}}
+{"t": 27.83, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " to 3 new plans for"}}
+{"t": 27.841, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " testing"}}
+{"t": 27.854, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ". Let me understand"}}
+{"t": 27.867, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " the situation"}}
+{"t": 27.962, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ":\n\nBusiness: Main Street Break"}}
+{"t": 27.962, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "fast Diner\n- Price"}}
+{"t": 28.049, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ": $12.5"}}
+{"t": 28.05, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "0 per breakfast plate\n-"}}
+{"t": 28.05, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " Unit cost: $4."}}
+{"t": 28.051, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "40\n- Weekly sales"}}
+{"t": 28.051, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ": 900 plates"}}
+{"t": 28.052, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n- Lead"}}
+{"t": 28.052, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " time: 1 week"}}
+{"t": 28.052, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n- Stock:"}}
+{"t": 28.052, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 1 week"}}
+{"t": 28.053, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n- Rival"}}
+{"t": 28.053, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ": Corner Diner at"}}
+{"t": 28.053, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $12.00"}}
+{"t": 28.054, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n- Exposed cost share"}}
+{"t": 28.061, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ": 0"}}
+{"t": 28.075, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ".24 (24"}}
+{"t": 28.086, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "% of cost is eggs"}}
+{"t": 28.099, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ")\n- Cash available: $"}}
+{"t": 28.11, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "40"}}
+{"t": 28.122, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "00\n\nNews:"}}
+{"t": 28.134, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " Egg prices rising due"}}
+{"t": 28.149, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " to bird flu -"}}
+{"t": 28.158, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " various"}}
+{"t": 28.17, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " scenarios from"}}
+{"t": 28.183, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " +15% to +"}}
+{"t": 28.195, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "55% input price increase"}}
+{"t": 28.207, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ", plus demand drop"}}
+{"t": 28.22, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " and rival price cut scenarios."}}
+{"t": 28.231, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n\nCurrent"}}
+{"t": 28.246, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " results:\n1. \"Ra"}}
+{"t": 28.256, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "ise price 5% now"}}
+{"t": 28.269, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\" - TER"}}
+{"t": 28.313, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "RIBLE:"}}
+{"t": 28.313, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " loses $"}}
+{"t": 28.314, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "40-4"}}
+{"t": 28.316, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "6k across"}}
+{"t": 28.328, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " scenarios,"}}
+{"t": 28.34, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 0% better than do"}}
+{"t": 28.353, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " nothing,"}}
+{"t": 28.376, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " OVER"}}
+{"t": 28.377, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " CASH. Weak"}}
+{"t": 28.389, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " spot: customers lost (-"}}
+{"t": 28.488, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "51.6k"}}
+{"t": 28.49, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " in worst"}}
+{"t": 28.49, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " case)."}}
+{"t": 28.49, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " Customers say"}}
+{"t": 28.49, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " they"}}
+{"t": 28.49, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "'ll switch."}}
+{"t": 28.491, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n\n2. \"Stock up"}}
+{"t": 28.491, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 4 weeks now\" - Mixed"}}
+{"t": 28.499, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ":"}}
+{"t": 28.513, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " small"}}
+{"t": 28.523, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " gains in most scenarios (+"}}
+{"t": 28.538, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "0.1"}}
+{"t": 28.548, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " to +14"}}
+{"t": 28.562, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ".4k), but bad"}}
+{"t": 28.579, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " case in s5 (supp"}}
+{"t": 28.588, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "ly delay) is -0"}}
+{"t": 28.601, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ".4k. OVER"}}
+{"t": 28.615, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " CASH (c"}}
+{"t": 28.632, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "ash 15.8"}}
+{"t": 28.641, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "k >"}}
+{"t": 28.667, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 4k"}}
+{"t": 28.678, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " available). Weak spot: storage"}}
+{"t": 28.691, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " &"}}
+{"t": 28.704, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " money tied up."}}
+{"t": 28.717, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n\nKey insights"}}
+{"t": 28.733, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ":\n- Rais"}}
+{"t": 28.742, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "ing price alone"}}
+{"t": 28.758, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " drives"}}
+{"t": 28.765, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " customers away (r"}}
+{"t": 28.778, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "ival is"}}
+{"t": 28.789, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " cheaper at $12 vs"}}
+{"t": 28.803, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " our"}}
+{"t": 28.815, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $12.50"}}
+{"t": 28.832, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ","}}
+{"t": 28.839, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 5% raise makes us"}}
+{"t": 28.851, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $13.12"}}
+{"t": 28.863, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "5)"}}
+{"t": 28.876, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n- Stocking up helps"}}
+{"t": 28.89, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " but ties"}}
+{"t": 28.903, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " up too"}}
+{"t": 28.914, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " much cash ($"}}
+{"t": 29.013, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "15.8k >"}}
+{"t": 29.013, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $4k limit)\n-"}}
+{"t": 29.014, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " The"}}
+{"t": 29.014, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " business"}}
+{"t": 29.015, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " has"}}
+{"t": 29.015, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " only"}}
+{"t": 29.015, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $"}}
+{"t": 29.016, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "40"}}
+{"t": 29.031, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "00 cash available for extra"}}
+{"t": 29.037, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " stock\n- Egg"}}
+{"t": 29.051, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " cost share is 24"}}
+{"t": 29.062, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "%, so a 38"}}
+{"t": 29.075, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "% egg price increase = ~"}}
+{"t": 29.086, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "9.1% cost"}}
+{"t": 29.099, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " increase overall"}}
+{"t": 29.123, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n- Current"}}
+{"t": 29.136, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " margin"}}
+{"t": 29.15, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ": $"}}
+{"t": 29.167, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "12.50 -"}}
+{"t": 29.176, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $4.40 ="}}
+{"t": 29.187, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $8.10 per"}}
+{"t": 29.2, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " plate,"}}
+{"t": 29.213, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " weekly"}}
+{"t": 29.225, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " gross"}}
+{"t": 29.238, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " ="}}
+{"t": 29.253, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $7"}}
+{"t": 29.263, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ","}}
+{"t": 29.277, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "290\n\nIde"}}
+{"t": 29.288, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "as for new plans:\n1"}}
+{"t": 29.3, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ". Sm"}}
+{"t": 29.312, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "aller stock"}}
+{"t": 29.325, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "-up within"}}
+{"t": 29.338, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " cash limit:"}}
+{"t": 29.353, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " extra"}}
+{"t": 29.364, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "_stock_weeks such"}}
+{"t": 29.378, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " that cash"}}
+{"t": 29.39, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " tied"}}
+{"t": 29.402, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " up"}}
+{"t": 29.415, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " <="}}
+{"t": 29.432, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $4000."}}
+{"t": 29.439, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " Current"}}
+{"t": 29.537, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " stock 1 week ="}}
+{"t": 29.537, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 900 plates"}}
+{"t": 29.538, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " * $4.40"}}
+{"t": 29.538, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " = $3"}}
+{"t": 29.539, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ",960."}}
+{"t": 29.539, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 4 extra"}}
+{"t": 29.539, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " weeks ="}}
+{"t": 29.54, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 3600 plates"}}
+{"t": 29.552, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " * $4.40"}}
+{"t": 29.566, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " = $15,8"}}
+{"t": 29.578, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "40 ("}}
+{"t": 29.604, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "matches cash"}}
+{"t": 29.605, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 15.8k"}}
+{"t": 29.617, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "). So max extra weeks within"}}
+{"t": 29.628, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " $4k"}}
+{"t": 29.642, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ": $"}}
+{"t": 29.661, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "4000 / $"}}
+{"t": 29.673, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "3960 ≈"}}
+{"t": 29.682, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 1 week"}}
+{"t": 29.693, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " extra"}}
+{"t": 29.708, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ". But wait"}}
+{"t": 29.721, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ", the"}}
+{"t": 29.731, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " cash"}}
+{"t": 29.744, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " shown"}}
+{"t": 29.756, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " is \"most extra cash tied"}}
+{"t": 29.772, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " up\" - for"}}
+{"t": 29.795, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 4 weeks it"}}
+{"t": 29.807, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "'s $"}}
+{"t": 29.821, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "15.8k."}}
+{"t": 29.832, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " So maybe 1 extra week"}}
+{"t": 29.845, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " would be ~$4"}}
+{"t": 29.857, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "k.\n\n2. Mod"}}
+{"t": 29.87, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "est price increase + marketing"}}
+{"t": 29.882, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " to"}}
+{"t": 29.897, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " retain customers: price"}}
+{"t": 29.907, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "_change_pct small (maybe"}}
+{"t": 29.922, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 3"}}
+{"t": 29.933, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "-4"}}
+{"t": 29.947, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "%), marketing_change"}}
+{"t": 29.958, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "_pct positive to offset"}}
+{"t": 30.063, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " customer"}}
+{"t": 30.064, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " loss.\n\n3. Switch supplier"}}
+{"t": 30.064, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "? But alt"}}
+{"t": 30.064, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "_cost_change_pct 0"}}
+{"t": 30.064, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "-50%"}}
+{"t": 30.065, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " (no cheaper supplier"}}
+{"t": 30.065, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " known), alt_lead_time"}}
+{"t": 30.065, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "_weeks 1-1"}}
+{"t": 30.073, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "6."}}
+{"t": 30.09, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " Might not help.\n\n4."}}
+{"t": 30.098, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " Staged: small"}}
+{"t": 30.111, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " stock-up now, then price"}}
+{"t": 30.123, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " increase later when stock"}}
+{"t": 30.137, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " runs out.\n\nLet me calculate"}}
+{"t": 30.149, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ": Weekly"}}
+{"t": 30.162, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " cost of"}}
+{"t": 30.174, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " goods ="}}
+{"t": 30.188, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 900 * $"}}
+{"t": 30.199, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "4.40 = $"}}
+{"t": 30.214, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "3,960."}}
+{"t": 30.226, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " Cash available $"}}
+{"t": 30.239, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "4,000."}}
+{"t": 30.255, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " So can afford"}}
+{"t": 30.265, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " about 1 extra week of"}}
+{"t": 30.277, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " stock.\n\nPlan"}}
+{"t": 30.29, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " ideas"}}
+{"t": 30.303, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ":\nA"}}
+{"t": 30.316, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ". \"Stock up 1"}}
+{"t": 30.328, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " week,"}}
+{"t": 30.343, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " raise"}}
+{"t": 30.354, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 3%"}}
+{"t": 30.37, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " week"}}
+{"t": 30.379, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 2"}}
+{"t": 30.392, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\" - Buy"}}
+{"t": 30.406, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 1 extra"}}
+{"t": 30.418, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " week now (within"}}
+{"t": 30.43, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " cash), then raise price modest"}}
+{"t": 30.448, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "ly when that"}}
+{"t": 30.456, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " stock runs out (~"}}
+{"t": 30.468, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "week 2). Price"}}
+{"t": 30.482, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " change at"}}
+{"t": 30.584, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " week 1"}}
+{"t": 30.587, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " or"}}
+{"t": 30.588, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 2,"}}
+{"t": 30.59, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " lasting to"}}
+{"t": 30.59, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " end.\n\nB. \"Stock"}}
+{"t": 30.591, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " up 1 week, marketing"}}
+{"t": 30.591, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " +"}}
+{"t": 30.592, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "2"}}
+{"t": 30.598, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "0%\" - Buy"}}
+{"t": 30.61, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 1 extra week,"}}
+{"t": 30.624, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " boost"}}
+{"t": 30.636, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " marketing to keep customers without"}}
+{"t": 30.649, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " price hike.\n\nC."}}
+{"t": 30.665, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " \"Ra"}}
+{"t": 30.677, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "ise 3"}}
+{"t": 30.688, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "% now"}}
+{"t": 30.704, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ", marketing +15"}}
+{"t": 30.715, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "%\" - Small price increase"}}
+{"t": 30.729, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " with marketing support"}}
+{"t": 30.74, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ", no extra"}}
+{"t": 30.754, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " stock.\n\nLet me check"}}
+{"t": 30.765, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " parameters"}}
+{"t": 30.78, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ":"}}
+{"t": 30.791, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n- price_change_pct:"}}
+{"t": 30.803, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " -20 to"}}
+{"t": 30.815, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 20\n- price"}}
+{"t": 30.828, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "_change_week: 0-"}}
+{"t": 30.841, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "23\n- price_end"}}
+{"t": 30.854, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "_week: 1-2"}}
+{"t": 30.867, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "4 (24 = to"}}
+{"t": 30.879, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " end)\n- extra_stock_"}}
+{"t": 30.891, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "weeks: 0-8"}}
+{"t": 30.904, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n- stock_week:"}}
+{"t": 30.918, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 0-23\n-"}}
+{"t": 30.929, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " marketing_change_pct: -"}}
+{"t": 30.942, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "50 to 10"}}
+{"t": 30.955, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "0\n- switch_sup"}}
+{"t": 30.967, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "plier: bool\n- alt"}}
+{"t": 30.981, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "_cost_change_pct:"}}
+{"t": 30.993, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " 0-50\n-"}}
+{"t": 31.006, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " alt_lead_time_weeks"}}
+{"t": 31.107, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ": 1-16"}}
+{"t": 31.107, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "\n- alt_shock_ex"}}
+{"t": 31.108, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": "posure: 0-1"}}
+{"t": 31.108, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " (default 0.3"}}
+{"t": 31.108, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": ")\n\nI'll propose 3"}}
+{"t": 31.108, "event": "reasoning", "data": {"role": "analyst", "round": 1, "delta": " plans."}}
+{"t": 32.685, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 2, "tokens_in": 2981, "tokens_out": 3406, "p50_ttft_ms": 1738.5, "tok_per_s": 293.2, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 2, "tokens_in": 1296, "tokens_out": 850, "p50_ttft_ms": 1436.1, "tok_per_s": 54.4, "errors": 0}}, "call_share": {"ultra": 28.6, "super": 42.9, "fast": 28.6}, "token_share": {"ultra": 56.3, "super": 24.8, "fast": 18.9}, "cost_usd": 0.014533, "cost_all_ultra_usd": 0.020551, "savings_pct": 29.3, "job": {"id": null, "status": "idle"}}}
+{"t": 32.685, "event": "reasoning_done", "data": {"role": "analyst", "round": 1}}
+{"t": 32.685, "event": "agent_step", "data": {"round": 1, "kind": "think", "text": "Raising price alone loses customers heavily (rival is $0.50 cheaper). Stocking 4 weeks helps but exceeds $4k cash limit ($15.8k tied up). Need plans within cash: ~1 extra week of stock ($4k) combined with modest price rise or marketing to retain customers.", "plan_name": null, "tier": "ultra", "latency_ms": 7425}}
+{"t": 32.685, "event": "plan", "data": {"name": "Stock 1wk, raise 3% wk1", "source": "ai", "round": 1, "spec": {"name": "Stock 1wk, raise 3% wk1", "price_change_pct": 3.0, "price_change_week": 1, "extra_stock_weeks": 1.0, "stock_week": 0, "marketing_change_pct": 0.0, "switch_supplier": false, "alt_cost_change_pct": 0.0, "alt_lead_time_weeks": 1, "alt_shock_exposure": 0.3, "price_end_week": 24}}}
+{"t": 32.685, "event": "agent_step", "data": {"round": 1, "kind": "test", "text": "Testing “Stock 1wk, raise 3% wk1” in every future.", "plan_name": "Stock 1wk, raise 3% wk1", "tier": "ultra", "latency_ms": null}}
+{"t": 32.685, "event": "plan", "data": {"name": "Stock 1wk, marketing +20%", "source": "ai", "round": 1, "spec": {"name": "Stock 1wk, marketing +20%", "price_change_pct": 0.0, "price_change_week": 0, "extra_stock_weeks": 1.0, "stock_week": 0, "marketing_change_pct": 20.0, "switch_supplier": false, "alt_cost_change_pct": 0.0, "alt_lead_time_weeks": 1, "alt_shock_exposure": 0.3, "price_end_week": 24}}}
+{"t": 32.685, "event": "agent_step", "data": {"round": 1, "kind": "test", "text": "Testing “Stock 1wk, marketing +20%” in every future.", "plan_name": "Stock 1wk, marketing +20%", "tier": "ultra", "latency_ms": null}}
+{"t": 32.685, "event": "plan", "data": {"name": "Raise 3% now, marketing +15%", "source": "ai", "round": 1, "spec": {"name": "Raise 3% now, marketing +15%", "price_change_pct": 3.0, "price_change_week": 0, "extra_stock_weeks": 0.0, "stock_week": 0, "marketing_change_pct": 15.0, "switch_supplier": false, "alt_cost_change_pct": 0.0, "alt_lead_time_weeks": 1, "alt_shock_exposure": 0.3, "price_end_week": 24}}}
+{"t": 32.685, "event": "agent_step", "data": {"round": 1, "kind": "test", "text": "Testing “Raise 3% now, marketing +15%” in every future.", "plan_name": "Raise 3% now, marketing +15%", "tier": "ultra", "latency_ms": null}}
+{"t": 42.506, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 2, "tokens_in": 2981, "tokens_out": 3406, "p50_ttft_ms": 1738.5, "tok_per_s": 293.2, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 3, "tokens_in": 1952, "tokens_out": 1274, "p50_ttft_ms": 1379.0, "tok_per_s": 54.1, "errors": 0}}, "call_share": {"ultra": 25.0, "super": 37.5, "fast": 37.5}, "token_share": {"ultra": 51.4, "super": 22.6, "fast": 26.0}, "cost_usd": 0.014674, "cost_all_ultra_usd": 0.022479, "savings_pct": 34.7, "job": {"id": null, "status": "idle"}}}
+{"t": 56.402, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 2, "tokens_in": 2981, "tokens_out": 3406, "p50_ttft_ms": 1738.5, "tok_per_s": 293.2, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 9, "tokens_in": 5210, "tokens_out": 3441, "p50_ttft_ms": 1279.2, "tok_per_s": 49.9, "errors": 1}}, "call_share": {"ultra": 14.3, "super": 21.4, "fast": 64.3}, "token_share": {"ultra": 35.8, "super": 15.8, "fast": 48.5}, "cost_usd": 0.015389, "cost_all_ultra_usd": 0.032238, "savings_pct": 52.3, "job": {"id": null, "status": "idle"}}}
+{"t": 56.403, "event": "crowd", "data": {"plan_name": "Stock 1wk, raise 3% wk1", "archetypes": [{"id": 1, "label": "Low-income · price-hunter · A-loyal", "mu": [0.15, -1.0], "sigma": [0.5, 0.5], "bubble": "Another price hike? Not today, thanks."}, {"id": 2, "label": "Low-income · price-hunter · B-loyal", "mu": [-1.0, 0.15], "sigma": [0.5, 0.5], "bubble": "A's up 3%? I'm sticking with B."}, {"id": 3, "label": "Low-income · moderate · A-loyal", "mu": [0.05, -1.0], "sigma": [0.5, 0.5], "bubble": "Just a little more... I can handle it."}, {"id": 4, "label": "Low-income · moderate · B-loyal", "mu": [-1.0, 0.05], "sigma": [0.5, 0.5], "bubble": "B's still cheaper and reliable—staying put."}, {"id": 5, "label": "Mid-income · price-hunter · A-loyal", "mu": [0.2, -1.0], "sigma": [0.5, 0.5], "bubble": "3% jump? Might wait for a real deal."}, {"id": 6, "label": "Mid-income · price-hunter · B-loyal", "mu": [-1.0, 0.2], "sigma": [0.5, 0.5], "bubble": "B's still the best price—no switch."}, {"id": 7, "label": "Mid-income · moderate · A-loyal", "mu": [0.65, -1.0], "sigma": [0.5, 0.5], "bubble": "Price hike hurts us, but we need the stock"}, {"id": 8, "label": "Mid-income · moderate · B-loyal", "mu": [-1.0, 0.65], "sigma": [0.5, 0.5], "bubble": "They raised prices, but I stick with B"}, {"id": 9, "label": "High-income · price-hunter · A-loyal", "mu": [0.85, -1.0], "sigma": [0.5, 0.5], "bubble": "A's price up, still a bargain compared to B"}, {"id": 10, "label": "High-income · price-hunter · B-loyal", "mu": [-1.0, 0.55], "sigma": [0.5, 0.5], "bubble": "B price steady, I stick with them"}, {"id": 11, "label": "High-income · moderate · A-loyal", "mu": [0.75, -1.0], "sigma": [0.5, 0.5], "bubble": "Quality stays, price rise is fine for me"}, {"id": 12, "label": "High-income · moderate · B-loyal", "mu": [-1.0, 0.65], "sigma": [0.5, 0.5], "bubble": "B's supply is solid, price unchanged"}]}}
+{"t": 56.403, "event": "agent_step", "data": {"round": 1, "kind": "shoppers", "text": "Kept 2 shopper groups in price order: none likes “Stock 1wk, raise 3% wk1” more than a cheaper plan or less than a dearer one.", "plan_name": "Stock 1wk, raise 3% wk1", "tier": "engine", "latency_ms": null}}
+{"t": 56.403, "event": "agent_step", "data": {"round": 1, "kind": "shoppers", "text": "Low-income · price-hunter · B-loyal: “A's up 3%? I'm sticking with B.”", "plan_name": "Stock 1wk, raise 3% wk1", "tier": "fast", "latency_ms": null}}
+{"t": 56.804, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 3% wk1", "shock_id": "news", "n": 1000, "mean_delta_usd": 3180.8215521726106, "p5_delta_usd": -156.18903797384857, "p_better": 0.941, "mean_profit_usd": 172921.24640185654, "bridge": {"cost_usd": 190.25830413818295, "price_usd": 8036.455833201903, "volume_usd": -5032.15198501016, "marketing_usd": 0.0, "holding_usd": -13.74060015731465}, "steady_rival_delta_usd": 3204.8414564660757, "peak_cash_usd": 3784.739627238405, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 56.804, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 3% wk1", "shock_id": "s1", "n": 1000, "mean_delta_usd": 4319.125104382295, "p5_delta_usd": 2032.948338624447, "p_better": 0.999, "mean_profit_usd": 171618.85800057958, "bridge": {"cost_usd": 55.99857765991509, "price_usd": 7806.543350116785, "volume_usd": -3517.332829586017, "marketing_usd": 0.0, "holding_usd": -26.083993808390417}, "steady_rival_delta_usd": 4342.85833844004, "peak_cash_usd": 3784.739627238405, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 56.804, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 3% wk1", "shock_id": "s2", "n": 1000, "mean_delta_usd": 6294.95342881054, "p5_delta_usd": 4397.641484309971, "p_better": 1.0, "mean_profit_usd": 172606.913637327, "bridge": {"cost_usd": 577.7467048003008, "price_usd": 8154.277155897599, "volume_usd": -2413.8290400777146, "marketing_usd": 0.0, "holding_usd": -23.24139180964385}, "steady_rival_delta_usd": 6288.952948317157, "peak_cash_usd": 3784.739627238405, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 56.804, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 3% wk1", "shock_id": "s3", "n": 1000, "mean_delta_usd": 2748.542471811654, "p5_delta_usd": 394.88070581988796, "p_better": 0.962, "mean_profit_usd": 148716.49690503135, "bridge": {"cost_usd": 73.55663389370527, "price_usd": 6845.618489249629, "volume_usd": -4150.560282342886, "marketing_usd": 0.0, "holding_usd": -20.072368988795084}, "steady_rival_delta_usd": 2777.30258927743, "peak_cash_usd": 3784.739627238405, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 56.804, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 3% wk1", "shock_id": "s4", "n": 1000, "mean_delta_usd": 8664.666204746287, "p5_delta_usd": 8229.958968682247, "p_better": 1.0, "mean_profit_usd": 164802.3338259233, "bridge": {"cost_usd": -1.1344395511463731e-13, "price_usd": 7404.023056371352, "volume_usd": 1301.6216401577149, "marketing_usd": 0.0, "holding_usd": -40.97849178277882}, "steady_rival_delta_usd": 8682.916076229036, "peak_cash_usd": 3784.739627238405, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 56.804, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 3% wk1", "shock_id": "s5", "n": 1000, "mean_delta_usd": 13594.596398508109, "p5_delta_usd": 4762.824369154013, "p_better": 1.0, "mean_profit_usd": 171335.0351684393, "bridge": {"cost_usd": 3.772131726924355e-13, "price_usd": 7721.325483005826, "volume_usd": 5948.854581188358, "marketing_usd": 0.0, "holding_usd": -75.58366568607572}, "steady_rival_delta_usd": 16110.082334128108, "peak_cash_usd": 3784.739627238405, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 56.804, "event": "agent_step", "data": {"round": 1, "kind": "result", "text": "“Stock 1wk, raise 3% wk1”: +$3.2k on average · bad case −$156", "plan_name": "Stock 1wk, raise 3% wk1", "tier": "engine", "latency_ms": null}}
+{"t": 56.804, "event": "crowd", "data": {"plan_name": "Stock 1wk, marketing +20%", "archetypes": [{"id": 1, "label": "Low-income · price-hunter · A-loyal", "mu": [0.85, -1.0], "sigma": [0.5, 0.5], "bubble": "Great deal! A stays cheap while B barely moves."}, {"id": 2, "label": "Low-income · price-hunter · B-loyal", "mu": [-1.0, 0.8], "sigma": [0.5, 0.5], "bubble": "A's price unchanged? B still beats it."}, {"id": 3, "label": "Low-income · moderate · A-loyal", "mu": [0.6, -1.0], "sigma": [0.5, 0.5], "bubble": "Same price, but B's reliability matters more now."}, {"id": 4, "label": "Low-income · moderate · B-loyal", "mu": [-1.0, 0.7], "sigma": [0.5, 0.5], "bubble": "B's consistency still beats A, even with extra stock."}, {"id": 5, "label": "Mid-income · price-hunter · A-loyal", "mu": [0.8, -1.0], "sigma": [0.5, 0.5], "bubble": "A's price same, but I'm watching B's moves."}, {"id": 6, "label": "Mid-income · price-hunter · B-loyal", "mu": [-1.0, 0.75], "sigma": [0.5, 0.5], "bubble": "A's price flat, but B's history still wins."}, {"id": 7, "label": "Mid-income · moderate · A-loyal", "mu": [0.6, -1.0], "sigma": [0.5, 0.5], "bubble": "Great deal! Still get my usual breakfast without any delays."}, {"id": 8, "label": "Mid-income · moderate · B-loyal", "mu": [-1.0, 0.8], "sigma": [0.5, 0.5], "bubble": "They're cutting costs but I'm not switching; B's still my go"}, {"id": 9, "label": "High-income · price-hunter · A-loyal", "mu": [0.9, -1.0], "sigma": [0.5, 0.5], "bubble": "10% extra stock and no price hike—smart move, I love it!"}, {"id": 10, "label": "High-income · price-hunter · B-loyal", "mu": [-1.0, 0.7], "sigma": [0.5, 0.5], "bubble": "Price stays same, but I'm curious if B will match the hype"}, {"id": 11, "label": "High-income · moderate · A-loyal", "mu": [0.5, -1.0], "sigma": [0.5, 0.5], "bubble": "Same price, extra stock—quality and availability still top"}, {"id": 12, "label": "High-income · moderate · B-loyal", "mu": [-1.0, 0.6], "sigma": [0.5, 0.5], "bubble": "A's pushing marketing but B's reliability still matters more"}]}}
+{"t": 56.804, "event": "agent_step", "data": {"round": 1, "kind": "shoppers", "text": "Low-income · price-hunter · B-loyal: “A's price unchanged? B still beats it.”", "plan_name": "Stock 1wk, marketing +20%", "tier": "fast", "latency_ms": null}}
+{"t": 57.182, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +20%", "shock_id": "news", "n": 1000, "mean_delta_usd": 1789.2787563146005, "p5_delta_usd": 105.71438669986662, "p_better": 0.957, "mean_profit_usd": 171529.70360599854, "bridge": {"cost_usd": 127.24488833873941, "price_usd": 0.0, "volume_usd": 3471.034855196663, "marketing_usd": -1749.6000000099832, "holding_usd": -59.40098721081534}, "steady_rival_delta_usd": 1821.382393039074, "peak_cash_usd": 3663.9326847396, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 57.182, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +20%", "shock_id": "s1", "n": 1000, "mean_delta_usd": 4493.432298659188, "p5_delta_usd": 3060.164531446932, "p_better": 1.0, "mean_profit_usd": 171793.16519485647, "bridge": {"cost_usd": 34.35987174413246, "price_usd": 0.0, "volume_usd": 6282.801710379059, "marketing_usd": -1749.6000000099832, "holding_usd": -74.12928345401828}, "steady_rival_delta_usd": 4515.202019868365, "peak_cash_usd": 3663.9326847396, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 57.182, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +20%", "shock_id": "s2", "n": 1000, "mean_delta_usd": 2072.612209820477, "p5_delta_usd": 451.7997406581268, "p_better": 0.969, "mean_profit_usd": 168384.57241833693, "bridge": {"cost_usd": 422.56449029074366, "price_usd": 0.0, "volume_usd": 3459.910218693292, "marketing_usd": -1749.6000000099832, "holding_usd": -60.262499153570985}, "steady_rival_delta_usd": 2086.099264195138, "peak_cash_usd": 3663.9326847396, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 57.182, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +20%", "shock_id": "s3", "n": 1000, "mean_delta_usd": 2592.4276518177016, "p5_delta_usd": 1182.296962852087, "p_better": 0.998, "mean_profit_usd": 148560.38208503742, "bridge": {"cost_usd": 20.082436098737862, "price_usd": 0.0, "volume_usd": 4388.391328111823, "marketing_usd": -1749.6000000099832, "holding_usd": -66.4461123828716}, "steady_rival_delta_usd": 2619.1159599064786, "peak_cash_usd": 3663.9326847396, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 57.182, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +20%", "shock_id": "s4", "n": 1000, "mean_delta_usd": 10222.883643181536, "p5_delta_usd": 7690.671284112663, "p_better": 1.0, "mean_profit_usd": 166360.55126435857, "bridge": {"cost_usd": -4.1651995977223476e-13, "price_usd": 0.0, "volume_usd": 12064.865608952592, "marketing_usd": -1749.6000000099832, "holding_usd": -92.38196576106856}, "steady_rival_delta_usd": 10238.433644334194, "peak_cash_usd": 3663.9326847396, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 57.182, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +20%", "shock_id": "s5", "n": 1000, "mean_delta_usd": 12446.015776943415, "p5_delta_usd": 5537.294552824274, "p_better": 1.0, "mean_profit_usd": 170186.4545468746, "bridge": {"cost_usd": -3.505895067073618e-14, "price_usd": 0.0, "volume_usd": 14307.729388086009, "marketing_usd": -1749.6000000099832, "holding_usd": -112.11361113260736}, "steady_rival_delta_usd": 14996.42035567054, "peak_cash_usd": 3663.9326847396, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 57.182, "event": "agent_step", "data": {"round": 1, "kind": "result", "text": "“Stock 1wk, marketing +20%”: +$1.8k on average · bad case +$106", "plan_name": "Stock 1wk, marketing +20%", "tier": "engine", "latency_ms": null}}
+{"t": 57.182, "event": "crowd", "data": {"plan_name": "Raise 3% now, marketing +15%", "archetypes": [{"id": 1, "label": "Low-income · price-hunter · A-loyal", "mu": [0.4, -1.0], "sigma": [0.5, 0.5], "bubble": "A's price jump hurts my budget; B's still cheaper."}, {"id": 2, "label": "Low-income · price-hunter · B-loyal", "mu": [-1.0, 0.0], "sigma": [0.5, 0.5], "bubble": "B's price unchanged; A's increase pushes me to switch."}, {"id": 3, "label": "Low-income · moderate · A-loyal", "mu": [0.1, -1.0], "sigma": [0.5, 0.5], "bubble": "A's higher cost feels risky on my fixed pension."}, {"id": 4, "label": "Low-income · moderate · B-loyal", "mu": [-1.0, 0.0], "sigma": [0.5, 0.5], "bubble": "B's reliability matters; A's price hike makes me stay."}, {"id": 5, "label": "Mid-income · price-hunter · A-loyal", "mu": [-1.0, 0.2], "sigma": [0.5, 0.5], "bubble": "A's 3% rise makes B cheaper; I'll likely switch."}, {"id": 6, "label": "Mid-income · price-hunter · B-loyal", "mu": [-1.0, 0.0], "sigma": [0.5, 0.5], "bubble": "B's price stays steady; A's increase nudges me toward B."}, {"id": 7, "label": "Mid-income · moderate · A-loyal", "mu": [0.45, -1.0], "sigma": [0.5, 0.5], "bubble": "3% higher? My family can handle it, but I hate stockouts."}, {"id": 8, "label": "Mid-income · moderate · B-loyal", "mu": [-1.0, 0.45], "sigma": [0.5, 0.5], "bubble": "They raised prices again. I stick with my routine."}, {"id": 9, "label": "High-income · price-hunter · A-loyal", "mu": [0.65, -1.0], "sigma": [0.5, 0.5], "bubble": "3% extra cost? I'll hunt for a discount."}, {"id": 10, "label": "High-income · price-hunter · B-loyal", "mu": [-1.0, 0.65], "sigma": [0.5, 0.5], "bubble": "No dip in price, so I stay loyal to B."}, {"id": 11, "label": "High-income · moderate · A-loyal", "mu": [0.35, -1.0], "sigma": [0.5, 0.5], "bubble": "Quality matters; price hike won't sway me."}, {"id": 12, "label": "High-income · moderate · B-loyal", "mu": [-1.0, 0.35], "sigma": [0.5, 0.5], "bubble": "Reliability matters; this price move won't lure me."}]}}
+{"t": 57.182, "event": "agent_step", "data": {"round": 1, "kind": "shoppers", "text": "Low-income · price-hunter · B-loyal: “B's price unchanged; A's increase pushes me to switch.”", "plan_name": "Raise 3% now, marketing +15%", "tier": "fast", "latency_ms": null}}
+{"t": 57.585, "event": "grid_cell", "data": {"plan_name": "Raise 3% now, marketing +15%", "shock_id": "news", "n": 1000, "mean_delta_usd": -10202.691600815613, "p5_delta_usd": -13877.883200960956, "p_better": 0.0, "mean_profit_usd": 159537.73324886832, "bridge": {"cost_usd": 142.08210279324155, "price_usd": 7812.581246186419, "volume_usd": -16918.439604913598, "marketing_usd": -1312.200000007486, "holding_usd": 73.28465512581444}, "steady_rival_delta_usd": -10228.481692129666, "peak_cash_usd": 10202.691600815617, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 57.585, "event": "grid_cell", "data": {"plan_name": "Raise 3% now, marketing +15%", "shock_id": "s1", "n": 1000, "mean_delta_usd": -9551.711383710668, "p5_delta_usd": -12217.294236056177, "p_better": 0.0, "mean_profit_usd": 157748.02151248662, "bridge": {"cost_usd": 53.43518838942807, "price_usd": 7570.327893462661, "volume_usd": -15925.604417757198, "marketing_usd": -1312.200000007486, "holding_usd": 62.32995220193068}, "steady_rival_delta_usd": -9577.840998087971, "peak_cash_usd": 9551.711383710666, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 57.585, "event": "grid_cell", "data": {"plan_name": "Raise 3% now, marketing +15%", "shock_id": "s2", "n": 1000, "mean_delta_usd": -7026.437122596694, "p5_delta_usd": -9299.784370970561, "p_better": 0.0, "mean_profit_usd": 159285.52308591973, "bridge": {"cost_usd": 267.63868811526635, "price_usd": 7935.486579239742, "volume_usd": -13981.042450005616, "marketing_usd": -1312.200000007486, "holding_usd": 63.6800600614042}, "steady_rival_delta_usd": -7074.576846325844, "peak_cash_usd": 7026.437122596697, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 57.585, "event": "grid_cell", "data": {"plan_name": "Raise 3% now, marketing +15%", "shock_id": "s3", "n": 1000, "mean_delta_usd": -9267.556628919498, "p5_delta_usd": -11989.799748970509, "p_better": 0.0, "mean_profit_usd": 136700.3978043002, "bridge": {"cost_usd": 98.93166898178298, "price_usd": 6686.618835874622, "volume_usd": -14807.197632192532, "marketing_usd": -1312.200000007486, "holding_usd": 66.29049842411843}, "steady_rival_delta_usd": -9286.991776201858, "peak_cash_usd": 9267.556628919503, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 57.585, "event": "grid_cell", "data": {"plan_name": "Raise 3% now, marketing +15%", "shock_id": "s4", "n": 1000, "mean_delta_usd": -5638.79149828987, "p5_delta_usd": -6389.4738539816, "p_better": 0.0, "mean_profit_usd": 150498.8761228872, "bridge": {"cost_usd": -1.7675858514763065e-13, "price_usd": 7155.681732950947, "volume_usd": -11531.048879186106, "marketing_usd": -1312.200000007486, "holding_usd": 48.77564795278023}, "steady_rival_delta_usd": -5670.834320268536, "peak_cash_usd": 5638.7914982898665, "payback_week": null, "over_cash": true, "source": "local"}}
+{"t": 57.585, "event": "grid_cell", "data": {"plan_name": "Raise 3% now, marketing +15%", "shock_id": "s5", "n": 1000, "mean_delta_usd": -2564.4523847608984, "p5_delta_usd": -9588.974758244294, "p_better": 0.392, "mean_profit_usd": 155175.98638517025, "bridge": {"cost_usd": 3.115763532422929e-13, "price_usd": 7389.3705029265775, "volume_usd": -8689.870921986456, "marketing_usd": -1312.200000007486, "holding_usd": 48.248034306468554}, "steady_rival_delta_usd": -1293.1957187240025, "peak_cash_usd": 2564.4523847609007, "payback_week": null, "over_cash": false, "source": "local"}}
+{"t": 57.585, "event": "agent_step", "data": {"round": 1, "kind": "result", "text": "“Raise 3% now, marketing +15%”: −$10.2k on average · bad case −$13.9k", "plan_name": "Raise 3% now, marketing +15%", "tier": "engine", "latency_ms": null}}
+{"t": 57.585, "event": "grid_summary", "data": {"baseline_profit_usd": {"news": 169740.4248496839, "s1": 167299.7328961973, "s2": 166311.96020851648, "s3": 145967.9544332197, "s4": 156137.66762117704, "s5": 157740.43876993118}, "best_today": "Stock 1wk, raise 3% wk1", "safest": "Stock 1wk, marketing +20%", "verified": false}}
+{"t": 58.173, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "We"}}
+{"t": 58.178, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " need"}}
+{"t": 58.188, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " to propose"}}
+{"t": 58.2, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " up to 3 new plans"}}
+{"t": 58.21, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " for"}}
+{"t": 58.22, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " round 2. We have"}}
+{"t": 58.232, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " results"}}
+{"t": 58.243, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " from round"}}
+{"t": 58.252, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1. The best plans"}}
+{"t": 58.272, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " so far: \"Stock"}}
+{"t": 58.376, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1wk, raise"}}
+{"t": 58.376, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 3% wk1\" and"}}
+{"t": 58.377, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " \"Stock 1wk"}}
+{"t": 58.377, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", marketing +20%"}}
+{"t": 58.377, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\". Both have positive mean"}}
+{"t": 58.377, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " and good bad cases"}}
+{"t": 58.377, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ". \"Stock 1w"}}
+{"t": 58.378, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k, raise 3%"}}
+{"t": 58.378, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " wk1\" has mean +"}}
+{"t": 58.378, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "3.2k"}}
+{"t": 58.38, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " on"}}
+{"t": 58.391, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " news"}}
+{"t": 58.402, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", bad case -0."}}
+{"t": 58.413, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "2k ("}}
+{"t": 58.423, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "almost"}}
+{"t": 58.435, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " break"}}
+{"t": 58.444, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "-e"}}
+{"t": 58.454, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "ven). \"Stock 1"}}
+{"t": 58.467, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "wk, marketing +2"}}
+{"t": 58.476, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0%\" has mean +1"}}
+{"t": 58.487, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ".8k, bad case"}}
+{"t": 58.497, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " +0.1k ("}}
+{"t": 58.51, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "positive). The"}}
+{"t": 58.521, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " latter"}}
+{"t": 58.528, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " seems"}}
+{"t": 58.54, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " more"}}
+{"t": 58.551, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " robust in bad case. However"}}
+{"t": 58.562, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", we"}}
+{"t": 58.572, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " need to consider cash"}}
+{"t": 58.585, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ": both"}}
+{"t": 58.593, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " have cash around"}}
+{"t": 58.603, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 3.7"}}
+{"t": 58.614, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "-3.8k,"}}
+{"t": 58.624, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " which is under cash_available"}}
+{"t": 58.635, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 4000? Wait"}}
+{"t": 58.65, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " cash_available is 40"}}
+{"t": 58.656, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "00.0"}}
+{"t": 58.667, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " (pres"}}
+{"t": 58.678, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "umably $40"}}
+{"t": 58.688, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "00). The cash"}}
+{"t": 58.699, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " column shows \"cash"}}
+{"t": 58.71, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 3.8\" and"}}
+{"t": 58.725, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " \"cash 3."}}
+{"t": 58.734, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "7\" - likely"}}
+{"t": 58.742, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " in $"}}
+{"t": 58.752, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k? The table says cash"}}
+{"t": 58.763, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " ="}}
+{"t": 58.774, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " most extra cash tied up,"}}
+{"t": 58.784, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " in"}}
+{"t": 58.795, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " $k? The numbers"}}
+{"t": 58.895, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ":"}}
+{"t": 58.895, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " \""}}
+{"t": 58.895, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "cash 3"}}
+{"t": 58.895, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ".8\" and \"c"}}
+{"t": 58.895, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "ash 3.7\""}}
+{"t": 58.896, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " -"}}
+{"t": 58.896, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " that's $3.8"}}
+{"t": 58.896, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k and"}}
+{"t": 58.896, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " $3.7k,"}}
+{"t": 58.9, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " which is less than $4"}}
+{"t": 58.916, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k available"}}
+{"t": 58.922, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ". So they"}}
+{"t": 58.933, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " are within cash. The \""}}
+{"t": 58.943, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "O"}}
+{"t": 58.953, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "VER CASH\" flag"}}
+{"t": 58.964, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " appears for plans with cash >"}}
+{"t": 58.987, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 4?"}}
+{"t": 58.997, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " Actually \"Raise price"}}
+{"t": 59.007, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 5% now\" shows"}}
+{"t": 59.018, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " cash 40.6"}}
+{"t": 59.028, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " OVER CASH (that"}}
+{"t": 59.039, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "'s $40.6"}}
+{"t": 59.051, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k). \"Stock up"}}
+{"t": 59.063, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 4 weeks now\" shows cash"}}
+{"t": 59.074, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 15.8 OVER"}}
+{"t": 59.082, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " CASH. \"Raise"}}
+{"t": 59.093, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 3% now, marketing"}}
+{"t": 59.104, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " +15%\" shows cash"}}
+{"t": 59.115, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 10.2 OVER"}}
+{"t": 59.125, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " CASH. So the"}}
+{"t": 59.135, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " two good plans are within cash"}}
+{"t": 59.146, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ".\n\nWe need to propose new"}}
+{"t": 59.157, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " plans that address weak"}}
+{"t": 59.167, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " spots. The"}}
+{"t": 59.179, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " weak spots:"}}
+{"t": 59.189, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " For \"Stock 1w"}}
+{"t": 59.199, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k, raise 3%"}}
+{"t": 59.21, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " wk1\", worst bad case"}}
+{"t": 59.221, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " in news (-0.2"}}
+{"t": 59.231, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "), biggest drag:"}}
+{"t": 59.242, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " customers won/lost -5"}}
+{"t": 59.253, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ".0. So"}}
+{"t": 59.264, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " losing"}}
+{"t": 59.274, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " customers"}}
+{"t": 59.284, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " due to price increase. For"}}
+{"t": 59.295, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " \"Stock 1wk"}}
+{"t": 59.307, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", marketing +20%\","}}
+{"t": 59.316, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " worst bad case in news (+"}}
+{"t": 59.328, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0.1), biggest drag"}}
+{"t": 59.419, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ": marketing -1.7"}}
+{"t": 59.42, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " (cost of marketing). So"}}
+{"t": 59.42, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " marketing"}}
+{"t": 59.42, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " costs"}}
+{"t": 59.42, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " money but"}}
+{"t": 59.42, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " retains"}}
+{"t": 59.421, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " customers.\n\nWe could try"}}
+{"t": 59.421, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " a combination"}}
+{"t": 59.423, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ": stock"}}
+{"t": 59.445, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1 week, raise price less"}}
+{"t": 59.458, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " (maybe"}}
+{"t": 59.47, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 2%)"}}
+{"t": 59.476, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " and marketing moderate"}}
+{"t": 59.491, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " ("}}
+{"t": 59.499, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "10%). Or stock"}}
+{"t": 59.508, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 2 weeks?"}}
+{"t": 59.518, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " But extra"}}
+{"t": 59.529, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_stock_weeks max"}}
+{"t": 59.54, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 8. Could"}}
+{"t": 59.552, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " also"}}
+{"t": 59.561, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " consider"}}
+{"t": 59.571, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " switching supplier?"}}
+{"t": 59.587, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " But"}}
+{"t": 59.593, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " alt"}}
+{"t": 59.603, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_cost_change_pct 0"}}
+{"t": 59.614, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "..50 ("}}
+{"t": 59.624, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "no cheaper supplier)."}}
+{"t": 59.635, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " Could"}}
+{"t": 59.651, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " switch to alternative supplier with higher"}}
+{"t": 59.656, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " cost but maybe less"}}
+{"t": 59.667, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " shock"}}
+{"t": 59.678, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " exposure? alt"}}
+{"t": 59.69, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_shock_exposure default"}}
+{"t": 59.7, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 0.3. Might"}}
+{"t": 59.71, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " be worth testing"}}
+{"t": 59.725, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " a"}}
+{"t": 59.731, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " supplier switch with some"}}
+{"t": 59.742, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " stock"}}
+{"t": 59.753, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "."}}
+{"t": 59.763, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\n\nAlso consider"}}
+{"t": 59.773, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " staged timing: buy stock early"}}
+{"t": 59.784, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " (stock_week 0)"}}
+{"t": 59.795, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " to lock in today's cost"}}
+{"t": 59.808, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", then a smaller price rise"}}
+{"t": 59.818, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " later, around when cheap stock"}}
+{"t": 59.828, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " runs out (about onset +"}}
+{"t": 59.842, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " lead time). Lead time is"}}
+{"t": 59.849, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1 week. So stock"}}
+{"t": 59.943, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_week"}}
+{"t": 59.943, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 0, extra"}}
+{"t": 59.944, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_stock_weeks maybe"}}
+{"t": 59.944, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 2-3 weeks,"}}
+{"t": 59.944, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " then price increase"}}
+{"t": 59.945, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " after that"}}
+{"t": 59.945, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " stock runs out ("}}
+{"t": 59.945, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "price_change"}}
+{"t": 59.946, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_week around"}}
+{"t": 59.955, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 2-"}}
+{"t": 59.969, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "3). That"}}
+{"t": 59.976, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " could"}}
+{"t": 59.986, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " be a plan"}}
+{"t": 59.998, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ".\n\nWe have"}}
+{"t": 60.008, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " cash_available 400"}}
+{"t": 60.019, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0 ($4k). Extra"}}
+{"t": 60.029, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " stock costs"}}
+{"t": 60.039, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ": unit_cost"}}
+{"t": 60.052, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " $"}}
+{"t": 60.061, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "4.4, weekly_s"}}
+{"t": 60.072, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "ales 900 plates"}}
+{"t": 60.081, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ". So"}}
+{"t": 60.092, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " one"}}
+{"t": 60.102, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " week of stock"}}
+{"t": 60.119, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " costs"}}
+{"t": 60.124, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 900*4"}}
+{"t": 60.134, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ".4 = $3"}}
+{"t": 60.145, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "960. That"}}
+{"t": 60.156, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "'s almost"}}
+{"t": 60.166, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " the"}}
+{"t": 60.177, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " entire cash. So extra_stock"}}
+{"t": 60.187, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_weeks"}}
+{"t": 60.198, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1 week"}}
+{"t": 60.209, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " costs"}}
+{"t": 60.22, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " ~$3.96"}}
+{"t": 60.231, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k. That"}}
+{"t": 60.243, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "'s within"}}
+{"t": 60.251, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " cash."}}
+{"t": 60.262, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 2 weeks would be"}}
+{"t": 60.274, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " ~$7.9k"}}
+{"t": 60.283, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " > cash. So we can"}}
+{"t": 60.294, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " only afford"}}
+{"t": 60.309, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1 extra week of stock"}}
+{"t": 60.315, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " (maybe 1"}}
+{"t": 60.327, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " week"}}
+{"t": 60.337, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "). The \"Stock"}}
+{"t": 60.349, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1wk\""}}
+{"t": 60.359, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " plans already do"}}
+{"t": 60.369, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " that. Could"}}
+{"t": 60.466, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " we do extra"}}
+{"t": 60.467, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_stock_weeks 1"}}
+{"t": 60.467, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " but at"}}
+{"t": 60.467, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " stock_week 0? That"}}
+{"t": 60.467, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "'s what they"}}
+{"t": 60.467, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " did? \"Stock 1"}}
+{"t": 60.467, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "wk, raise 3"}}
+{"t": 60.468, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "% wk1\" likely means"}}
+{"t": 60.47, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " extra_stock_weeks=1"}}
+{"t": 60.477, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", stock_week=0,"}}
+{"t": 60.485, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price_change_p"}}
+{"t": 60.496, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "ct=3,"}}
+{"t": 60.507, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price_change_week=1,"}}
+{"t": 60.518, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price_end_week=2"}}
+{"t": 60.529, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "4."}}
+{"t": 60.539, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " \"Stock 1wk"}}
+{"t": 60.552, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", marketing +20%\""}}
+{"t": 60.561, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " likely extra_stock_weeks="}}
+{"t": 60.573, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "1, stock_week=0"}}
+{"t": 60.582, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", marketing_change_pct="}}
+{"t": 60.593, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "20.\n\nWe could"}}
+{"t": 60.603, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " try extra"}}
+{"t": 60.615, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_stock_weeks=1"}}
+{"t": 60.625, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", stock_week=0,"}}
+{"t": 60.635, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price_change_pct=2"}}
+{"t": 60.646, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", price_change_week=2"}}
+{"t": 60.656, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", price_end_week=2"}}
+{"t": 60.668, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "4,"}}
+{"t": 60.679, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " marketing_change_pct=1"}}
+{"t": 60.688, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0. Or"}}
+{"t": 60.701, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " maybe no"}}
+{"t": 60.71, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price change,"}}
+{"t": 60.719, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " just marketing?"}}
+{"t": 60.731, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " But marketing alone"}}
+{"t": 60.741, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " didn"}}
+{"t": 60.753, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "'t appear"}}
+{"t": 60.766, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "."}}
+{"t": 60.774, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " Could test"}}
+{"t": 60.786, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " \"Stock 1wk"}}
+{"t": 60.796, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", marketing +10%\""}}
+{"t": 60.808, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " to"}}
+{"t": 60.817, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " reduce"}}
+{"t": 60.827, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " marketing cost.\n\nAlso"}}
+{"t": 60.843, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " consider switching supplier:"}}
+{"t": 60.849, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " switch"}}
+{"t": 60.859, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_supplier=true"}}
+{"t": 60.871, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", alt_cost_change_pct"}}
+{"t": 60.881, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " maybe 10%"}}
+{"t": 60.891, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " (h"}}
+{"t": 60.992, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "igher cost), alt_lead"}}
+{"t": 60.992, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_time_weeks maybe 2"}}
+{"t": 60.992, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", alt_shock_exposure"}}
+{"t": 60.992, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 0.3. But"}}
+{"t": 60.992, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " that"}}
+{"t": 60.993, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " would increase cost. Might not"}}
+{"t": 60.993, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " be"}}
+{"t": 60.993, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " good.\n\nWe need to propose"}}
+{"t": 60.993, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " up to 3 new plans"}}
+{"t": 60.999, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ". Let's think of three"}}
+{"t": 61.007, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " distinct ideas:\n\n1. \""}}
+{"t": 61.019, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "Stock 1wk,"}}
+{"t": 61.029, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " raise 2% wk2"}}
+{"t": 61.042, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\" - smaller"}}
+{"t": 61.05, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price increase later"}}
+{"t": 61.061, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ","}}
+{"t": 61.077, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " to reduce customer"}}
+{"t": 61.083, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " loss.\n2. \"Stock"}}
+{"t": 61.093, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1wk, marketing"}}
+{"t": 61.104, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " +10%\" - less"}}
+{"t": 61.119, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " marketing spend"}}
+{"t": 61.125, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", still retain"}}
+{"t": 61.136, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " customers.\n3. \"Stock"}}
+{"t": 61.146, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1"}}
+{"t": 61.157, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "wk, raise 2"}}
+{"t": 61.167, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "% wk2, marketing"}}
+{"t": 61.178, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " +5"}}
+{"t": 61.189, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "%\" - combo"}}
+{"t": 61.199, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ".\n\nBut we must ensure"}}
+{"t": 61.21, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " each plan has unique"}}
+{"t": 61.221, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " name <="}}
+{"t": 61.233, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "32 chars.\n\nWe also"}}
+{"t": 61.242, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " need to consider the"}}
+{"t": 61.257, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " weak"}}
+{"t": 61.266, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " spot"}}
+{"t": 61.274, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " of \"Stock 1w"}}
+{"t": 61.284, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k, raise 3%"}}
+{"t": 61.3, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " wk1\":"}}
+{"t": 61.309, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " customer loss -5.0"}}
+{"t": 61.316, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " in bad case. So reducing"}}
+{"t": 61.328, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price increase magnitude"}}
+{"t": 61.338, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " or delaying"}}
+{"t": 61.348, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " it might"}}
+{"t": 61.361, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " help. The"}}
+{"t": 61.371, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " weak spot of \"Stock"}}
+{"t": 61.381, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1wk, marketing +"}}
+{"t": 61.392, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "20%\": marketing cost"}}
+{"t": 61.402, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " -1.7. So"}}
+{"t": 61.413, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " reducing marketing spend"}}
+{"t": 61.425, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " might"}}
+{"t": 61.515, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " improve"}}
+{"t": 61.516, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " bad"}}
+{"t": 61.516, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " case.\n\nWe also"}}
+{"t": 61.516, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " have scenario"}}
+{"t": 61.516, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " s"}}
+{"t": 61.516, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "4 \""}}
+{"t": 61.516, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "Corner Diner cuts 5"}}
+{"t": 61.516, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "%\" where \""}}
+{"t": 61.519, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "Stock 1wk,"}}
+{"t": 61.531, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " raise 3% wk1"}}
+{"t": 61.544, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\" got +8.7"}}
+{"t": 61.554, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " mean, +8.2"}}
+{"t": 61.563, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " bad case (good). \""}}
+{"t": 61.574, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "Stock 1wk,"}}
+{"t": 61.584, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " marketing +20%\" got"}}
+{"t": 61.596, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " +10.2 mean"}}
+{"t": 61.606, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", +7.7 bad"}}
+{"t": 61.615, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " case. So both"}}
+{"t": 61.627, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " good.\n\nWe need to propose"}}
+{"t": 61.637, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " plans that are still OK"}}
+{"t": 61.647, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " in bad case. Look"}}
+{"t": 61.659, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " at bad"}}
+{"t": 61.669, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " case column"}}
+{"t": 61.681, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " for each scenario"}}
+{"t": 61.691, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ". The worst"}}
+{"t": 61.701, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " bad case across scenarios for"}}
+{"t": 61.711, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " each plan: For \"Stock"}}
+{"t": 61.725, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1wk, raise"}}
+{"t": 61.732, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 3% wk1\","}}
+{"t": 61.745, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " the worst bad case is -"}}
+{"t": 61.754, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0.2 (news)."}}
+{"t": 61.768, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " For \"Stock 1w"}}
+{"t": 61.778, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k, marketing +20"}}
+{"t": 61.786, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "%\", worst bad case is +"}}
+{"t": 61.797, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0.1 (news)."}}
+{"t": 61.81, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " So marketing"}}
+{"t": 61.818, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " plan"}}
+{"t": 61.834, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " is slightly"}}
+{"t": 61.842, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " better in worst"}}
+{"t": 61.85, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " case.\n\nBut"}}
+{"t": 61.861, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " we can"}}
+{"t": 61.872, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " try to improve the"}}
+{"t": 61.882, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " marketing plan's"}}
+{"t": 61.892, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " average"}}
+{"t": 61.903, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " by adding"}}
+{"t": 61.914, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " a small price"}}
+{"t": 61.926, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " increase later? However"}}
+{"t": 61.939, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price"}}
+{"t": 62.044, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " increase risks"}}
+{"t": 62.045, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " customer loss. Maybe we"}}
+{"t": 62.045, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " can do a temporary"}}
+{"t": 62.046, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price increase?"}}
+{"t": 62.046, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price"}}
+{"t": 62.047, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_end_week earlier"}}
+{"t": 62.047, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "?"}}
+{"t": 62.047, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " But price_end_week"}}
+{"t": 62.047, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 2"}}
+{"t": 62.047, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "4 means permanent"}}
+{"t": 62.052, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ". Could do temporary"}}
+{"t": 62.065, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " surcharge for"}}
+{"t": 62.076, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " a few weeks? But the"}}
+{"t": 62.085, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " news shock"}}
+{"t": 62.095, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " is"}}
+{"t": 62.11, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " persistent"}}
+{"t": 62.116, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "? The scenarios"}}
+{"t": 62.127, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " are persistent"}}
+{"t": 62.142, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price shocks"}}
+{"t": 62.148, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ". So"}}
+{"t": 62.159, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " temporary might"}}
+{"t": 62.169, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " not help.\n\nAlternatively"}}
+{"t": 62.18, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", we could try"}}
+{"t": 62.19, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " \"Stock 2wk"}}
+{"t": 62.202, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ","}}
+{"t": 62.213, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " raise 3"}}
+{"t": 62.227, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "% wk3"}}
+{"t": 62.233, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\" but cash would"}}
+{"t": 62.244, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " be OVER"}}
+{"t": 62.254, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " CASH (2 weeks stock"}}
+{"t": 62.265, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " ~$"}}
+{"t": 62.277, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "7"}}
+{"t": 62.286, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ".9k > $4"}}
+{"t": 62.298, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k). So not allowed."}}
+{"t": 62.308, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\n\nWhat"}}
+{"t": 62.319, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " about switching"}}
+{"t": 62.329, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " supplier?"}}
+{"t": 62.34, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " If"}}
+{"t": 62.351, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " we switch to"}}
+{"t": 62.361, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " a supplier with higher cost but"}}
+{"t": 62.374, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " less shock exposure? alt"}}
+{"t": 62.385, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_shock_exposure default"}}
+{"t": 62.392, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 0.3. Our"}}
+{"t": 62.404, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " exposed_cost_share is"}}
+{"t": 62.417, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 0.24. So"}}
+{"t": 62.425, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " alternative"}}
+{"t": 62.436, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " supplier might have similar exposure."}}
+{"t": 62.449, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " Not sure.\n\nWe could also"}}
+{"t": 62.459, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " consider \"Stock"}}
+{"t": 62.468, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1wk, raise"}}
+{"t": 62.57, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 3% wk1"}}
+{"t": 62.57, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", marketing +10%\""}}
+{"t": 62.57, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " but that might"}}
+{"t": 62.57, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " increase cash"}}
+{"t": 62.571, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "?"}}
+{"t": 62.571, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " Marketing doesn"}}
+{"t": 62.571, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "'t tie"}}
+{"t": 62.571, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " up cash? marketing"}}
+{"t": 62.571, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_change_pct is percentage"}}
+{"t": 62.574, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " change"}}
+{"t": 62.585, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " in marketing spend?"}}
+{"t": 62.594, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " It"}}
+{"t": 62.605, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " likely"}}
+{"t": 62.618, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " costs money."}}
+{"t": 62.626, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " The cash column"}}
+{"t": 62.638, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " for"}}
+{"t": 62.648, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " \"Stock 1wk"}}
+{"t": 62.659, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", marketing +20%\""}}
+{"t": 62.67, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " is 3.7 ("}}
+{"t": 62.685, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "same as stock 1w"}}
+{"t": 62.691, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "k). So marketing"}}
+{"t": 62.701, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " doesn"}}
+{"t": 62.714, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "'t increase cash tied"}}
+{"t": 62.723, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " up"}}
+{"t": 62.735, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "? It"}}
+{"t": 62.745, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " might be expense"}}
+{"t": 62.76, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " not cash tied"}}
+{"t": 62.765, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " up. So we"}}
+{"t": 62.776, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " can combine.\n\nBut we must"}}
+{"t": 62.786, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " not"}}
+{"t": 62.796, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " repeat"}}
+{"t": 62.809, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " names. Let"}}
+{"t": 62.821, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "'s propose three"}}
+{"t": 62.829, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " new"}}
+{"t": 62.84, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " plans:\n\nPlan"}}
+{"t": 62.851, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " A: \"Stock 1"}}
+{"t": 62.861, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "wk, raise 2"}}
+{"t": 62.874, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "% wk2\" - extra"}}
+{"t": 62.882, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_stock_weeks=1,"}}
+{"t": 62.893, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " stock_week=0, price"}}
+{"t": 62.913, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_change_pct=2,"}}
+{"t": 62.914, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price_change_week=2,"}}
+{"t": 62.926, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price_end_week=24"}}
+{"t": 62.935, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", marketing_change_pct="}}
+{"t": 62.945, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0, switch_supplier"}}
+{"t": 62.958, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "=false.\n\nPlan B: \""}}
+{"t": 62.968, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "Stock 1wk,"}}
+{"t": 62.979, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " marketing +10%\" -"}}
+{"t": 62.992, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " extra_stock_weeks=1"}}
+{"t": 63.091, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", stock_week=0,"}}
+{"t": 63.091, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " marketing_change_pct=1"}}
+{"t": 63.091, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0."}}
+{"t": 63.091, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\n\nPlan C: \"Stock"}}
+{"t": 63.091, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1wk, raise"}}
+{"t": 63.091, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 2% wk2, marketing"}}
+{"t": 63.092, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " +5%\" - combo"}}
+{"t": 63.092, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ".\n\nBut we need to specify"}}
+{"t": 63.093, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " all fields:"}}
+{"t": 63.096, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price_change_pct, price"}}
+{"t": 63.108, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_change_week, price"}}
+{"t": 63.117, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_end_week, extra_stock_"}}
+{"t": 63.128, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "weeks, stock_week, marketing"}}
+{"t": 63.139, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_change_pct, switch_s"}}
+{"t": 63.15, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "upplier, alt_cost_change"}}
+{"t": 63.161, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_pct, alt_lead"}}
+{"t": 63.172, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_time_weeks, alt_sh"}}
+{"t": 63.185, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "ock_exposure. For plans"}}
+{"t": 63.193, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " without supplier"}}
+{"t": 63.206, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " switch, we"}}
+{"t": 63.217, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " can set switch_supplier"}}
+{"t": 63.225, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "=false, alt_cost_change_p"}}
+{"t": 63.235, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "ct=0, alt_"}}
+{"t": 63.247, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "lead_time_weeks=1"}}
+{"t": 63.257, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", alt_shock_exposure"}}
+{"t": 63.271, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "=0.3 (defaults"}}
+{"t": 63.278, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "). But"}}
+{"t": 63.29, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " the schema requires all fields?"}}
+{"t": 63.3, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " The instruction"}}
+{"t": 63.31, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " says"}}
+{"t": 63.321, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " each"}}
+{"t": 63.334, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " plan is a few knobs"}}
+{"t": 63.343, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ": price_change_pct (-"}}
+{"t": 63.356, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "20..20)"}}
+{"t": 63.364, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " from price_change_week (0"}}
+{"t": 63.376, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "..23), lasting until"}}
+{"t": 63.386, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " price_end_week (1.."}}
+{"t": 63.396, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "24; 24"}}
+{"t": 63.409, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " = to the end),"}}
+{"t": 63.416, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " extra_stock_weeks (0"}}
+{"t": 63.427, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "..8), one"}}
+{"t": 63.438, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " extra raw-material order placed in"}}
+{"t": 63.448, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " stock_week (0..2"}}
+{"t": 63.46, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "3); marketing_change_pct"}}
+{"t": 63.47, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " (-50..10"}}
+{"t": 63.484, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0); switch_supplier"}}
+{"t": 63.492, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " (bool) with alt_cost"}}
+{"t": 63.502, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_change_pct (0.."}}
+{"t": 63.516, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "50), alt_lead"}}
+{"t": 63.613, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "_time_weeks (1.."}}
+{"t": 63.614, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "16) and alt_sh"}}
+{"t": 63.614, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "ock_exposure (0.."}}
+{"t": 63.614, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "1,"}}
+{"t": 63.615, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " default 0.3)."}}
+{"t": 63.615, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " So we must provide"}}
+{"t": 63.615, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " all these"}}
+{"t": 63.615, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " fields in"}}
+{"t": 63.615, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " the plan object."}}
+{"t": 63.62, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\n\nWe'll create"}}
+{"t": 63.634, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " three"}}
+{"t": 63.642, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " plan"}}
+{"t": 63.654, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " objects.\n\nWe"}}
+{"t": 63.666, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " also"}}
+{"t": 63.676, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " need to output"}}
+{"t": 63.685, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " thought"}}
+{"t": 63.699, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", action, plans"}}
+{"t": 63.706, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ", pick, why.\n\nPick"}}
+{"t": 63.718, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ": the"}}
+{"t": 63.728, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " best plan so far. Based"}}
+{"t": 63.737, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " on results, \"Stock"}}
+{"t": 63.749, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " 1wk, marketing +"}}
+{"t": 63.759, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "20%\" has best bad"}}
+{"t": 63.769, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " case (+"}}
+{"t": 63.78, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0.1) and good"}}
+{"t": 63.791, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " mean. \""}}
+{"t": 63.801, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "Stock 1wk,"}}
+{"t": 63.813, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " raise 3% wk1"}}
+{"t": 63.827, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\" has slightly higher"}}
+{"t": 63.836, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " mean but worse bad case."}}
+{"t": 63.845, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " The business cannot"}}
+{"t": 63.859, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " afford to gamble,"}}
+{"t": 63.866, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " so prefer the one with positive"}}
+{"t": 63.877, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " bad case. So pick \""}}
+{"t": 63.887, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "Stock 1wk,"}}
+{"t": 63.897, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " marketing +20%\"."}}
+{"t": 63.909, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " But we need to pick"}}
+{"t": 63.918, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " from"}}
+{"t": 63.929, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " tested"}}
+{"t": 63.94, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " list"}}
+{"t": 63.95, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "?"}}
+{"t": 63.961, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " The pick"}}
+{"t": 63.972, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " should"}}
+{"t": 63.985, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " be the name of the plan"}}
+{"t": 63.994, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " we prefer so far (ex"}}
+{"t": 64.004, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "actly as named;"}}
+{"t": 64.016, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " use \"Do nothing\" if"}}
+{"t": 64.025, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " nothing beats it). So we"}}
+{"t": 64.037, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " can pick \"Stock 1"}}
+{"t": 64.138, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "wk, marketing +2"}}
+{"t": 64.139, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "0%\"."}}
+{"t": 64.139, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\n\nNow thought"}}
+{"t": 64.139, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ": reasoning"}}
+{"t": 64.139, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " in"}}
+{"t": 64.139, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " <=250 chars."}}
+{"t": 64.139, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "\n\nAction"}}
+{"t": 64.139, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": ": \"test\" with"}}
+{"t": 64.139, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": " new plans.\n\nLet"}}
+{"t": 64.143, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "'s craft JSON"}}
+{"t": 64.154, "event": "reasoning", "data": {"role": "analyst", "round": 2, "delta": "."}}
+{"t": 65.534, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 3, "tokens_in": 5482, "tokens_out": 6280, "p50_ttft_ms": 955.1, "tok_per_s": 320.8, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 9, "tokens_in": 5210, "tokens_out": 3441, "p50_ttft_ms": 1279.2, "tok_per_s": 49.9, "errors": 1}}, "call_share": {"ultra": 20.0, "super": 20.0, "fast": 60.0}, "token_share": {"ultra": 50.6, "super": 12.1, "fast": 37.2}, "cost_usd": 0.026512, "cost_all_ultra_usd": 0.043361, "savings_pct": 38.9, "job": {"id": null, "status": "idle"}}}
+{"t": 65.534, "event": "reasoning_done", "data": {"role": "analyst", "round": 2}}
+{"t": 65.534, "event": "agent_step", "data": {"round": 2, "kind": "think", "text": "Two plans show promise: 'Stock 1wk, raise 3% wk1' (mean +3.2k, bad -0.2k) and 'Stock 1wk, marketing +20%' (mean +1.8k, bad +0.1k). The marketing plan has a positive worst-case, crucial for a small business. Its weak spot is marketing cost (-1.7k). The price-rise plan loses customers (-5.0k).", "plan_name": null, "tier": "ultra", "latency_ms": 7948}}
+{"t": 65.534, "event": "plan", "data": {"name": "Stock 1wk, raise 2% wk2", "source": "ai", "round": 2, "spec": {"name": "Stock 1wk, raise 2% wk2", "price_change_pct": 2.0, "price_change_week": 2, "extra_stock_weeks": 1.0, "stock_week": 0, "marketing_change_pct": 0.0, "switch_supplier": false, "alt_cost_change_pct": 0.0, "alt_lead_time_weeks": 1, "alt_shock_exposure": 0.3, "price_end_week": 24}}}
+{"t": 65.535, "event": "agent_step", "data": {"round": 2, "kind": "test", "text": "Testing “Stock 1wk, raise 2% wk2” in every future.", "plan_name": "Stock 1wk, raise 2% wk2", "tier": "ultra", "latency_ms": null}}
+{"t": 65.535, "event": "plan", "data": {"name": "Stock 1wk, marketing +10%", "source": "ai", "round": 2, "spec": {"name": "Stock 1wk, marketing +10%", "price_change_pct": 0.0, "price_change_week": 0, "extra_stock_weeks": 1.0, "stock_week": 0, "marketing_change_pct": 10.0, "switch_supplier": false, "alt_cost_change_pct": 0.0, "alt_lead_time_weeks": 1, "alt_shock_exposure": 0.3, "price_end_week": 24}}}
+{"t": 65.535, "event": "agent_step", "data": {"round": 2, "kind": "test", "text": "Testing “Stock 1wk, marketing +10%” in every future.", "plan_name": "Stock 1wk, marketing +10%", "tier": "ultra", "latency_ms": null}}
+{"t": 65.535, "event": "plan", "data": {"name": "Stock 1wk, raise 2% wk2, mkt +5%", "source": "ai", "round": 2, "spec": {"name": "Stock 1wk, raise 2% wk2, mkt +5%", "price_change_pct": 2.0, "price_change_week": 2, "extra_stock_weeks": 1.0, "stock_week": 0, "marketing_change_pct": 5.0, "switch_supplier": false, "alt_cost_change_pct": 0.0, "alt_lead_time_weeks": 1, "alt_shock_exposure": 0.3, "price_end_week": 24}}}
+{"t": 65.535, "event": "agent_step", "data": {"round": 2, "kind": "test", "text": "Testing “Stock 1wk, raise 2% wk2, mkt +5%” in every future.", "plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "tier": "ultra", "latency_ms": null}}
+{"t": 75.196, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 3, "tokens_in": 5482, "tokens_out": 6280, "p50_ttft_ms": 955.1, "tok_per_s": 320.8, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 10, "tokens_in": 5866, "tokens_out": 3875, "p50_ttft_ms": 1281.9, "tok_per_s": 50.1, "errors": 1}}, "call_share": {"ultra": 18.8, "super": 18.8, "fast": 62.5}, "token_share": {"ultra": 48.4, "super": 11.6, "fast": 40.1}, "cost_usd": 0.026656, "cost_all_ultra_usd": 0.045319, "savings_pct": 41.2, "job": {"id": null, "status": "idle"}}}
+{"t": 75.359, "event": "crowd", "data": {"plan_name": "Stock 1wk, raise 2% wk2", "archetypes": [{"id": 1, "label": "Low-income · price-hunter · A-loyal", "mu": [0.85, -1.0], "sigma": [0.5, 0.5], "bubble": "Great deal! My budget stretches further now."}, {"id": 2, "label": "Low-income · price-hunter · B-loyal", "mu": [-1.0, 0.85], "sigma": [0.5, 0.5], "bubble": "A's price hike? I'm switching to B immediately."}, {"id": 3, "label": "Low-income · moderate · A-loyal", "mu": [0.35, -1.0], "sigma": [0.5, 0.5], "bubble": "Another small rise? I'll just keep buying my usual."}, {"id": 4, "label": "Low-income · moderate · B-loyal", "mu": [-1.0, 0.35], "sigma": [0.5, 0.5], "bubble": "B's price is steady; I'll stick with what's reliable."}, {"id": 5, "label": "Mid-income · price-hunter · A-loyal", "mu": [0.45, -1.0], "sigma": [0.5, 0.5], "bubble": "A's price is still a bargain compared to B's."}, {"id": 6, "label": "Mid-income · price-hunter · B-loyal", "mu": [-1.0, 0.45], "sigma": [0.5, 0.5], "bubble": "B's price is holding; I'll stick with the known value."}, {"id": 7, "label": "Mid-income · moderate · A-loyal", "mu": [0.65, 0.25], "sigma": [0.5, 0.5], "bubble": "Still love the diner, but stock worries me."}, {"id": 8, "label": "Mid-income · moderate · B-loyal", "mu": [0.15, 0.55], "sigma": [0.5, 0.5], "bubble": "Hmm, price up a bit, but still sticking with B."}, {"id": 9, "label": "High-income · price-hunter · A-loyal", "mu": [0.85, 0.15], "sigma": [0.5, 0.5], "bubble": "Only 2% increase—still a bargain compared to B."}, {"id": 10, "label": "High-income · price-hunter · B-loyal", "mu": [0.25, 0.75], "sigma": [0.5, 0.5], "bubble": "B's price is still lower; I'll keep buying B."}, {"id": 11, "label": "High-income · moderate · A-loyal", "mu": [0.75, 0.35], "sigma": [0.5, 0.5], "bubble": "Quality matters more; 2% rise is fine."}, {"id": 12, "label": "High-income · moderate · B-loyal", "mu": [0.35, 0.65], "sigma": [0.5, 0.5], "bubble": "B's reliability still beats A's small price bump."}]}}
+{"t": 75.359, "event": "agent_step", "data": {"round": 2, "kind": "shoppers", "text": "Kept 1 shopper group in price order: none likes “Stock 1wk, raise 2% wk2” more than a cheaper plan or less than a dearer one.", "plan_name": "Stock 1wk, raise 2% wk2", "tier": "engine", "latency_ms": null}}
+{"t": 75.359, "event": "agent_step", "data": {"round": 2, "kind": "shoppers", "text": "Low-income · price-hunter · B-loyal: “A's price hike? I'm switching to B immediately.”", "plan_name": "Stock 1wk, raise 2% wk2", "tier": "fast", "latency_ms": null}}
+{"t": 75.764, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2", "shock_id": "news", "n": 1000, "mean_delta_usd": 8685.617457254488, "p5_delta_usd": 5461.134325812073, "p_better": 1.0, "mean_profit_usd": 178426.0423069384, "bridge": {"cost_usd": 148.3413080881356, "price_usd": 5385.614163875626, "volume_usd": 3205.3714736383067, "marketing_usd": 0.0, "holding_usd": -53.709488347579864}, "steady_rival_delta_usd": 8684.785294034975, "peak_cash_usd": 3558.6428758290695, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 75.764, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2", "shock_id": "s1", "n": 1000, "mean_delta_usd": 9084.86981302106, "p5_delta_usd": 6473.535739515763, "p_better": 1.0, "mean_profit_usd": 176384.6027092184, "bridge": {"cost_usd": 44.73728280171204, "price_usd": 5200.527785015819, "volume_usd": 3902.726959065085, "marketing_usd": 0.0, "holding_usd": -63.12221386155777}, "steady_rival_delta_usd": 9086.263326197475, "peak_cash_usd": 3558.6428758290695, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 75.764, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2", "shock_id": "s2", "n": 1000, "mean_delta_usd": 10783.674950276263, "p5_delta_usd": 8597.310439906114, "p_better": 1.0, "mean_profit_usd": 177095.6351587927, "bridge": {"cost_usd": 444.47975589177497, "price_usd": 5440.557439211768, "volume_usd": 4963.482024886705, "marketing_usd": 0.0, "holding_usd": -64.84426971398294}, "steady_rival_delta_usd": 10769.548826514072, "peak_cash_usd": 3558.6428758290695, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 75.764, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2", "shock_id": "s3", "n": 1000, "mean_delta_usd": 7518.609198748135, "p5_delta_usd": 5041.641833175185, "p_better": 1.0, "mean_profit_usd": 153486.56363196785, "bridge": {"cost_usd": 40.035467920458, "price_usd": 4553.553775291481, "volume_usd": 2984.4563699173455, "marketing_usd": 0.0, "holding_usd": -59.43641438114961}, "steady_rival_delta_usd": 7522.58324057814, "peak_cash_usd": 3558.6428758290695, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 75.764, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2", "shock_id": "s4", "n": 1000, "mean_delta_usd": 11982.721593294938, "p5_delta_usd": 9967.83683673122, "p_better": 1.0, "mean_profit_usd": 168120.389214472, "bridge": {"cost_usd": -2.654828181829541e-13, "price_usd": 4881.243841920113, "volume_usd": 7173.637720289712, "marketing_usd": 0.0, "holding_usd": -72.15996891488271}, "steady_rival_delta_usd": 11979.258707519704, "peak_cash_usd": 3558.6428758290695, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 75.764, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2", "shock_id": "s5", "n": 1000, "mean_delta_usd": 18023.474816622667, "p5_delta_usd": 8918.66801756563, "p_better": 1.0, "mean_profit_usd": 175763.91358655386, "bridge": {"cost_usd": 4.137975733870425e-14, "price_usd": 5129.175738434555, "volume_usd": 13000.131693083698, "marketing_usd": 0.0, "holding_usd": -105.83261489558771}, "steady_rival_delta_usd": 18502.965504742937, "peak_cash_usd": 3558.6428758290695, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 75.764, "event": "agent_step", "data": {"round": 2, "kind": "result", "text": "“Stock 1wk, raise 2% wk2”: +$8.7k on average · bad case +$5.5k", "plan_name": "Stock 1wk, raise 2% wk2", "tier": "engine", "latency_ms": null}}
+{"t": 75.764, "event": "crowd", "data": {"plan_name": "Stock 1wk, marketing +10%", "archetypes": [{"id": 1, "label": "Low-income · price-hunter · A-loyal", "mu": [0.1, -1.0], "sigma": [0.5, 0.5], "bubble": "A discount means I can finally afford a proper breakfast."}, {"id": 2, "label": "Low-income · price-hunter · B-loyal", "mu": [-1.0, 0.1], "sigma": [0.5, 0.5], "bubble": "Firm B stayed steady while A’s price jumped—no surprise."}, {"id": 3, "label": "Low-income · moderate · A-loyal", "mu": [0.0, -1.0], "sigma": [0.5, 0.5], "bubble": "Same price, but A’s marketing feels pushy."}, {"id": 4, "label": "Low-income · moderate · B-loyal", "mu": [-1.0, 0.0], "sigma": [0.5, 0.5], "bubble": "Reliability matters—B’s consistency wins over a small price."}, {"id": 5, "label": "Mid-income · price-hunter · A-loyal", "mu": [0.0, -1.0], "sigma": [0.5, 0.5], "bubble": "A 10% gap? I’ll switch to B next week."}, {"id": 6, "label": "Mid-income · price-hunter · B-loyal", "mu": [-1.0, 0.0], "sigma": [0.5, 0.5], "bubble": "B’s price is equal, but their history makes me stay."}, {"id": 7, "label": "Mid-income · moderate · A-loyal", "mu": [0.4, -1.0], "sigma": [0.5, 0.5], "bubble": "A bit annoyed if A runs out of stock again."}, {"id": 8, "label": "Mid-income · moderate · B-loyal", "mu": [0.0, 0.3], "sigma": [0.5, 0.5], "bubble": "I stick with B, but a little extra buzz helps."}, {"id": 9, "label": "High-income · price-hunter · A-loyal", "mu": [0.6, -1.0], "sigma": [0.5, 0.5], "bubble": "Great deal, still cheaper than B despite hype."}, {"id": 10, "label": "High-income · price-hunter · B-loyal", "mu": [-1.0, 0.5], "sigma": [0.5, 0.5], "bubble": "If A drops price, maybe I'd switch, but not now."}, {"id": 11, "label": "High-income · moderate · A-loyal", "mu": [0.3, -1.0], "sigma": [0.5, 0.5], "bubble": "Quality stays top; price unchanged feels safe."}, {"id": 12, "label": "High-income · moderate · B-loyal", "mu": [-1.0, 0.4], "sigma": [0.5, 0.5], "bubble": "B's reliability matters; A's hype isn't enough."}]}}
+{"t": 75.765, "event": "agent_step", "data": {"round": 2, "kind": "shoppers", "text": "Low-income · price-hunter · B-loyal: “Firm B stayed steady while A’s price jumped—no surprise.”", "plan_name": "Stock 1wk, marketing +10%", "tier": "fast", "latency_ms": null}}
+{"t": 76.144, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +10%", "shock_id": "news", "n": 1000, "mean_delta_usd": 478.09050284150624, "p5_delta_usd": -613.9320408484864, "p_better": 0.833, "mean_profit_usd": 170218.51535252543, "bridge": {"cost_usd": 140.46982897027812, "price_usd": 0.0, "volume_usd": 1257.8180481033846, "marketing_usd": -874.800000004992, "holding_usd": -45.397374227163134}, "steady_rival_delta_usd": 516.9084660363088, "peak_cash_usd": 3779.877854032199, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.144, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +10%", "shock_id": "s1", "n": 1000, "mean_delta_usd": 2429.3096698208, "p5_delta_usd": 1234.5801509394773, "p_better": 0.995, "mean_profit_usd": 169729.04256601803, "bridge": {"cost_usd": 39.15311634935852, "price_usd": 0.0, "volume_usd": 3321.4568504098484, "marketing_usd": -874.800000004992, "holding_usd": -56.50029693341449}, "steady_rival_delta_usd": 2465.0355264814766, "peak_cash_usd": 3779.877854032199, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.144, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +10%", "shock_id": "s2", "n": 1000, "mean_delta_usd": 897.3149924911063, "p5_delta_usd": -265.3378114702771, "p_better": 0.911, "mean_profit_usd": 167209.27520100752, "bridge": {"cost_usd": 472.83181014698033, "price_usd": 0.0, "volume_usd": 1343.9667980084826, "marketing_usd": -874.800000004992, "holding_usd": -44.683615659362374}, "steady_rival_delta_usd": 929.9443030069378, "peak_cash_usd": 3779.877854032199, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.144, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +10%", "shock_id": "s3", "n": 1000, "mean_delta_usd": 897.0538275234936, "p5_delta_usd": -145.94677926528792, "p_better": 0.918, "mean_profit_usd": 146865.00826074323, "bridge": {"cost_usd": 36.179960311950154, "price_usd": 0.0, "volume_usd": 1786.3704730317527, "marketing_usd": -874.800000004992, "holding_usd": -50.69660581521509}, "steady_rival_delta_usd": 937.612387091673, "peak_cash_usd": 3779.877854032199, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.144, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +10%", "shock_id": "s4", "n": 1000, "mean_delta_usd": 6537.5057817452625, "p5_delta_usd": 4434.911498033712, "p_better": 1.0, "mean_profit_usd": 162675.17340292232, "bridge": {"cost_usd": -9.052741738292666e-14, "price_usd": 0.0, "volume_usd": 7481.526684718363, "marketing_usd": -874.800000004992, "holding_usd": -69.2209029681055}, "steady_rival_delta_usd": 6569.006443383488, "peak_cash_usd": 3779.877854032199, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.144, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, marketing +10%", "shock_id": "s5", "n": 1000, "mean_delta_usd": 9200.573708401047, "p5_delta_usd": 2726.345357874345, "p_better": 0.994, "mean_profit_usd": 166941.0124783322, "bridge": {"cost_usd": 2.7387250620406245e-13, "price_usd": 0.0, "volume_usd": 10178.086638162622, "marketing_usd": -874.800000004992, "holding_usd": -102.71292975657897}, "steady_rival_delta_usd": 12682.11035550166, "peak_cash_usd": 3779.877854032199, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.144, "event": "agent_step", "data": {"round": 2, "kind": "result", "text": "“Stock 1wk, marketing +10%”: +$478 on average · bad case −$614", "plan_name": "Stock 1wk, marketing +10%", "tier": "engine", "latency_ms": null}}
+{"t": 76.144, "event": "crowd", "data": {"plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "archetypes": [{"id": 1, "label": "Low-income · price-hunter · A-loyal", "mu": [0.6, 0.2], "sigma": [0.5, 0.5], "bubble": "I can stretch my budget a bit for A's familiar taste, but 2%"}, {"id": 2, "label": "Low-income · price-hunter · B-loyal", "mu": [0.1, 0.7], "sigma": [0.5, 0.5], "bubble": "A's 2% rise makes B still cheaper; I stick with B"}, {"id": 3, "label": "Low-income · moderate · A-loyal", "mu": [0.4, 0.1], "sigma": [0.5, 0.5], "bubble": "A's small rise is okay; I stay loyal to A"}, {"id": 4, "label": "Low-income · moderate · B-loyal", "mu": [0.05, 0.65], "sigma": [0.5, 0.5], "bubble": "B's reliability beats A's tiny price bump for me"}, {"id": 5, "label": "Mid-income · price-hunter · A-loyal", "mu": [0.3, 0.15], "sigma": [0.5, 0.5], "bubble": "2% rise is okay, but I watch if gap widens to 10%"}, {"id": 6, "label": "Mid-income · price-hunter · B-loyal", "mu": [0.05, 0.55], "sigma": [0.5, 0.5], "bubble": "B still cheaper; I stick with B despite A's marketing push"}, {"id": 7, "label": "Mid-income · moderate · A-loyal", "mu": [0.55, -1.0], "sigma": [0.5, 0.5], "bubble": "Price up? No! Still getting my usual plate, but hope it's in"}, {"id": 8, "label": "Mid-income · moderate · B-loyal", "mu": [-1.0, 0.55], "sigma": [0.5, 0.5], "bubble": "They raised price? Still sticking with my usual spot, but I"}, {"id": 9, "label": "High-income · price-hunter · A-loyal", "mu": [0.9, -1.0], "sigma": [0.5, 0.5], "bubble": "Only $0.25 more? That's a bargain for my routine"}, {"id": 10, "label": "High-income · price-hunter · B-loyal", "mu": [-1.0, 0.9], "sigma": [0.5, 0.5], "bubble": "Price jump? I'll wait for a dip before I switch"}, {"id": 11, "label": "High-income · moderate · A-loyal", "mu": [0.55, -1.0], "sigma": [0.5, 0.5], "bubble": "Quality's key, $0.25 extra? Still worth it for reliability"}, {"id": 12, "label": "High-income · moderate · B-loyal", "mu": [-1.0, 0.55], "sigma": [0.5, 0.5], "bubble": "Raised price? I'll stay loyal to my trusted supplier"}]}}
+{"t": 76.144, "event": "agent_step", "data": {"round": 2, "kind": "shoppers", "text": "Mid-income · moderate · B-loyal: “They raised price? Still sticking with my usual spot, but I”", "plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "tier": "fast", "latency_ms": null}}
+{"t": 76.519, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "shock_id": "news", "n": 1000, "mean_delta_usd": 2118.481830032087, "p5_delta_usd": -743.543250626164, "p_better": 0.889, "mean_profit_usd": 171858.90667971602, "bridge": {"cost_usd": 176.1621474328547, "price_usd": 5208.194565783336, "volume_usd": -2805.203916920447, "marketing_usd": -437.4000000024968, "holding_usd": -23.27096626115821}, "steady_rival_delta_usd": 2087.9254977606233, "peak_cash_usd": 3891.149147846026, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.519, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "shock_id": "s1", "n": 1000, "mean_delta_usd": 1725.842144281966, "p5_delta_usd": -446.771195462553, "p_better": 0.922, "mean_profit_usd": 169025.57504047922, "bridge": {"cost_usd": 55.278022430359506, "price_usd": 5003.415001630067, "volume_usd": -2867.059710272692, "marketing_usd": -437.4000000024968, "holding_usd": -28.39116950327328}, "steady_rival_delta_usd": 1698.7094654606797, "peak_cash_usd": 3891.149147846026, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.519, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "shock_id": "s2", "n": 1000, "mean_delta_usd": 4549.324361173431, "p5_delta_usd": 2904.99700650675, "p_better": 1.0, "mean_profit_usd": 170861.28456968986, "bridge": {"cost_usd": 548.424113626481, "price_usd": 5267.606913527981, "volume_usd": -797.0746572216492, "marketing_usd": -437.4000000024968, "holding_usd": -32.232008756885776}, "steady_rival_delta_usd": 4513.522707136217, "peak_cash_usd": 3891.149147846026, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.519, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "shock_id": "s3", "n": 1000, "mean_delta_usd": 1389.7026070042941, "p5_delta_usd": -581.380549847092, "p_better": 0.893, "mean_profit_usd": 147357.65704022403, "bridge": {"cost_usd": 64.03819705313194, "price_usd": 4391.738928732848, "volume_usd": -2602.1683321875807, "marketing_usd": -437.4000000024968, "holding_usd": -26.506186591607108}, "steady_rival_delta_usd": 1366.906489725004, "peak_cash_usd": 3891.149147846026, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.519, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "shock_id": "s4", "n": 1000, "mean_delta_usd": 3599.2065239663507, "p5_delta_usd": 2556.5049675979667, "p_better": 1.0, "mean_profit_usd": 159736.87414514337, "bridge": {"cost_usd": -1.6902131942168972e-13, "price_usd": 4656.407801699972, "volume_usd": -585.3398888195156, "marketing_usd": -437.4000000024968, "holding_usd": -34.46138891160828}, "steady_rival_delta_usd": 3568.925737658942, "peak_cash_usd": 3891.149147846026, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.519, "event": "grid_cell", "data": {"plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "shock_id": "s5", "n": 1000, "mean_delta_usd": 12587.721521304316, "p5_delta_usd": 1368.0108666953577, "p_better": 0.999, "mean_profit_usd": 170328.16029123554, "bridge": {"cost_usd": 6.594466770345332e-13, "price_usd": 4992.837317580547, "volume_usd": 8108.476951437188, "marketing_usd": -437.4000000024968, "holding_usd": -76.19274771092358}, "steady_rival_delta_usd": 12429.385316843318, "peak_cash_usd": 3891.149147846026, "payback_week": 2, "over_cash": false, "source": "local"}}
+{"t": 76.519, "event": "agent_step", "data": {"round": 2, "kind": "result", "text": "“Stock 1wk, raise 2% wk2, mkt +5%”: +$2.1k on average · bad case −$744", "plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "tier": "engine", "latency_ms": null}}
+{"t": 76.519, "event": "grid_summary", "data": {"baseline_profit_usd": {"news": 169740.4248496839, "s1": 167299.7328961973, "s2": 166311.96020851648, "s3": 145967.9544332197, "s4": 156137.66762117704, "s5": 157740.43876993118}, "best_today": "Stock 1wk, raise 2% wk2", "safest": "Stock 1wk, raise 2% wk2", "verified": false}}
+{"t": 77.949, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 4, "tokens_in": 6274, "tokens_out": 6422, "p50_ttft_ms": 889.2, "tok_per_s": 293.2, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 15, "tokens_in": 9134, "tokens_out": 6078, "p50_ttft_ms": 1415.8, "tok_per_s": 52.4, "errors": 1}}, "call_share": {"ultra": 18.2, "super": 13.6, "fast": 68.2}, "token_share": {"ultra": 41.3, "super": 9.2, "fast": 49.5}, "cost_usd": 0.028599, "cost_all_ultra_usd": 0.056414, "savings_pct": 49.3, "job": {"id": null, "status": "idle"}}}
+{"t": 77.949, "event": "memo", "data": {"plan_name": "Stock 1wk, raise 2% wk2", "headline": "Stock 1 week, raise price 2% in week 2", "why": "The plan covers a 28-38% egg-cost jump shown in the news while keeping one week of stock on hand. Simulated cash flow stays under the $4,000 limit and pays back the extra outlay by week 2.", "watch_out": "If bird flu spreads further, egg costs could climb past the 38% rise already reported, squeezing margin before the price increase takes full effect.", "recheck_when": "Next USDA egg-price report or supplier notice of further avian-flu outbreaks", "numbers": {"shock_id": "news", "mean_delta_usd": 8685.62, "p5_delta_usd": 5461.13, "p_better": 1.0, "n": 1000, "verified": false, "bridge": {"cost_usd": 148.34, "price_usd": 5385.61, "volume_usd": 3205.37, "marketing_usd": 0.0, "holding_usd": -53.71}, "steady_rival_delta_usd": 8684.79, "peak_cash_usd": 3558.64, "payback_week": 2, "over_cash": false, "cash_available": 4000.0}, "cost_line": "Eggs +38% × 24% of your cost is eggs = your cost +9% (+$0.40 a breakfast plate)", "sources": [{"title": "Rising egg prices linked to bird flu’s impact on supply chain", "url": "https://thehill.com/business/4905382-bird-flu-eggs-prices", "quote": "Eggs’ price tag has gone up by 28.1 percent in the last 12 months"}, {"title": "Why egg prices may soon ‘flirt with record highs': supplier", "url": "https://www.cnbc.com/2024/12/12/why-egg-prices-may-soon-flirt-with-record-highs-supplier.html", "quote": "The average retail price of eggs in the U.S. has risen 38% since November 2023, according to consumer price index data issued Wednesday."}, {"title": "Avian Influenza Hits Turkeys and Eggs Hardest | Farm Bureau Intel Markets | American Farm Bureau Federation", "url": "https://www.fb.org/intel/markets/avian-influenza-hits-turkeys-and-eggs-hardest", "quote": "the January-September 2024 average retail price for eggs is $2.99 per dozen, up 7% from 2023."}], "not_modelled": {"fixed": ["Fixed costs such as rent and salaries (profit here is gross profit)", "Taxes", "Payment terms (we assume you pay suppliers when you order, and customers pay when they buy)", "Seasonality", "Your other products", "Warehouse space limits", "How other rivals react (we model one main rival)"], "found": [{"text": "Bird flu jumps to humans causing health scare", "source_id": "n1"}, {"text": "New USDA rule mandates cage-free eggs raising cost", "source_id": null}]}, "fallback_used": false, "actions": [{"week": 0, "text": "Order 1 extra week of eggs (about $4.0k)"}, {"week": 2, "text": "The cash tied up in that stock is back"}, {"week": 2, "text": "Raise price 2% ($12.50 → $12.75)"}], "runner_up": {"name": "Stock 1wk, raise 3% wk1", "mean_delta_usd": 3180.8215521726106, "p5_delta_usd": -156.18903797384857, "why_not": "Stock 1wk, raise 3% wk1 averages +$3.2k in today's news case against +$8.7k for the pick; in the bad case it is −$156 against +$5.5k."}}}
+{"t": 79.195, "event": "backtest", "data": {"backtest_id": "bt_eggs_2025", "as_of": "2024-12-15", "horizon_end": "2025-06-01", "series": {"label": "US retail price, eggs, grade A large", "unit": "$/dozen", "source_url": "https://data.bls.gov/timeseries/APU0000708111", "as_of_value": 4.146, "points": [{"week": 0, "date": "2024-12-15", "value": 4.146, "change": 0.0}, {"week": 1, "date": "2024-12-22", "value": 4.3282, "change": 0.044}, {"week": 2, "date": "2024-12-29", "value": 4.5105, "change": 0.0879}, {"week": 3, "date": "2025-01-05", "value": 4.6927, "change": 0.1319}, {"week": 4, "date": "2025-01-12", "value": 4.8749, "change": 0.1758}, {"week": 5, "date": "2025-01-19", "value": 5.0748, "change": 0.224}, {"week": 6, "date": "2025-01-26", "value": 5.288, "change": 0.2754}, {"week": 7, "date": "2025-02-02", "value": 5.5011, "change": 0.3269}, {"week": 8, "date": "2025-02-09", "value": 5.7143, "change": 0.3783}, {"week": 9, "date": "2025-02-16", "value": 5.9088, "change": 0.4252}, {"week": 10, "date": "2025-02-23", "value": 5.9913, "change": 0.4451}, {"week": 11, "date": "2025-03-02", "value": 6.0738, "change": 0.465}, {"week": 12, "date": "2025-03-09", "value": 6.1563, "change": 0.4849}, {"week": 13, "date": "2025-03-16", "value": 6.1914, "change": 0.4933}, {"week": 14, "date": "2025-03-23", "value": 5.9418, "change": 0.4331}, {"week": 15, "date": "2025-03-30", "value": 5.6923, "change": 0.373}, {"week": 16, "date": "2025-04-06", "value": 5.4428, "change": 0.3128}, {"week": 17, "date": "2025-04-13", "value": 5.1933, "change": 0.2526}, {"week": 18, "date": "2025-04-20", "value": 5.0263, "change": 0.2123}, {"week": 19, "date": "2025-04-27", "value": 4.8924, "change": 0.18}, {"week": 20, "date": "2025-05-04", "value": 4.7585, "change": 0.1477}, {"week": 21, "date": "2025-05-11", "value": 4.6245, "change": 0.1154}, {"week": 22, "date": "2025-05-18", "value": 4.4732, "change": 0.0789}, {"week": 23, "date": "2025-05-25", "value": 4.2986, "change": 0.0368}, {"week": 24, "date": "2025-06-01", "value": 4.1241, "change": -0.0053}]}, "realized_case": {"id": "realized", "label": "What happened: Eggs +49%, then +4%", "delta_c_raw": 0.0, "delta_lead_time": 0, "demand_shock": 0.0, "onset_week": 0, "ramp_weeks": 1, "rival_price_change_pct": 0.0, "share_shift_pct": 0.0, "likelihood": "likely", "why": "What the input's price really did next", "source_ids": [], "origin": "realized", "cost_path": [0.0, 0.043952196442743174, 0.08790439288548613, 0.1318565893282293, 0.17580878577097248, 0.2240247109534257, 0.2754384326906618, 0.32685215442789795, 0.37826587616513385, 0.42517745158845033, 0.44507614912824756, 0.464974846668045, 0.48487354420784246, 0.49333208844902976, 0.4331497128985575, 0.3729673373480853, 0.31278496179761306, 0.2526025862471406, 0.21233317253577755, 0.18002894356005794, 0.14772471458433833, 0.11542048560861873, 0.07891788431912605, 0.036817453277936174], "cost_line": "Eggs +4% by May (+49% at the peak in March) × 24% of your cost is eggs = your cost +1% (+$0.04 a breakfast plate)"}, "cells": [{"plan_name": "Raise price 5% now", "mean_delta_usd": -40797.04, "p5_delta_usd": -45992.55, "p_better": 0.0, "bridge": {"cost_usd": 339.33, "price_usd": 10162.16, "volume_usd": -51537.31, "marketing_usd": 0.0, "holding_usd": 238.77}}, {"plan_name": "Stock up 4 weeks now", "mean_delta_usd": 401.33, "p5_delta_usd": 215.92, "p_better": 1.0, "bridge": {"cost_usd": 640.71, "price_usd": 0.0, "volume_usd": 0.0, "marketing_usd": 0.0, "holding_usd": -239.38}}, {"plan_name": "Stock 1wk, raise 3% wk1", "mean_delta_usd": 3383.48, "p5_delta_usd": 482.49, "p_better": 0.963, "bridge": {"cost_usd": 159.13, "price_usd": 7986.03, "volume_usd": -4742.58, "marketing_usd": 0.0, "holding_usd": -19.11}}, {"plan_name": "Stock 1wk, marketing +20%", "mean_delta_usd": 2322.79, "p5_delta_usd": 687.98, "p_better": 0.983, "bridge": {"cost_usd": 98.0, "price_usd": 0.0, "volume_usd": 4036.38, "marketing_usd": -1749.6, "holding_usd": -61.99}}, {"plan_name": "Raise 3% now, marketing +15%", "mean_delta_usd": -10119.29, "p5_delta_usd": -13415.65, "p_better": 0.0, "bridge": {"cost_usd": 132.21, "price_usd": 7757.9, "volume_usd": -16768.32, "marketing_usd": -1312.2, "holding_usd": 71.12}}, {"plan_name": "Stock 1wk, raise 2% wk2", "mean_delta_usd": 8701.23, "p5_delta_usd": 5948.36, "p_better": 1.0, "bridge": {"cost_usd": 121.15, "price_usd": 5344.51, "volume_usd": 3294.11, "marketing_usd": 0.0, "holding_usd": -58.54}}, {"plan_name": "Stock 1wk, marketing +10%", "mean_delta_usd": 908.05, "p5_delta_usd": -287.01, "p_better": 0.911, "bridge": {"cost_usd": 107.82, "price_usd": 0.0, "volume_usd": 1723.16, "marketing_usd": -874.8, "holding_usd": -48.13}}, {"plan_name": "Stock 1wk, raise 2% wk2, mkt +5%", "mean_delta_usd": 1925.35, "p5_delta_usd": -543.06, "p_better": 0.921, "bridge": {"cost_usd": 144.52, "price_usd": 5161.58, "volume_usd": -2915.8, "marketing_usd": -437.4, "holding_usd": -27.55}}], "pick": "Stock 1wk, raise 2% wk2", "pick_rank": 1, "n_plans": 9, "beat_do_nothing": true, "pick_delta_usd": 8701.23, "hindsight_best": {"name": "Stock 1wk, raise 2% wk2", "spec": {"name": "Stock 1wk, raise 2% wk2", "price_change_pct": 2.0, "price_change_week": 2, "extra_stock_weeks": 1.0, "stock_week": 0, "marketing_change_pct": 0.0, "switch_supplier": false, "alt_cost_change_pct": 0.0, "alt_lead_time_weeks": 1, "alt_shock_exposure": 0.3, "price_end_week": 24}, "mean_delta_usd": 8701.23, "plain": "week 0: Order 1 extra week of eggs (about $4.0k); week 2: Raise price 2% ($12.50 → $12.75)"}, "regret_usd": 0.0, "baselines": [{"name": "Do nothing", "mean_delta_usd": 0.0}, {"name": "Raise price 5% now", "mean_delta_usd": -40797.04}, {"name": "Stock up 4 weeks now", "mean_delta_usd": 401.33}, {"name": "Textbook price rule", "mean_delta_usd": 521.18}], "futures_cover": {"min": 0.0, "max": 0.55, "realized_peak": 0.4933, "realized_end": 0.0368, "peak_inside": true, "end_inside": true}, "leak_check": {"clean": false, "flags": [{"where": "Ultra reasoning (scenarios, round 0)", "text": "Worse cost increase: Eggs +50% (bird flu worsening)"}]}, "dropped_news": 0, "what_happened": [{"date": "2025-02-03", "text": "Waffle House added a temporary 50-cent surcharge per egg to all menus.", "url": "https://www.yahoo.com/news/waffle-house-adds-50-cent-013414532.html"}, {"date": "2025-02-25", "text": "Denny's said some restaurants would temporarily add a surcharge to every meal that includes eggs.", "url": "https://abc17news.com/money/cnn-business-consumer/2025/02/25/dennys-reportedly-adds-egg-surcharge-amid-rising-prices-and-bird-flu-shortages/"}, {"date": "2025-03", "text": "The BLS average for a dozen grade A large eggs reached a record $6.23.", "url": "https://www.nbcchicago.com/news/national-international/egg-prices-record-high-march-2025-donald-trump-bird-flu/3719119/"}, {"date": "2025-05-13", "text": "Egg prices fell for the first time in months, to $5.12 in April, though they stayed near record highs.", "url": "https://www.clickondetroit.com/business/2025/05/13/us-egg-prices-fall-for-the-first-time-in-months-but-remain-near-record-highs/"}, {"date": "2025-07-01", "text": "Waffle House dropped its 50-cent egg surcharge as prices stabilised. The BLS average had fallen to $3.78 in June.", "url": "https://www.fox35orlando.com/news/egg-prices-waffle-house-surcharge-ends"}], "caveats": ["The series is the BLS retail price of eggs. A diner buys wholesale, which swung harder than retail in this episode, so the real swing was bigger than the one scored here. We did not swap in a wholesale source we could not cite.", "Eggs are set at 24% of a plate's food cost: about 3 eggs a plate at the BLS price of $4.15 a dozen in December 2024 is $1.04 of $4.40. We found no published share for diners (a Spokane diner manager called eggs the restaurant's biggest expense), so the 3 eggs a plate is the made-up owner's figure.", "Each monthly value is treated as the month's mid-point, with straight lines between them. BLS did not publish October 2025, which is outside this case's window.", "The model has seen this period. Nemotron Ultra's model card gives a pre-training cutoff of September 2025 and a post-training cutoff of May 2026, so a date in the prompt cannot make it forget. The run only gives it news from before the date, and the leak check looks for hindsight in what it wrote.", "“Best plan in hindsight” is the best of about 230 plans on a fixed grid (price, start, end, extra stock), run on the real path. Shoppers react to a sweep plan like they did to the nearest price plan the analysis tested; with none tested, they are neutral.", "News pages are read as they are today. Any article that names a date after the as-of date is dropped, but a page edited later could still carry hindsight."]}}
+{"t": 79.195, "event": "telemetry", "data": {"tiers": {"ultra": {"calls": 4, "tokens_in": 6274, "tokens_out": 6422, "p50_ttft_ms": 889.2, "tok_per_s": 293.2, "errors": 0}, "super": {"calls": 3, "tokens_in": 2468, "tokens_out": 346, "p50_ttft_ms": 2056.5, "tok_per_s": 178.6, "errors": 0}, "fast": {"calls": 15, "tokens_in": 9134, "tokens_out": 6078, "p50_ttft_ms": 1415.8, "tok_per_s": 52.4, "errors": 1}}, "call_share": {"ultra": 18.2, "super": 13.6, "fast": 68.2}, "token_share": {"ultra": 41.3, "super": 9.2, "fast": 49.5}, "cost_usd": 0.028599, "cost_all_ultra_usd": 0.056414, "savings_pct": 49.3, "job": {"id": null, "status": "idle"}}}
+{"t": 79.195, "event": "done", "data": {"analysis_id": "f20c9288266a", "cost_usd": 0.028599}}

@@ -534,6 +534,7 @@ A plan is a few knobs, turned by code into per-week decisions. The fields are fl
 | `alt_cost_change_pct` | −30 … +50 | the alternative's unit cost vs the current supplier |
 | `alt_lead_time_weeks` | 1 … 16 | the alternative's lead time |
 | `alt_shock_exposure` | 0 … 1 | how much of the news shock also hits the alternative (default 0.3) |
+| **`price_end_week`** (B1) | 1 … 24, default **24** | the price change lasts while `price_change_week ≤ t < price_end_week`; 24 = to the end of the horizon. A value at or below `price_change_week` is treated as 24. Lets Ultra propose a surcharge that ends (a temporary price rise, lifted once the news fades). |
 
 - **"Do nothing"** = all zeros, `switch_supplier = false`. It's always simulated as the reference, and it's never sent to the LLM as a choice.
 - **No invented cheaper supplier (approved 2026-10-15, P4).** Ultra's supplier switches must have `alt_cost_change_pct ≥ 0`: the analyst can't assume a cheaper supplier exists. Code skips an Ultra plan below 0 and says so in a note. The exception, a cheaper supplier named in the profile, needs a new §15.3 field and isn't built yet. Plans the owner enters are exempt (they know their suppliers). The −30 bound stays in the engine and the schema for that case.
@@ -542,7 +543,7 @@ A plan is a few knobs, turned by code into per-week decisions. The fields are fl
 
 **How the planner runs a plan** (it is closed-loop per path, inside the vectorised simulation):
 
-- **Your price** = starting price × (1 + `price_change_pct`/100) from `price_change_week`.
+- **Your price** = starting price × (1 + `price_change_pct`/100) from `price_change_week` until `price_end_week` (B1; the starting price again from then on).
 - **Production plan**, for both firms = the 4-week moving average of their own demand, plus 10%.
 - **Reordering:** the (s,S) rule of §4.5 with ω = 0, plus the one-off extra order.
 - **Purchase-cost accounting (new, planner only):**
@@ -573,7 +574,8 @@ A `ShockCase` is one possible future, given as engine knobs plus display fields:
 | **`likelihood`** (v3.1) | `likely` \| `possible` \| `unlikely` | Ultra's call, shown on the column header |
 | **`why`** (v3.1) | str ≤ 120 | one line on why this future is plausible |
 | **`source_ids`** (v3.1) | list[str], 0–3 | ids of the `news` items it's based on |
-| **`origin`** (v3.1) | `news` \| `ai` \| `default` | who built the column |
+| **`origin`** (v3.1) | `news` \| `ai` \| `default` \| `realized` (B1) | who built the column. `realized` is a backtest's column of what really happened |
+| **`cost_path`** (B1) | list[float], default `[]`, length ≤ 24, each −0.9 … 3.0 | the news input's real price change vs week 0, one value per week. Non-empty: it replaces `delta_c_raw × ramp` in the cost formula (§15.5.1) with **no per-path shock size** (it really happened), and its last value holds for any later week. Empty: nothing changes. Only backtest code builds it; Ultra's `ScenarioCaseModel` has no such field. |
 
 Currency moves, tariffs and freight costs are expressed as `delta_c_raw` (they all change the input's landed price). A case that needs a knob we don't have goes into `unmodelled` instead (§15.6 step 0b), never into a fudged number.
 
@@ -709,6 +711,7 @@ In the replay, **U1 = the plan** and **U2 = do nothing**, in dollars. The LIVE-o
 - API v2 and the Nebius deploy
 - new screens 1–6
 - README, video, FEEDBACK.md
+- **B1 (backtests, §15.12):** `price_end_week` and `cost_path` in the engine, the as-of run, the scoring and the `backtest` event, the 4 recorded cases, the reveal screen
 - **v3.1:** the cost line (§15.5.1), Ultra's futures step with the two new knobs (§15.6 0b), country-aware search (§15.7), the P&L breakdown, the steady-rival split, cash tied up and the over-cash flag (§15.5.2), and the "not modelled" list (§15.11)
 
 **P1, should ship:**
@@ -736,3 +739,29 @@ Real life has more cases than any model. We don't hide that; we list it. Every m
 
 **What we do model, said in the same place:** your price, your stock and the cost you paid for it, one main rival who keeps its margin and follows your price cuts, 12 kinds of customers who react to price and marketing, supplier delays, and up to 6 futures built from today's news, each run 1,000 times (10,000 on the cloud job).
 
+### 15.12 Backtest: "would Dry Run have helped?" (B1, decided 2026-10-21)
+
+Judges and owners ask whether this is a toy. A backtest shows what Dry Run **would have said** on a real past date, using only the news from before that date, and then scores that advice against the input's real price over the next 24 weeks. The engine does the scoring, so the result is checkable even when the advice lost money. **We ship the result whatever it is.** Task file: `prompts/oct22-24_backtest/B1-backtest.md`.
+
+**Two engine additions** (both approved 2026-10-21; neither touches `backend/engine/types.py`):
+- `PlanSpec.price_end_week` (§15.4): a price change that ends, so a plan can be a surcharge.
+- `ShockCase.cost_path` and origin `realized` (§15.5): a real cost history instead of a ramp. The cost line says "Cocoa +80% by June (+121% at the peak in April) × …". Markers: costs start rising (first week the input moves 2%), the peak, and a fall of 10+ points from it.
+
+**Cases** (`fixtures/backtests/<id>.json`; the four: `bt_cocoa_2024`, `bt_robusta_2024`, `bt_eggs_2025`, `bt_tariff_2025`): `{id, title, subtitle, as_of, horizon_weeks: 24, text, profile, series, path_index, what_happened, spoiler_terms, claim_words, caveats}`. The profile is the made-up owner's, as they would have described it on `as_of`; `subtitle` never says what happened. Each `what_happened` line has a source URL and is shown only in the reveal. Prices are in `fixtures/prices/*.csv` (World Bank Pink Sheet, CC BY 4.0; BLS egg series; `scripts/fetch_prices.py`); the tariff case is a step function of dated policy steps (no price file).
+- **Weekly path:** each monthly value is the month's mid-point (the 15th), straight lines between, then `path[t] = P(as_of + 7t days) / P(as_of) − 1`. A policy case uses `(1 + base + duty_t) / (1 + base + duty_asof) − 1` on the dutiable share of cost. With `path_index: "order_week"` (duty paid when goods arrive) the path is shifted earlier by the lead time: an order placed in week t pays the rate in force at week t + lead.
+
+**The as-of run** (`Analysis(backtest=…, as_of=…)`):
+- **News:** every Tavily search uses `start_date = as_of − 90 days`, `end_date = as_of`, no `time_range`; the dates are in the cache key. Results with no `published_date`, a later one, or a URL or title dated after `as_of` are dropped and counted (`dropped_news`), and so is any extracted article that names a later date. There is no "Check live news".
+- **Prompts:** every Super, Ultra and shopper system prompt starts with "Today's date is {as_of:%d %B %Y}. You know nothing after this date. Use only the news below."
+- **Leak check** (code, after the run): the text the models wrote (reasoning, steps, the futures, shopper bubbles, the memo) is scanned for the case's `spoiler_terms`, for any date after `as_of` (month and year, an ISO date, or a bare later year), and for a percent claim in a sentence about prices that lands within 5 points of the real peak or end value, unless the figure is in the news the run was given. The result is `{clean, flags: [{where, text}]}`. A flagged run is shown, never hidden.
+- **Known limit:** the model has seen the period. Nemotron Ultra's card gives a pre-training cutoff of Sept 2025 and a post-training cutoff of May 2026 (Day-0 probe: it knew the 2024 cocoa spike), so a date in the prompt cannot make it forget. Every `backtest` event carries this caveat.
+- **Freeze:** prompts, seeds and case texts are not edited to improve a case's score. Each case is recorded once; a run that failed technically (timeout, fallback) may be re-run.
+
+**Scoring** (`backend/sim/backtest.py`, engine only, free): the `realized` column is the real `cost_path` with every other knob 0, `likelihood: "likely"`, 1,000 paths, the analysis's seed and common random numbers.
+1. Every plan the analysis tested (seeds, Ultra's rounds, the gut call) runs on it, with the shoppers' reaction recorded in the run. Plus "Do nothing" ($0) and the textbook price rule as baselines.
+2. A **hindsight sweep** finds the best plan in hindsight: price change {−5, 0, 3, 5, 8, 12}% × start week {0, 2, 4} × end week {12, 16, 24} × extra stock {0, 2, 4, 6, 8} weeks at week 0 (229 plans) at 300 paths, then the top 3 at 1,000. A sweep plan's shoppers react like the nearest tested plan with a price move the same way (scaled by the size ratio), else they are neutral. `regret_usd` = best of the sweep and the tested plans − the pick, never below 0.
+3. `futures_cover` compares the range of Ultra's columns' `delta_c_raw` with the real peak and end.
+
+**Output:** the `backtest` stream event (docs/EVENTS.md v2.2), recorded last before `done` in `fixtures/replays/backtest_<id>.jsonl`, plus `cell_backtest_<id>_<plan-slug>_realized.jsonl` for the pick. REST: `GET /api/backtests`, `POST /api/analyses {backtest_id}` (REPLAY only), replays with `shock_id: "realized"`. CLI: `uv run python -m backend.sim.cli --backtest bt_cocoa_2024 [--offline | --record]`.
+
+**Out of scope:** demand-side realised data, more than one input per case, live backtests on a date the user picks (needs a price-series picker), paywalled wholesale egg data.

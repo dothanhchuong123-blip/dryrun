@@ -1,0 +1,126 @@
+{
+  "id": "bt_tariff_2025",
+  "title": "US online shop, China-made kitchenware",
+  "subtitle": "Silicone and bamboo kitchen tools by sea, as of 25 Mar 2025",
+  "as_of": "2025-03-25",
+  "horizon_weeks": 24,
+  "text": "I run an online shop in the US selling silicone and bamboo kitchen tool sets made in China, about 400 sets a week. A set sells for $28 and lands in my warehouse at about $12.50, including duty and freight. An order takes about 5 weeks to arrive by sea; I keep about 6 weeks of stock and could put about $25,000 into more. Other sellers on the same marketplaces charge about $27.",
+  "profile": {
+    "business_name": "Kitchen Tools Online",
+    "product_unit": "set of silicone and bamboo kitchen tools",
+    "price": 28.0,
+    "unit_cost": 12.5,
+    "weekly_sales": 400.0,
+    "lead_time_weeks": 5,
+    "stock_weeks": 6.0,
+    "rival_name": "Other marketplace sellers",
+    "rival_price": 27.0,
+    "supplier_region": "Guangdong, China",
+    "customers": "home cooks buying online",
+    "search_terms": [
+      "US tariffs China kitchenware imports",
+      "China tariff ocean freight rates US importers"
+    ],
+    "country": "united states",
+    "market_terms": [],
+    "exposed_cost_share": 0.86,
+    "cash_available": 25000.0,
+    "guessed_fields": [
+      "exposed_cost_share"
+    ]
+  },
+  "series": {
+    "file": null,
+    "column": null,
+    "unit": "% extra duty",
+    "label": "US extra duty on Chinese goods (fentanyl + reciprocal)",
+    "source_url": "https://www.whitehouse.gov/briefings-statements/2025/05/joint-statement-on-u-s-china-economic-and-trade-meeting-in-geneva/",
+    "licence": "US Government documents, public domain",
+    "base_duty": 0.0,
+    "steps": [
+      {
+        "date": "2025-03-04",
+        "duty": 0.2,
+        "text": "The fentanyl-related duty on Chinese goods rose from 10% to 20%.",
+        "url": "https://www.whitehouse.gov/presidential-actions/2025/03/further-amendment-to-duties-addressing-the-synthetic-opioid-supply-chain-in-the-peoples-republic-of-china/"
+      },
+      {
+        "date": "2025-04-05",
+        "duty": 0.3,
+        "text": "A 10% baseline tariff on all imports took effect, so Chinese goods paid 30% in total.",
+        "url": "https://www.whitehouse.gov/presidential-actions/2025/04/regulating-imports-with-a-reciprocal-tariff-to-rectify-trade-practices-that-contribute-to-large-and-persistent-annual-united-states-goods-trade-deficits/"
+      },
+      {
+        "date": "2025-04-09",
+        "duty": 1.04,
+        "text": "The country rate on China rose to 84% (executive order of April 8), for 104% in total.",
+        "url": "https://www.federalregister.gov/documents/2025/04/14/2025-06378/amendment-to-reciprocal-tariffs-and-updated-duties-as-applied-to-low-value-imports-from-the-peoples"
+      },
+      {
+        "date": "2025-04-10",
+        "duty": 1.45,
+        "text": "The rate on China rose to 125% (executive order of April 9), for 145% in total.",
+        "url": "https://www.whitehouse.gov/presidential-actions/2025/04/modifying-reciprocal-tariff-rates-to-reflect-trading-partner-retaliation-and-alignment/"
+      },
+      {
+        "date": "2025-05-14",
+        "duty": 0.3,
+        "text": "After talks in Geneva the US cut the reciprocal rate on China to 10%, keeping the 20% fentanyl duty: 30% in total.",
+        "url": "https://www.whitehouse.gov/briefings-statements/2025/05/joint-statement-on-u-s-china-economic-and-trade-meeting-in-geneva/"
+      }
+    ]
+  },
+  "path_index": "order_week",
+  "what_happened": [
+    {
+      "date": "2025-03-04",
+      "text": "The fentanyl-related duty on Chinese goods rose from 10% to 20%.",
+      "url": "https://www.whitehouse.gov/presidential-actions/2025/03/further-amendment-to-duties-addressing-the-synthetic-opioid-supply-chain-in-the-peoples-republic-of-china/"
+    },
+    {
+      "date": "2025-04-05",
+      "text": "A 10% baseline tariff on all imports took effect, so Chinese goods paid 30% in total.",
+      "url": "https://www.whitehouse.gov/presidential-actions/2025/04/regulating-imports-with-a-reciprocal-tariff-to-rectify-trade-practices-that-contribute-to-large-and-persistent-annual-united-states-goods-trade-deficits/"
+    },
+    {
+      "date": "2025-04-09",
+      "text": "The country rate on China rose to 84% (executive order of April 8), for 104% in total.",
+      "url": "https://www.federalregister.gov/documents/2025/04/14/2025-06378/amendment-to-reciprocal-tariffs-and-updated-duties-as-applied-to-low-value-imports-from-the-peoples"
+    },
+    {
+      "date": "2025-04-10",
+      "text": "The rate on China rose to 125% (executive order of April 9), for 145% in total.",
+      "url": "https://www.whitehouse.gov/presidential-actions/2025/04/modifying-reciprocal-tariff-rates-to-reflect-trading-partner-retaliation-and-alignment/"
+    },
+    {
+      "date": "2025-05-14",
+      "text": "After talks in Geneva the US cut the reciprocal rate on China to 10%, keeping the 20% fentanyl duty: 30% in total.",
+      "url": "https://www.whitehouse.gov/briefings-statements/2025/05/joint-statement-on-u-s-china-economic-and-trade-meeting-in-geneva/"
+    },
+    {
+      "date": "2025-08-11",
+      "text": "The US and China extended the pause on the higher reciprocal rates to November 10; the 30% total stayed.",
+      "url": "https://www.federalregister.gov/documents/2025/08/14/2025-15554/further-modifying-reciprocal-tariff-rates-to-reflect-ongoing-discussions-with-the-peoples-republic"
+    }
+  ],
+  "spoiler_terms": [
+    "145%",
+    "125%",
+    "84%",
+    "104%",
+    "Geneva",
+    "Liberation Day",
+    "90-day pause"
+  ],
+  "claim_words": [
+    "tariff",
+    "tariffs",
+    "duty",
+    "duties"
+  ],
+  "caveats": [
+    "The path is the extra duty by date, applied when goods enter the US: an order placed in week t pays the rate in force 5 weeks later. The cost rise is (1 + duty then) / (1 + 20% at the as-of date) − 1, on the part of the landed cost that scales with the duty (set at 86%: $9.00 of goods at $12.50 landed). The $9.00 goods cost, the $1.40 freight and the made-up shop are the owner's figures, not data.",
+    "Only the extra duties of this timeline are in the path. Section 301 duties (7.5% to 25% on many Chinese kitchenware lines, depending on the product code) were already in force and are not added; they would make the real rise a few points smaller. Steel and aluminium kitchenware faced separate Section 232 duties; this case is silicone and bamboo. Ending de minimis for China (May 2) does not touch bulk sea freight. No product exemption we found covered kitchenware.",
+    "Goods already on the water on 25 Mar that arrived after 9 Apr also paid the higher duty in real life; the engine charges that stock its old cost. Rivals face the same duty here (their cost moves too)."
+  ]
+}

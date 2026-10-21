@@ -16,6 +16,7 @@ import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
+from datetime import date
 from typing import Any
 
 import numpy as np
@@ -241,7 +242,7 @@ def _unique_name(name: str, taken: set[str]) -> str:
 
 
 async def ask_crowd(
-    router: Any, profile: Mapping[str, Any], spec: PlanSpec
+    router: Any, profile: Mapping[str, Any], spec: PlanSpec, as_of: date | None = None
 ) -> tuple[CrowdSentiment, list[dict], bool]:
     """The 12 shopper groups react to one plan: two parallel Lightning calls of 6 groups (SPEC §15.6).
 
@@ -266,7 +267,7 @@ async def ask_crowd(
             extra = {"timeout": CROWD_RETRY_TIMEOUT} if failures else {}
             try:
                 res = await router.call(
-                    "fast", plan_crowd_messages(todo, dict(profile), spec.to_dict(), rival, batch=i),
+                    "fast", plan_crowd_messages(todo, dict(profile), spec.to_dict(), rival, batch=i, as_of=as_of),
                     CrowdBatch, thinking=False, role="crowd", **extra,
                 )
                 parsed = res.parsed
@@ -358,12 +359,15 @@ class Analyst:
         n_paths: int = 1000,
         seed: int = 0,
         gut_plan: PlanSpec | Mapping[str, Any] | None = None,
+        as_of: date | None = None,
     ) -> None:
-        """`news` is `NewsWatch.find`'s result (or just its items). `shocks` is the grid's columns so far: leave it
+        """`as_of` (a backtest, B1) puts "Today's date is ..." at the top of every Ultra, Super and shopper prompt.
+        `news` is `NewsWatch.find`'s result (or just its items). `shocks` is the grid's columns so far: leave it
         empty (or pass only the `news` column) and `scenarios()` builds the rest with Ultra; pass 2 or more and
         they are used as given (the caller has already emitted them). `gut_plan` is the owner's own idea: it is
         tested with the seed plans as "Your gut call: {name}" (source `user`), and Ultra is told whose idea it is."""
         self.router, self.cal, self.profile, self._emit_fn = router, cal, dict(profile), emit
+        self.as_of = as_of
         self.max_rounds, self.max_plans, self.n_paths, self.seed = max_rounds, max_plans, n_paths, seed
         if isinstance(news, Mapping):
             self.news_items = [dict(i) for i in news.get("items", [])]
@@ -483,7 +487,7 @@ class Analyst:
         ids = {str(i.get("id")) for i in self.news_items if not is_assumption(i)}  # the assumption isn't a source
         msgs = scenario_messages(
             self.profile, news_case.to_dict(), wording.cost_line(self.profile, news_case),
-            self.supply_items, self.market_items,
+            self.supply_items, self.market_items, as_of=self.as_of,
         )
         parsed, _ = await self._ultra(msgs, ScenarioSet, role="scenarios", rnd=0, thinking=True)
         fell_back = False
@@ -516,7 +520,7 @@ class Analyst:
         that reaction instead of a second, possibly contradicting, call."""
         key = visible_key(spec)
         if key not in self._reactions:
-            self._reactions[key] = asyncio.ensure_future(ask_crowd(self.router, self.profile, spec))
+            self._reactions[key] = asyncio.ensure_future(ask_crowd(self.router, self.profile, spec, self.as_of))
         return await asyncio.shield(self._reactions[key])
 
     def _in_price_order(
@@ -656,7 +660,7 @@ class Analyst:
             self.profile, self.supply_items, wording.results_table(self.cells, self._shock_dicts()),
             self._crowd_notes(), rnd, self.max_rounds, [DO_NOTHING, *(s.name for s in self.specs)],
             futures_block=wording.futures_block(self._shock_dicts()),
-            owner_idea=self.gut.name if self.gut is not None else None,
+            owner_idea=self.gut.name if self.gut is not None else None, as_of=self.as_of,
         )
         step, latency = await self._ultra(msgs, AnalystStep, role="analyst", rnd=rnd, thinking=True)
         if step is None:
@@ -822,7 +826,7 @@ class Analyst:
         numbers = self._numbers(cell)
         draft: dict[str, str] | None = None
         if not template_only:
-            msgs = memo_messages(self.profile, pick, spec.to_dict(), numbers, self.news_items)
+            msgs = memo_messages(self.profile, pick, spec.to_dict(), numbers, self.news_items, self.as_of)
             parsed, _ = await self._ultra(msgs, MemoDraft, role="memo", rnd=self.max_rounds + 1, thinking=False)
             if parsed is not None:
                 assert isinstance(parsed, MemoDraft)

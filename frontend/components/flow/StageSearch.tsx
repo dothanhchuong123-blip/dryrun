@@ -6,7 +6,7 @@ import { formatDelta, formatSignedPercent } from "../../lib/format";
 import { useMarketStore } from "../../lib/store";
 import { MINUS, hue, relDate } from "./parts";
 
-const ORIGIN: Record<ShockCase["origin"], string> = { news: "From the news", ai: "Nemotron's pick", default: "Standard test" };
+const ORIGIN: Record<ShockCase["origin"], string> = { news: "From the news", ai: "Nemotron's pick", default: "Standard test", realized: "What really happened" };
 const LIKELY: Record<ShockCase["likelihood"], string> = { likely: "Likely", possible: "Possible", unlikely: "Unlikely" };
 
 /** What an article moved, as short chips. */

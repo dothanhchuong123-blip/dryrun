@@ -1,5 +1,5 @@
 /**
- * Backend ↔ frontend contract, v2.1 (docs/EVENTS.md). Types for every REST body/response and SSE event.
+ * Backend ↔ frontend contract, v2.2 (docs/EVENTS.md). Types for every REST body/response and SSE event.
  * Arrays indexed by firm are [A, B]: A = the user's business, B = the rival. Shares are [outside, A, B].
  * Money is USD; time is weeks.
  */
@@ -9,7 +9,7 @@ export type ShareTriple = [number, number, number];
 export type ModelTier = "ultra" | "super" | "fast";
 export type RunMode = "live" | "replay";
 export type Likelihood = "likely" | "possible" | "unlikely";
-export type ShockOrigin = "news" | "ai" | "default";
+export type ShockOrigin = "news" | "ai" | "default" | "realized";
 export type PlanSource = "seed" | "ai" | "user";
 export type CellSource = "local" | "cloud";
 export type JobStatus = "idle" | "queued" | "running" | "verified" | "failed";
@@ -48,6 +48,8 @@ export interface PlanSpec {
   alt_cost_change_pct: number;
   alt_lead_time_weeks: number;
   alt_shock_exposure: number;
+  /** (v2.2) 1–24: the price change lasts while price_change_week <= t < price_end_week. 24 or missing = to the end. */
+  price_end_week?: number;
 }
 
 export interface ShockCase {
@@ -66,6 +68,8 @@ export interface ShockCase {
   source_ids: string[];
   origin: ShockOrigin;
   cost_line: string | null;
+  /** (v2.2) a backtest's real input price change vs week 0, one value per week (0–24, each −0.9…3.0); [] or missing otherwise */
+  cost_path?: number[];
 }
 
 /** The five lines sum to mean_delta_usd. */
@@ -105,8 +109,20 @@ export interface ParseProfileResponse {
   source?: ProfileSource | null;
 }
 
+/** GET /api/backtests (v2.2): the real cases. `subtitle` never says what happened. */
+export interface BacktestSummary {
+  id: string;
+  title: string;
+  subtitle: string;
+  as_of: string;
+  has_replay: boolean;
+}
+export type BacktestsResponse = BacktestSummary[];
+
 export interface CreateAnalysisRequest {
   example_id?: string;
+  /** (v2.2) a real case; REPLAY only */
+  backtest_id?: string;
   profile?: BusinessProfile;
   mode: RunMode;
   /** (review) the owner's gut call, tested with the seed plans as "Your gut call: {name}" */
@@ -157,6 +173,9 @@ export interface AnalysisEventData {
   profile: BusinessProfile;
   horizon_weeks: number;
   n_paths: number;
+  /** (v2.2) a backtest's as-of date, "YYYY-MM-DD"; null for examples and custom profiles */
+  as_of?: string | null;
+  backtest_id?: string | null;
 }
 
 export type NewsKind = "supply" | "market";
@@ -392,6 +411,44 @@ export interface ReplayDoneData {
   cum_profit_usd: { U1: number; U2: number };
 }
 
+/** (v2.2) The `backtest` event: the advice scored against what really happened (docs/EVENTS.md). */
+export interface BacktestSeriesPoint {
+  week: number;
+  date: string;
+  value: number;
+  change: number;
+}
+export interface BacktestCell {
+  plan_name: string;
+  mean_delta_usd: number;
+  p5_delta_usd: number;
+  p_better: number;
+  bridge: CellBridge;
+}
+export interface BacktestEventData {
+  backtest_id: string;
+  as_of: string;
+  horizon_end: string;
+  series: { label: string; unit: string; source_url: string; as_of_value: number; points: BacktestSeriesPoint[] };
+  /** id "realized", origin "realized", with cost_path and cost_line */
+  realized_case: ShockCase;
+  cells: BacktestCell[];
+  pick: string;
+  pick_rank: number;
+  /** the tested plans plus "Do nothing" */
+  n_plans: number;
+  beat_do_nothing: boolean;
+  pick_delta_usd: number;
+  hindsight_best: { name: string; spec: PlanSpec; mean_delta_usd: number; plain: string };
+  regret_usd: number;
+  baselines: { name: string; mean_delta_usd: number }[];
+  futures_cover: { min: number; max: number; realized_peak: number; realized_end: number; peak_inside: boolean; end_inside: boolean };
+  leak_check: { clean: boolean; flags: { where: string; text: string }[] };
+  dropped_news: number;
+  what_happened: { date: string; text: string; url: string }[];
+  caveats: string[];
+}
+
 // ---- event names and payload maps --------------------------------------------------------------
 
 export interface AnalysisEventMap {
@@ -407,6 +464,7 @@ export interface AnalysisEventMap {
   reasoning: ReasoningData;
   reasoning_done: ReasoningDoneData;
   memo: MemoEventData;
+  backtest: BacktestEventData;
   telemetry: TelemetryData;
   mode: ModeEventData;
   error: ErrorEventData;
@@ -432,6 +490,7 @@ export const ANALYSIS_EVENT_NAMES = [
   "reasoning",
   "reasoning_done",
   "memo",
+  "backtest",
   "telemetry",
   "mode",
   "error",
