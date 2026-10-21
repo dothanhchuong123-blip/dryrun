@@ -7,6 +7,7 @@ client that connects late (the UI opens the stream after the POST returns) first
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import json
 import logging
 import time
@@ -17,6 +18,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -127,7 +129,33 @@ class CreateAnalysis(BaseModel):
 
 
 class ParseRequest(BaseModel):
-    text: str
+    text: str = ""
+    url: str | None = None
+
+
+BAD_URL = "That link doesn't look like a public web page. Paste a website, Google Maps, Facebook or Shopee link."
+UNREADABLE = "Couldn't read that page. Describe your business in a line instead."
+
+
+def check_page_url(url: str) -> str | None:
+    """The URL if it is a public http(s) page (no localhost or private IPs), else None."""
+    url = url.strip()
+    if not url or len(url) > 500:
+        return None
+    try:
+        u = urlparse(url)
+        host = (u.hostname or "").lower()
+    except ValueError:
+        return None
+    if u.scheme not in ("http", "https") or not host:
+        return None
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        if host == "localhost" or host.endswith((".localhost", ".local", ".internal", ".test")) or "." not in host:
+            return None
+        return url
+    return None if not ip.is_global else url
 
 
 class AddPlan(BaseModel):
@@ -252,15 +280,41 @@ def create_app(
         if not guard.allow():
             return JSONResponse({"reason": "Today's free live budget is used up. Pick an example, or try again tomorrow."}, 429)
         text = body.text.strip()
-        if not text or len(text) > 4000:
+        url = None
+        if body.url is not None and body.url.strip():
+            url = check_page_url(body.url)
+            if url is None:
+                raise HTTPException(422, {"reason": BAD_URL})
+        if len(text) > 4000 or not (text or url):
             raise HTTPException(422, {"reason": "Describe your business in a few sentences (up to 4,000 characters)."})
-        parse_hits.add(ip)
+        page, source = None, None
+        if url is not None:
+            if credits_used_today() >= s.tavily_daily_credit_cap:
+                return JSONResponse(
+                    {"reason": "Reading links is used up for today. Describe your business in a line instead."}, 429
+                )
+            parse_hits.add(ip)
+            scout = make_scout()
+            before = getattr(scout, "credits_used", 0)
+            try:
+                read = await scout.read_page(url)
+            except Exception as e:  # noqa: BLE001  Tavily / network / cache miss: treated as unreadable
+                log.warning("page read failed: %s", e)
+                read = None
+            finally:
+                credits["used"] = credits_used_today() + max(0, getattr(scout, "credits_used", 0) - before)
+            if read is None:
+                raise HTTPException(422, {"reason": UNREADABLE})
+            page = {"url": url, "title": read.title, "text": read.text}
+            source = {"url": url, "title": read.title, "method": read.method, "credits": read.credits}
+        else:
+            parse_hits.add(ip)
         try:
-            profile, fallback = await parse_profile(get_router(), text)
+            profile, fallback = await parse_profile(get_router(), text, page)
         except Exception as e:
             log.warning("profile parse failed: %s", e)
             raise HTTPException(502, {"reason": "Could not read a business from that text. Try again, or pick an example."}) from e
-        return {"profile": profile, "fallback_used": fallback}
+        return {"profile": profile, "fallback_used": fallback, "source": source}
 
     # --- analyses ---------------------------------------------------------------------------
     @app.post("/api/analyses")

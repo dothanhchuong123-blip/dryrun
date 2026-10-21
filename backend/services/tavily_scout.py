@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlparse
 
 from backend.agents.prompts import scout_query_messages, shock_parser_messages
 from backend.agents.schemas import Evidence, ScoutQuery, ShockVector
@@ -87,6 +88,41 @@ def _cards(shock: ShockVector, articles: list[dict], query: str, *, live: bool, 
     return out
 
 
+PAGE_MIN_CHARS = 200  # shorter than this and the page is probably a login wall or JS shell
+PAGE_MAX_CHARS = 3000
+
+
+@dataclass
+class PageRead:
+    text: str
+    title: str
+    method: str  # "extract" | "search"
+    credits: int
+
+
+_PLATFORMS = {
+    "facebook.com": "facebook page", "instagram.com": "instagram", "tiktok.com": "tiktok shop", "etsy.com": "etsy shop",
+    "shopee.vn": "shopee shop", "shopee.com": "shopee shop", "google.com": "business", "goo.gl": "business",
+    "maps.app.goo.gl": "business",
+}
+
+
+def _search_query_for(url: str) -> str:
+    """A query from the URL's domain and path (a shop name in a Maps or Facebook link survives this)."""
+    u = urlparse(url)
+    host = (u.hostname or "").removeprefix("www.")
+    path = re.sub(r"[^\w]+", " ", unquote(u.path), flags=re.UNICODE)
+    path = re.sub(r"\b(place|maps|data|search|pages|profile|php|html?)\b|\b(shop|shops|p|pg)\b|\b\d[\w.]*\b", " ", path, flags=re.IGNORECASE)
+    # on a platform the host says nothing about the shop (a search for "facebook.com tartinebakery" finds Wikipedia):
+    # search the shop's name and name the platform only as a hint
+    for platform, hint in _PLATFORMS.items():
+        if host == platform or host.endswith("." + platform):
+            if path.strip():
+                return re.sub(r"\s+", " ", f"{path} {hint}").strip()[:200]
+            break
+    return re.sub(r"\s+", " ", f"{host} {path}").strip()[:200]
+
+
 class TavilyScout:
     def __init__(self, cache_dir: str | Path = "fixtures/tavily_cache", offline: bool = False, *, client: Any = None, router: Any = None) -> None:
         p = Path(cache_dir)
@@ -131,11 +167,12 @@ class TavilyScout:
 
     # --- Tavily calls -----------------------------------------------------------------
     async def search(
-        self, query: str, depth: str = "advanced", time_range: str = "week",
+        self, query: str, depth: str = "advanced", time_range: str | None = "week",
         include_domains: list[str] | None = None, *, use_cache: bool = True,
         topic: str = "news", country: str = "", cache_only: bool = False,
     ) -> dict:
         """`country` boosts local results and is only sent with `topic="general"` (Tavily ignores it for news).
+        `time_range=None` leaves the field out (page lookups, not news).
         `cache_only` raises OfflineCacheMiss instead of spending a credit when the cache has no answer."""
         req: dict[str, Any] = {"query": query, "depth": depth, "time_range": time_range, "include_domains": include_domains or []}
         if topic != "news":  # keep the cache keys of plain news searches unchanged
@@ -144,9 +181,9 @@ class TavilyScout:
             req["country"] = country
 
         async def fetch():
-            kw: dict[str, Any] = {
-                "query": query, "search_depth": depth, "topic": topic, "time_range": time_range, "max_results": 5,
-            }
+            kw: dict[str, Any] = {"query": query, "search_depth": depth, "topic": topic, "max_results": 5}
+            if time_range is not None:
+                kw["time_range"] = time_range
             if include_domains:
                 kw["include_domains"] = include_domains
             if topic == "general" and country:
@@ -162,6 +199,31 @@ class TavilyScout:
             return await self.client.extract(urls=urls, query=query or None, extract_depth="basic", format="text")
 
         return await self._cached("extract", req, math.ceil(len(urls) / 5), fetch, use_cache, cache_only)
+
+    async def read_page(self, url: str) -> PageRead | None:
+        """The owner's own page for the profile parser: Extract first, then one basic Search when the page is empty
+        or too short. None when both come back empty. Raises on Tavily errors."""
+        before = self.credits_used
+        text, title = "", ""
+        try:
+            er = await self.extract([url])
+            row = next((r for r in er.get("results", []) if r.get("raw_content")), None)
+            if row:
+                text, title = re.sub(r"\s+", " ", row["raw_content"]).strip(), row.get("title") or ""
+        except OfflineCacheMiss:
+            raise
+        except Exception:  # noqa: BLE001  extract failures (blocked site) fall through to search
+            text = ""
+        if len(text) >= PAGE_MIN_CHARS:
+            return PageRead(text[:PAGE_MAX_CHARS], title, "extract", self.credits_used - before)
+        sr = await self.search(_search_query_for(url), "basic", None, topic="general")
+        hits = [r for r in sr.get("results", []) if r.get("content") or r.get("title")][:4]
+        snippets = " ".join(f"{r.get('title', '')}: {r.get('content', '')}".strip() for r in hits)
+        snippets = re.sub(r"\s+", " ", f"{text} {snippets}").strip()
+        if not snippets:
+            return None
+        return PageRead(snippets[:PAGE_MAX_CHARS], (hits[0].get("title") if hits else "") or title, "search",
+                        self.credits_used - before)
 
     # --- pipeline ---------------------------------------------------------------------
     async def _parse(self, articles: list[dict], hint: str) -> ShockVector | None:

@@ -71,9 +71,9 @@ def gut_preset(example: Mapping[str, Any], name: str | None = None) -> PlanSpec 
     raise ValueError(f"no gut plan named {name!r}; choose one of: {', '.join(p['name'] for p in presets)}")
 
 
-async def parse_profile(router: Any, text: str) -> tuple[dict, bool]:
+async def parse_profile(router: Any, text: str, page: dict | None = None) -> tuple[dict, bool]:
     """Plain words -> BusinessProfile with one Super call (EVENTS.md /api/profile/parse). Raises if it fails."""
-    res = await router.call("super", profile_parser_messages(text), BusinessProfile, thinking=False, role="profile_parser")
+    res = await router.call("super", profile_parser_messages(text, page), BusinessProfile, thinking=False, role="profile_parser")
     if res.parsed is None:
         raise ValueError("Could not read a business profile from that text.")
     return BusinessProfile.model_validate(res.parsed.model_dump()).model_dump(), False

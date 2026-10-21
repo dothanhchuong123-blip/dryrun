@@ -91,9 +91,18 @@ export type ExamplesResponse = ExampleSummary[];
 export interface ParseProfileRequest {
   text: string;
 }
+/** Where the profile text came from when the owner pasted a link (EVENTS.md /api/profile/parse). */
+export interface ProfileSource {
+  url: string;
+  title: string;
+  method: "extract" | "search";
+  credits: number;
+}
+
 export interface ParseProfileResponse {
   profile: BusinessProfile;
   fallback_used: boolean;
+  source?: ProfileSource | null;
 }
 
 export interface CreateAnalysisRequest {

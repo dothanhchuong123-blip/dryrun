@@ -28,12 +28,14 @@ import type {
   PlanSpec,
   ReplayEvent,
   RunMode,
+  ProfileSource,
   ScenariosEventData,
   ShockCase,
   TelemetryData,
   TickEventData,
 } from "./events";
 import { decodeChoicesB64 } from "./events";
+import { splitLink } from "./link";
 import {
   ApiError,
   api,
@@ -181,6 +183,8 @@ export interface MarketState extends RunData {
   profileStatus: ProfileStatus;
   profileFallback: boolean;
   profileError: string | null;
+  /** set when the profile was read from a pasted link */
+  profileSource: ProfileSource | null;
 
   // actions
   loadExamples(): Promise<void>;
@@ -289,6 +293,7 @@ export const useMarketStore = create<MarketState>()((set, get) => {
     profileStatus: "idle",
     profileFallback: false,
     profileError: null,
+    profileSource: null,
 
     async loadExamples() {
       if (get().examples.length) return;
@@ -311,16 +316,27 @@ export const useMarketStore = create<MarketState>()((set, get) => {
         profileText: text,
         profileStatus: "reading",
         profileError: null,
+        profileSource: null,
         exampleId: keepExample ? get().exampleId : null,
       });
       try {
-        const res = await api.parseProfile(trimmed);
-        set({ profile: res.profile, profileFallback: res.fallback_used, profileStatus: "ready", backend: backendKind() });
+        const { url, note } = splitLink(trimmed);
+        const res = await api.parseProfile(note, url);
+        set({
+          profile: res.profile,
+          profileFallback: res.fallback_used,
+          profileSource: res.source ?? null,
+          profileStatus: "ready",
+          backend: backendKind(),
+        });
       } catch (e) {
+        const reason = e instanceof ApiError ? (e.body as { reason?: unknown } | null)?.reason : null;
         const msg =
-          e instanceof ApiError && e.status === 429
-            ? "You've read a few businesses already. Try again in a while, or pick an example."
-            : "Could not read that. Try again, or pick an example.";
+          typeof reason === "string" && e instanceof ApiError && [0, 422, 429].includes(e.status)
+            ? reason
+            : e instanceof ApiError && e.status === 429
+              ? "You've read a few businesses already. Try again in a while, or pick an example."
+              : "Could not read that. Try again, or pick an example.";
         set({ profileStatus: "error", profileError: msg });
       }
     },
@@ -337,7 +353,7 @@ export const useMarketStore = create<MarketState>()((set, get) => {
     pickExample(id) {
       const ex = get().examples.find((e) => e.id === id);
       if (!ex) return;
-      set({ exampleId: id, profileText: ex.text, profile: null, profileStatus: "idle", profileError: null });
+      set({ exampleId: id, profileText: ex.text, profile: null, profileStatus: "idle", profileError: null, profileSource: null });
     },
 
     async startAnalysis() {
@@ -511,6 +527,7 @@ export const useMarketStore = create<MarketState>()((set, get) => {
         profile: null,
         profileStatus: "idle",
         profileError: null,
+        profileSource: null,
       });
     },
 

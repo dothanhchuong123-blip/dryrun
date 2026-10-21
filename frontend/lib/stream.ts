@@ -126,18 +126,22 @@ export const api = {
     return (await mockModule()).mockExamples();
   },
 
-  async parseProfile(text: string): Promise<ParseProfileResponse> {
+  async parseProfile(text: string, url?: string | null): Promise<ParseProfileResponse> {
     await probe();
     if (kind === "api") {
       try {
         return await http<ParseProfileResponse>("/api/profile/parse", {
           method: "POST",
-          body: JSON.stringify({ text }),
+          body: JSON.stringify(url ? { text, url } : { text }),
         });
       } catch (e) {
         if (!isOffline(e)) throw e;
         setKind("mock");
       }
+    }
+    if (url) {
+      const reason = "Reading links needs the live server. Pick an example, or describe your business in a line.";
+      throw new ApiError(0, { reason }, reason);
     }
     return (await mockModule()).mockParseProfile(text);
   },

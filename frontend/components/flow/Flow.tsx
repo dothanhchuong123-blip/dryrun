@@ -23,10 +23,18 @@ const STEPS = [
   { title: "Your answer", sub: "what to do" },
 ];
 const AUTO_MS = 4000;
-const SAMPLE_PLACEHOLDER =
-  "e.g. I run a small bakery-café in Austin, Texas and sell about 600 pastries a week at $4.50 each. Ingredients cost me about $1.80 each. My main rival is a Starbucks two blocks away…";
+const SAMPLE_PLACEHOLDER = "e.g. I run a small bakery-café in Austin, Texas… or paste a link";
+const LINK_PLACEHOLDER = "Paste your website, Google Maps, Facebook or Shopee link…";
+const STARTERS: { label: string; text: string }[] = [
+  { label: "Café", text: "I run a small café in " },
+  { label: "Bakery", text: "I run a small bakery in " },
+  { label: "Restaurant", text: "I run a small restaurant in " },
+  { label: "Online shop", text: "I run a small online shop selling " },
+  { label: "Clothing", text: "I run a small clothing shop in " },
+  { label: "Salon", text: "I run a small hair salon in " },
+];
 const HOW = [
-  { t: "Describe your business", d: "A few sentences: what you sell, price, cost, main rival." },
+  { t: "Describe your business", d: "One line is enough, or paste a link. We guess the rest and mark it." },
   { t: "We search the news", d: "Tavily finds this week's news that actually hits your costs and customers." },
   { t: "An AI analyst proposes plans", d: "Nemotron suggests moves; a simulator stress-tests each across possible futures." },
   { t: "You get a decision memo", d: "The plan that holds up best, with the numbers and sources behind it." },
@@ -190,8 +198,20 @@ export function Flow() {
   const [showFull, setShowFull] = useState(false);
   const exReplay = !!s.examples.find((e) => e.id === (s.exampleId ?? s.analysis.exampleId))?.has_replay || s.analysis.mode === "replay";
   const autoEff = auto ?? exReplay;
-  const sample = s.examples.find((e) => e.has_replay)?.text;
-  const placeholder = sample ? `e.g. ${sample.length > 220 ? `${sample.slice(0, 220).trim()}…` : sample}` : SAMPLE_PLACEHOLDER;
+  const [linkMode, setLinkMode] = useState(false);
+  const boxRef = useRef<HTMLTextAreaElement>(null);
+  const placeholder = linkMode ? LINK_PLACEHOLDER : SAMPLE_PLACEHOLDER;
+  const showChips = !s.profileText.trim() || STARTERS.some((c) => c.text === s.profileText);
+  const pickStarter = (text: string | null) => {
+    setLinkMode(text === null);
+    s.setProfileText(text ?? "");
+    window.setTimeout(() => {
+      const el = boxRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }, 0);
+  };
   const offline = s.backend === "mock";
 
   // ---- gates --------------------------------------------------------------------------------------
@@ -374,6 +394,7 @@ export function Flow() {
             ) : (
               <>
                 <textarea
+                  ref={boxRef}
                   aria-label="Describe your business"
                   rows={4}
                   value={s.profileText}
@@ -384,7 +405,7 @@ export function Flow() {
                   placeholder={placeholder}
                 />
                 <div className="fl-boxbar">
-                  <span>Helps to include: what you sell, price, cost, main rival · <kbd>⌘</kbd> <kbd>Enter</kbd> to start</span>
+                  <span>One line is enough: we guess the rest and mark it. Or paste your website, Google Maps or shop link · <kbd>⌘</kbd> <kbd>Enter</kbd> to start</span>
                   <button type="button" className="fl-btn" disabled={!s.profileText.trim() || s.profileStatus === "reading"} onClick={() => read(s.profileText)}>
                     Test my business
                     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
@@ -392,6 +413,18 @@ export function Flow() {
                     </svg>
                   </button>
                 </div>
+                {showChips && (
+                  <div className="fl-starters" role="group" aria-label="Quick starts">
+                    {STARTERS.map((c) => (
+                      <button key={c.label} type="button" className="fl-starter" aria-pressed={s.profileText === c.text} onClick={() => pickStarter(c.text)}>
+                        {c.label}
+                      </button>
+                    ))}
+                    <button type="button" className="fl-starter link" onClick={() => pickStarter(null)}>
+                      My shop&apos;s link
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>

@@ -5,6 +5,17 @@ import type { BusinessProfile } from "../../lib/events";
 import { useMarketStore } from "../../lib/store";
 import { NUM_FIELDS, checkNum, trimNum, type NumField } from "../setup/SetupScreen";
 
+/** the numbers the profile parser may guess (prompts.py _PROFILE_SYSTEM) */
+const GUESSABLE = 7;
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
 type TextKey = "business_name" | "rival_name" | "supplier_region" | "country";
 const TEXT_FIELDS: { key: TextKey; label: string }[] = [
   { key: "business_name", label: "Business" },
@@ -91,6 +102,7 @@ export function StageUnderstand() {
   const p = useMarketStore((s) => s.profile);
   const status = useMarketStore((s) => s.profileStatus);
   const fallback = useMarketStore((s) => s.profileFallback);
+  const source = useMarketStore((s) => s.profileSource);
   const exampleId = useMarketStore((s) => s.exampleId);
   const started = useMarketStore((s) => s.analysis.status !== "idle");
 
@@ -123,6 +135,8 @@ export function StageUnderstand() {
   const fields = [TEXT_FIELDS[0], ...NUM_FIELDS.slice(0, 5), TEXT_FIELDS[1], NUM_FIELDS[5], TEXT_FIELDS[2], TEXT_FIELDS[3], NUM_FIELDS[6], NUM_FIELDS[7]];
   const terms = p.search_terms ?? [];
   const local = p.market_terms ?? [];
+  const nGuessed = p.guessed_fields.length;
+  const domain = source ? hostOf(source.url) : "";
   return (
     <div className="fl-stage">
       <div className="fl-g2">
@@ -134,6 +148,16 @@ export function StageUnderstand() {
             </div>
             <span className="fl-pill ok">Nemotron Super</span>
           </div>
+          {source && (
+            <a className="fl-pill tav fl-src" href={source.url} target="_blank" rel="noopener noreferrer" title={source.title || source.url}>
+              {source.method === "search" ? `Found with Tavily Search · ${domain}` : `Read from ${domain} with Tavily Extract`}
+            </a>
+          )}
+          {nGuessed > 0 && (
+            <p className="fl-guessnote">
+              We guessed <b>{nGuessed}</b> of <b>{GUESSABLE}</b> numbers. Change any you know.
+            </p>
+          )}
           <div className="fl-facts">
             {fields.map((f, i) =>
               "unit" in f ? <NumFact key={f.key} f={f} p={p} i={i} /> : <TextFact key={f.key} k={f.key} label={f.label} p={p} i={i} />,
