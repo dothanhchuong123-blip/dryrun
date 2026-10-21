@@ -76,7 +76,7 @@ export function AddPlanPanel({ profile, onClose }: { profile: BusinessProfile; o
         <h3>
           Your plan: <span className="pg-pname">{name.replace(/^(Your plan|Yours): /, "") || "no changes yet"}</span>
         </h3>
-        <button className="al-tbtn" style={{ color: "var(--ink-3)", padding: 0 }} onClick={onClose}>
+        <button type="button" className="al-tbtn pg-close" onClick={onClose}>
           Close
         </button>
       </div>
@@ -126,14 +126,14 @@ export function AddPlanPanel({ profile, onClose }: { profile: BusinessProfile; o
       )}
 
       <div className="pg-addf">
-        <span className="muted" style={{ fontSize: 12.5 }}>
+        <span className="muted pg-note">
           {full
             ? `You can add up to ${MAX_USER_PLANS} plans of your own, so the grid stays quick and readable.`
             : nothing
               ? "Change at least one thing to test it."
               : `Engine only: free, about 1 s, no Nemotron call. ${userPlans} of ${MAX_USER_PLANS} own plans used.`}
         </span>
-        <button className="btn sm" disabled={busy || full || nothing} onClick={() => void submit()}>
+        <button type="button" className="btn sm pg-go" disabled={busy || full || nothing} onClick={() => void submit()}>
           {busy ? "Adding…" : "Test this plan"}
         </button>
       </div>

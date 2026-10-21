@@ -636,6 +636,23 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
   const best = shown.done ? summary?.best_today : null;
   const safest = shown.done ? summary?.safest : null;
   const cash = p?.cash_available ?? 0;
+  // the recommended row plays its entrance once, the first time it is on screen after the run is done
+  const recRef = useRef<HTMLTableRowElement>(null);
+  const [recSeen, setRecSeen] = useState<string | null>(null);
+  useEffect(() => {
+    const el = recRef.current;
+    if (!best || !el || recSeen === best) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        setRecSeen(best);
+        io.disconnect();
+      },
+      { threshold: 0.9 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [best, recSeen]);
 
   const top = useCallback((r: DOMRect) => {
     const h = tipH.current,
@@ -815,10 +832,15 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
               ))}
             </tr>
             {rows.map((r) => (
-              <tr key={r.name} className="fl-in">
+              <tr
+                key={r.name}
+                ref={best === r.name ? recRef : undefined}
+                className={best === r.name ? `fl-in fl-rec${recSeen === r.name ? " go" : ""}` : "fl-in"}
+              >
                 <th scope="row">
                   {best === r.name && <span className="star">★ </span>}
                   {r.name}
+                  {best === r.name && <span className="fl-rectag">Recommended</span>}
                   <small>
                     {r.source === "user" ? "your plan" : r.source === "seed" ? "starter plan" : `Nemotron · round ${r.round + 1}`}
                     {best === r.name && " · best today"}
