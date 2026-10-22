@@ -9,6 +9,7 @@ import { BlockMeter, FutureHead } from "../faces/GridMarks";
 import { CellMath } from "../memo/CellMath";
 import { describePlan } from "../memo/MemoScreen";
 import "../memo/answer.css";
+import { MemoTwins } from "../replay/MemoTwins";
 import { BacktestReveal } from "./BacktestReveal";
 import { FallbackNotice } from "./FallbackNotice";
 import { EngineOnly, sign } from "./parts";
@@ -150,6 +151,8 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
             </div>
           )}
         </div>
+
+        <MemoTwins planName={memo.plan_name} shockId={n.shock_id} onFull={() => void openReplay(memo.plan_name, n.shock_id)} />
 
         <section className="am-sec" aria-label="The plan">
           <h2>The plan</h2>

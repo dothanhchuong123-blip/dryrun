@@ -129,3 +129,21 @@
   .rp *, .rp-b { transition: none !important; }
   .ts-stat .sold { animation: none; }
 }
+
+/* the twin worlds on the answer page (MemoTwins) */
+.am-twins { padding-bottom: 20px; }
+.mt-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 14px; }
+.mt-head h2 { margin: 0; }
+.mt-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mt-wk { padding: 2px 7px; background: var(--fl-solid); color: var(--fl-on-solid); font-family: var(--mono); font-weight: 500; font-size: 10.5px; letter-spacing: 0.08em; white-space: nowrap; }
+.mt-gap { padding: 1px 7px; border: 2px solid var(--px-hard); font-family: var(--mono); font-weight: 500; font-size: 10.5px; letter-spacing: 0.08em; white-space: nowrap; }
+.mt-gap b { font-family: var(--sans, inherit); font-weight: 700; font-size: 14px; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-left: 4px; }
+.mt-gap.pos b { color: var(--fl-gain); }
+.mt-gap.neg b { color: var(--fl-loss); }
+.mt-twins { gap: 12px; }
+.mt-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 14px; margin-top: 4px; }
+.mt-note { flex: 1 1 260px; min-width: 0; font-family: var(--mono); font-size: 11.5px; line-height: 1.5; color: var(--fl-ink-2); }
+.mt-note b { font-family: inherit; font-weight: 700; color: var(--fl-ink); }
+.mt-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+@media print { .am-twins { display: none; } }
+@media (max-width: 480px) { .mt-twins .ts-count { display: none; } .mt-twins { gap: 10px; } }
