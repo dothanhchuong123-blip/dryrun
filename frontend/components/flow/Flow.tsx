@@ -40,6 +40,12 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const LONG_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 /** "2024-01-15" -> "Jan 2024" */
 const monthYear = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""} ${iso.slice(0, 4)}`;
+/** ["2024-01-15", "2025-03-25"] -> "2024–25" */
+const yearSpan = (isos: string[]) => {
+  const ys = isos.map((d) => Number(d.slice(0, 4)));
+  const lo = Math.min(...ys), hi = Math.max(...ys);
+  return lo === hi ? `${lo}` : `${lo}–${String(hi).slice(2)}`;
+};
 /** "2024-01-15" -> "15 January 2024" */
 const longDate = (iso: string) => `${Number(iso.slice(8, 10))} ${LONG_MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""} ${iso.slice(0, 4)}`;
 
@@ -451,6 +457,11 @@ export function Flow() {
               Try your plan on <em>200 customers</em> before you try it on real ones.
             </h1>
             <p>Describe your business. We find the news that hits it, test a few plans against good and bad futures, and tell you which one holds up.</p>
+            {!up && s.backtests.length > 0 && (
+              <button type="button" className="bt-proof" onClick={() => document.getElementById("real-cases")?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+                <span className="bt-chip">Backtested</span> Checked on {s.backtests.length} real cases from {yearSpan(s.backtests.map((b) => b.as_of))}: see what it said, then what really happened ↓
+              </button>
+            )}
           </div>
 
           {!up && (
@@ -608,6 +619,21 @@ export function Flow() {
             )}
           </div>
 
+          {!up && s.backtests.length > 0 && (
+            <div className="fl-ex bt-ex" id="real-cases">
+              <p>Real cases: would it have helped? We replay a past date with only the news from before it, then check the advice against what really happened.</p>
+              <div className="fl-exg">
+                {s.backtests.map((b) => (
+                  <button key={b.id} type="button" className="fl-exb bt-card" onClick={() => pickBacktest(b.id)}>
+                    <span className="bt-chip">{monthYear(b.as_of)}</span>
+                    <b>{b.title}</b>
+                    <span>{b.subtitle}</span>
+                    <small>Replay this date →</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {!up && s.examples.length > 0 && (
             <div className="fl-ex">
               <p>No business in mind? Pick one. One click runs it end to end, free.</p>
@@ -623,21 +649,6 @@ export function Flow() {
                     </button>
                   );
                 })}
-              </div>
-            </div>
-          )}
-          {!up && s.backtests.length > 0 && (
-            <div className="fl-ex bt-ex">
-              <p>Real cases: would it have helped? We replay a past date with only the news from before it, then check the advice against what really happened.</p>
-              <div className="fl-exg">
-                {s.backtests.map((b) => (
-                  <button key={b.id} type="button" className="fl-exb bt-card" onClick={() => pickBacktest(b.id)}>
-                    <span className="bt-chip">{monthYear(b.as_of)}</span>
-                    <b>{b.title}</b>
-                    <span>{b.subtitle}</span>
-                    <small>Replay this date →</small>
-                  </button>
-                ))}
               </div>
             </div>
           )}

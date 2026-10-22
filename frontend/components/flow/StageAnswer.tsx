@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { MemoEventData } from "../../lib/events";
 import { formatDelta, formatMoney, formatRuns } from "../../lib/format";
 import { cellKey, useMarketStore } from "../../lib/store";
+import { CellMath } from "../memo/CellMath";
 import { describePlan } from "../memo/MemoScreen";
 import "../memo/answer.css";
 import { BacktestReveal } from "./BacktestReveal";
@@ -33,6 +34,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
   const downloadMemo = useMarketStore((s) => s.downloadMemo);
   const openReplay = useMarketStore((s) => s.openReplay);
   const [note, setNote] = useState<string | null>(null);
+  const [open, setOpen] = useState<{ plan: string; shock: string } | null>(null);
   if (!memoRaw) return null;
 
   const memo = memoRaw as MemoView;
@@ -149,7 +151,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
         {rows.length > 0 && (
           <section className="am-sec" aria-label="Plans compared">
             <h2>How it compares</h2>
-            <p className="am-sub">Profit change vs doing nothing in each future we tested.</p>
+            <p className="am-sub">Profit change vs doing nothing in each future we tested. Tap a number to see how it was computed.</p>
             <div className="am-tbl-wrap">
               <table className="am-tbl">
                 <thead>
@@ -172,9 +174,12 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
                       {futures.map((s) => {
                         const v = cells[cellKey(r, s.id)]?.mean_delta_usd;
                         if (v == null) return <td key={s.id}>n/a</td>;
+                        const on = open?.plan === r && open.shock === s.id;
                         return (
-                          <td key={s.id} className={`c ${sign(v)}`}>
-                            {formatDelta(v)}
+                          <td key={s.id} className={`c ${sign(v)}${on ? " on" : ""}`}>
+                            <button type="button" className="am-cellbtn" aria-expanded={on} onClick={() => setOpen(on ? null : { plan: r, shock: s.id })}>
+                              {formatDelta(v)}
+                            </button>
                             <i style={{ background: v >= 0 ? "var(--fl-gain-bar)" : "var(--fl-loss-bar)", width: `calc(${(Math.abs(v) / cmax) * 100}% - 16px)`, left: v >= 0 ? 8 : "auto", right: v < 0 ? 8 : "auto" }} />
                           </td>
                         );
@@ -190,6 +195,11 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
                 </tbody>
               </table>
             </div>
+            {(() => {
+              const c = open && cells[cellKey(open.plan, open.shock)];
+              const sh = open && shocks.find((x) => x.id === open.shock);
+              return c && sh ? <CellMath cell={c} shock={sh} profile={profile} onClose={() => setOpen(null)} /> : null;
+            })()}
             {steady != null && (
               <p className="am-luck">
                 <b>Skill vs luck.</b> Even if {rival} never runs out of stock, this plan makes <b>{formatDelta(steady)}</b>. The other <b>{formatDelta(n.mean_delta_usd - steady)}</b> only comes if they run short.

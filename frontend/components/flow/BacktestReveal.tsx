@@ -107,6 +107,8 @@ interface Row {
 export function BacktestReveal() {
   const b = useMarketStore((s) => s.backtest);
   const openReplay = useMarketStore((s) => s.openReplay);
+  const memo = useMarketStore((s) => s.memo);
+  const shocks = useMarketStore((s) => s.shocks);
   if (!b) return null;
 
   const cover = b.futures_cover;
@@ -139,6 +141,9 @@ export function BacktestReveal() {
     b.regret_usd > 0
       ? `Best plan in hindsight: ${b.hindsight_best.plain || b.hindsight_best.name} (${formatMoney(b.regret_usd)} more).`
       : "The memo's pick was also the best plan in hindsight.";
+  // the memo's headline is a forecast for one tested future; this panel is the same plan on the real path
+  const forecast = memo && !doNothing && memo.plan_name === b.pick ? memo.numbers : null;
+  const forecastIn = forecast && shocks.find((s) => s.id === forecast.shock_id)?.label;
 
   // the peak and end are read off the line above, so the words match the chart
   const pts = b.series.points;
@@ -166,6 +171,11 @@ export function BacktestReveal() {
           {verdict} <span className="bt-rank">{rank}</span>
         </p>
         <p className="bt-hind">{hind}</p>
+        {forecast && (
+          <p className="bt-hind">
+            Why this differs from the memo&apos;s {formatDelta(forecast.mean_delta_usd)}: that was the forecast{forecastIn ? ` for “${forecastIn}”` : ""}, made on {niceDate(b.as_of)} with only the news of that day. This number is the same plan run on the price that really happened.
+          </p>
+        )}
       </div>
 
       <figure className="bt-fig">
