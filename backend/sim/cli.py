@@ -5,6 +5,7 @@
     --offline                     cached Tavily only and a scripted router: no network, $0
     --record                      write fixtures/replays/analysis_<ID>.jsonl and the memo plan's `news` cell replay
                                   (the `news` column is the example's labelled assumption, as with --assumption-news)
+    --allow-fallback              let --record save a run where an Ultra or Super call fell back (refused by default)
     --fresh-news                  re-run the Tavily searches (about 4 credits) instead of reading the cache
     --gut NAME | none             the owner's gut call, from the example's `gut_plans` (default: the first one)
     --replay-cell PLAN SHOCK      replay one cell of the last analysis week by week
@@ -118,6 +119,22 @@ async def record_files(a: Analysis, directory: Path | None = None) -> list[Path]
     return paths
 
 
+def analyst_fallbacks(a: Analysis) -> list[Any]:
+    """This run's Ultra and Super calls that ended on a fallback (shopper fallbacks are allowed in a recording)."""
+    return [r for r in a.telemetry.records if r.tier in ("ultra", "super") and r.fallback_used]
+
+
+def refuse_fallback_record(a: Analysis) -> bool:
+    """Print each Ultra/Super call that fell back and return True when --record must not save this run."""
+    bad = analyst_fallbacks(a)
+    for r in bad:
+        print(f"  {r.role or '-'} ({r.tier}): {r.status}{' ' + r.error if r.error else ''}", file=sys.stderr)
+    if bad:
+        print(f"Not recorded: {len(bad)} Ultra/Super call(s) fell back. Fix the cause, or pass --allow-fallback.",
+              file=sys.stderr)
+    return bool(bad)
+
+
 async def _replay_cell(plan: str, shock: str) -> int:
     if not LAST_RUN.exists():
         print("No last analysis yet: run one first.", file=sys.stderr)
@@ -189,6 +206,8 @@ async def _run(args: argparse.Namespace) -> int:
     LAST_MEMO.write_text(a.memo_markdown(), encoding="utf-8")
     print(f"\nMemo: {LAST_MEMO.relative_to(ROOT)} · stream: {LAST_RUN.relative_to(ROOT)}")
     if args.record:
+        if not args.allow_fallback and refuse_fallback_record(a):
+            return 1
         for p in await record_files(a):
             print(f"Recorded {p.relative_to(ROOT)}")
     return 0
@@ -204,6 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--offline", action="store_true", help="cached Tavily and a scripted router, no network")
     ap.add_argument("--fresh-news", action="store_true", help="re-run the Tavily searches instead of the cache (~4 credits)")
     ap.add_argument("--record", action="store_true", help="write the example's replay recordings (implies --assumption-news)")
+    ap.add_argument("--allow-fallback", action="store_true", help="with --record, save even if Ultra or Super fell back")
     ap.add_argument("--assumption-news", action="store_true",
                     help="use the example's labelled assumption for the news column; articles are still shown as cards")
     ap.add_argument("--gut", help="the owner's gut call by name from the example's gut_plans, or 'none'")

@@ -444,6 +444,20 @@ export function Flow() {
         <ThemeToggle />
       </header>
 
+      {s.analysis.status === "error" && s.analysis.modelsDown && (
+        <div className="mt-banner" role="alert">
+          <p>{s.analysis.note ?? "The AI models aren't available right now, so this live run stopped."}</p>
+          <div className="mt-btns">
+            <button type="button" className="fl-btn" onClick={() => void s.watchRecorded().then((ok) => ok && go(1))}>
+              Watch a recorded run
+            </button>
+            <button type="button" className="fl-btn2" onClick={() => { void s.startAnalysis(); go(1); }}>
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
+
       {up && s.analysis.asOf && (
         <div className="bt-banner" role="status">
           <b>Replaying {longDate(s.analysis.asOf)}.</b> Dry Run only sees news from before this date.

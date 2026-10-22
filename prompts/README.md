@@ -96,6 +96,7 @@ Then (optional, advice only): Argon review **A2** (prompt red-team on the analys
 | [x] | F2 screens 3–4: analyst log, plans × futures grid | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F2-analyst-grid.md` |
 | [x] | F3 screens 5–6: replay drawer (arena), decision memo | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F3-replay-memo.md` |
 | [x] | F5 drop a file in the box (PDF, photo) + "not enough" gate | Claude Opus 5.5 (effort high) | `prompts/ui_oct21_one-task/F5-drop-files.md` |
+| [x] | F6 model-trouble notice: stop LIVE runs on 402/auth/cap, "how much was Nemotron" notice, `--record` guard | Claude Sonnet 5.5 (effort high) | `prompts/ui_oct21_one-task/F6-model-trouble.md` |
 
 ### Wave 4 · Oct 19–20 · **Milestone B** (deployed) · `prompts/4_oct19-20_in-order/`. **T08 first, then T09.**
 | Done | Task | Builder | File |

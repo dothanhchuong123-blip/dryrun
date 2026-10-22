@@ -72,6 +72,8 @@ export interface AnalysisInfo {
   costUsd: number | null;
   /** reason from a `mode` event or an error, for the mode chip tooltip / error banner */
   note: string | null;
+  /** F6: the run stopped because the models can't be reached (an `error` event with recoverable: true) */
+  modelsDown: boolean;
 }
 
 export interface PlanRow {
@@ -143,6 +145,7 @@ const emptyAnalysis = (): AnalysisInfo => ({
   backtestId: null,
   costUsd: null,
   note: null,
+  modelsDown: false,
 });
 
 interface RunData {
@@ -215,6 +218,8 @@ export interface MarketState extends RunData {
   /** (B1) Plays a real case: the run starts at once, because the case brings its own business. */
   pickBacktest(id: string): Promise<void>;
   startAnalysis(): Promise<void>;
+  /** F6: after a live run stopped because the models are down, plays a recorded example instead (no model call). */
+  watchRecorded(): Promise<boolean>;
   /** Adds a user plan row (engine only, free). Resolves to an error message, or null when accepted. */
   addPlan(spec: PlanSpec): Promise<string | null>;
   newsCheck(): Promise<string | null>;
@@ -479,6 +484,40 @@ export const useMarketStore = create<MarketState>()((set, get) => {
       }
     },
 
+    async watchRecorded() {
+      const s = get();
+      const ex = s.examples.find((e) => e.has_replay && e.id === s.analysis.exampleId) ?? s.examples.find((e) => e.has_replay);
+      if (!ex) return false;
+      closeAnalysisStream?.();
+      closeAnalysisStream = null;
+      get().closeReplay();
+      stopClock();
+      reasoningBuf = {};
+      stepSeq = 0;
+      set({
+        ...emptyRun(),
+        analysis: { ...emptyAnalysis(), status: "starting", exampleId: ex.id, mode: "replay" },
+        step: "news",
+        exampleId: ex.id,
+        profileText: ex.text,
+        profile: null,
+        profileStatus: "ready", // the recording brings its own profile, so no model has to read the text
+        profileError: null,
+        profileSource: null,
+        profileFile: null,
+        profileReject: null,
+      });
+      try {
+        const res = await api.createAnalysis({ example_id: ex.id, mode: "replay" });
+        set((st) => ({ analysis: { ...st.analysis, id: res.analysis_id, mode: "replay", status: "running" }, backend: backendKind() }));
+        closeAnalysisStream = connectAnalysisStream(res.analysis_id, (ev) => get().applyAnalysisEvent(ev), (reason) => fail(reason));
+        return true;
+      } catch {
+        fail("Could not start the recorded run.");
+        return false;
+      }
+    },
+
     async addPlan(spec) {
       const s = get();
       const id = s.analysis.id ?? getCurrentAnalysisId();
@@ -717,7 +756,10 @@ export const useMarketStore = create<MarketState>()((set, get) => {
           handleError(ev.data);
           break;
         case "done":
-          set((s) => ({ analysis: { ...s.analysis, status: "done", costUsd: ev.data.cost_usd } }));
+          // a run that stopped on an error stays an error: `done` only closes the stream
+          set((s) => ({
+            analysis: { ...s.analysis, status: s.analysis.modelsDown ? "error" : "done", costUsd: ev.data.cost_usd },
+          }));
           break;
       }
     },
@@ -764,7 +806,7 @@ export const useMarketStore = create<MarketState>()((set, get) => {
   };
 
   function handleError(e: ErrorEventData) {
-    if (e.recoverable) set((s) => ({ analysis: { ...s.analysis, note: e.message } }));
+    if (e.recoverable) set((s) => ({ analysis: { ...s.analysis, status: "error", note: e.message, modelsDown: true } }));
     else fail(e.message);
   }
 });

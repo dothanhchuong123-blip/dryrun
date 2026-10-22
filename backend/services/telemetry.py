@@ -35,7 +35,8 @@ class CallRecord(BaseModel):
     completion_tokens: int = 0
     reasoning_tokens: int = 0
     tok_per_s: float | None = None
-    status: str = "ok"  # ok | error | timeout | rate_limited | shed | capped
+    status: str = "ok"  # ok | error | no_credit | auth | server_error | timeout | rate_limited | shed | capped
+    error: str = ""     # for a failed call: status code and API error code, e.g. "402 credit_balance_exhausted"
     retries: int = 0
     n_429: int = 0
     json_valid: bool = False

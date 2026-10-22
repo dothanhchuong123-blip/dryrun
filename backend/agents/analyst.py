@@ -42,6 +42,7 @@ from backend.config import ROOT
 from backend.engine import planner
 from backend.engine.planner import DO_NOTHING, PlanSpec, ShockCase
 from backend.engine.types import N_ARCHETYPES, CrowdSentiment
+from backend.services.router import ModelsUnavailable
 
 log = logging.getLogger(__name__)
 
@@ -454,6 +455,12 @@ class Analyst:
     def _shock_dicts(self) -> list[dict]:
         return [c.to_dict() for c in self.shocks]
 
+    def _check_models(self) -> None:
+        """Stop the run once the models are known to be unreachable: more calls would only burn time (SPEC F6)."""
+        reason = getattr(self.router, "hard_failure", None)
+        if reason:
+            raise ModelsUnavailable(reason)
+
     async def _ultra(
         self, messages: list[dict], schema: type[BaseModel], *, role: str, rnd: int, thinking: bool
     ) -> tuple[BaseModel | None, float | None]:
@@ -463,6 +470,8 @@ class Analyst:
 
         latency: float | None = None
         for _ in range(ULTRA_TRIES):
+            if getattr(self.router, "hard_failure", None):
+                break
             try:
                 res = await self.router.call(
                     "ultra", messages, schema, thinking=thinking, role=role,
@@ -854,12 +863,17 @@ class Analyst:
 
     # --- run ---------------------------------------------------------------------------------
     async def run(self) -> dict:
+        self._check_models()
         if not self._scenarios_done:
             await self.scenarios()
+            self._check_models()
         await self._seed()
+        self._check_models()
         for rnd in range(1, self.max_rounds + 1):
             if len(self.specs) >= self.max_plans or not await self._round(rnd):
                 break
+            self._check_models()
+        self._check_models()
         pick = self._final_pick(self.ultra_pick)
         memo = await self._memo(pick, template_only=self.search_fallback)
         return {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CellBridge, MemoEventData, PlanSpec } from "../../lib/events";
 import { formatDelta, formatMoney, formatRuns } from "../../lib/format";
 import { useMarketStore } from "../../lib/store";
+import { FallbackNotice } from "../flow/FallbackNotice";
 import { api } from "../../lib/stream";
 import { withTransition } from "../../lib/transition";
 import { ModelChip } from "../shell/ModelChip";
@@ -257,7 +258,7 @@ export function MemoScreen() {
         {copied && <div className="mm-toast" role="status">{copied}</div>}
 
         <article className="card mm">
-          {memo.fallback_used && <p className="mm-fallback">Nemotron was unavailable, so this memo used the built-in rules.</p>}
+          <FallbackNotice />
           <header>
             <h1 className="mm-h" style={{ viewTransitionName: "pick" }}>{memo.headline}</h1>
             {memo.cost_line && <p className="mm-cost num">{memo.cost_line}</p>}

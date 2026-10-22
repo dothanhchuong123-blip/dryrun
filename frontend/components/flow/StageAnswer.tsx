@@ -8,6 +8,7 @@ import { CellMath } from "../memo/CellMath";
 import { describePlan } from "../memo/MemoScreen";
 import "../memo/answer.css";
 import { BacktestReveal } from "./BacktestReveal";
+import { FallbackNotice } from "./FallbackNotice";
 import { EngineOnly, sign } from "./parts";
 
 /** Optional review fields (EVENTS v2.1) that lib/events.ts doesn't carry yet. */
@@ -100,6 +101,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
 
   return (
     <div className="fl-stage am">
+      <FallbackNotice />
       <article className="am-paper" aria-labelledby="am-h">
         <header className="am-head">
           <div className="am-eyebrow">
@@ -307,7 +309,6 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
           Plans by NVIDIA Nemotron; every number comes from our simulator, never from the AI.
           {memo.cost_line ? ` How the news moved your cost: ${memo.cost_line}.` : ""}
           {calls > 0 && telemetry ? ` ${calls} AI calls, $${telemetry.cost_usd.toFixed(2)}.` : ""}
-          {memo.fallback_used ? " Some steps used a plain fallback." : ""}
         </footer>
       </article>
 

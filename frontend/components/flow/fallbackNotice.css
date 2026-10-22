@@ -1,0 +1,3 @@
+.fb-notice { margin: 0 0 14px; padding: 9px 12px; border-radius: 10px; background: var(--fl-amber-soft, #fff8e6); color: var(--fl-amber-ink, #92400e); font-size: 13px; line-height: 1.5; }
+.fb-notice p { margin: 0; }
+.fb-notice p + p { margin-top: 3px; }

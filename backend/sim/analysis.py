@@ -37,7 +37,7 @@ from backend.engine.planner import DO_NOTHING, PlanSpec, ShockCase
 from backend.engine.types import N_ARCHETYPES, CrowdSentiment
 from backend.services import replay
 from backend.services.news_watch import NewsWatch
-from backend.services.router import DEFAULT_MAX_TOKENS, DEFAULT_TIMEOUT
+from backend.services.router import DEFAULT_MAX_TOKENS, DEFAULT_TIMEOUT, ModelsUnavailable, RunHealth
 from backend.services.telemetry import CallRecord, TelemetryStore
 from backend.sim import backtest as bt
 
@@ -55,6 +55,12 @@ DEFAULT_FALLBACK_SHOCK = {
 }
 
 Emit = Callable[[str, dict], Any]
+MODELS_DOWN = {
+    "no_credit": "The AI models aren't available right now, so this live run stopped. You can watch a recorded run instead.",
+    "capped": "Today's live budget is used up, so this live run stopped. You can watch a recorded run, or try live again tomorrow.",
+    "server_error": "Token Factory isn't answering right now, so this live run stopped. Try again in a few minutes, or watch a recorded run.",
+}
+MODELS_DOWN["auth"] = MODELS_DOWN["no_credit"]
 
 
 def load_example(example_id: str) -> dict:
@@ -145,6 +151,12 @@ class _RouterProxy:
 
     def __init__(self, inner: Any, after_call: Callable[[Any], Any], *, cheap: bool = False) -> None:
         self.inner, self.after_call, self.cheap = inner, after_call, cheap
+        self.health = RunHealth()   # this run's only: the inner router is shared by every visitor
+
+    @property
+    def hard_failure(self) -> str | None:
+        """Why the models are unreachable ("no_credit", "auth", "capped", "server_error"), or None."""
+        return self.health.reason
 
     @property
     def store(self) -> Any:
@@ -156,6 +168,9 @@ class _RouterProxy:
             kw.setdefault("max_tokens", DEFAULT_MAX_TOKENS["ultra"])
             kw.setdefault("timeout", DEFAULT_TIMEOUT["ultra"])
         res = await self.inner.call(tier, messages, schema, **kw)
+        rec = getattr(res, "record", None)
+        if isinstance(rec, CallRecord):
+            self.health.note(rec)
         await self.after_call(res)
         return res
 
@@ -393,6 +408,10 @@ class Analysis:
                 await self._compute(send)
         except asyncio.CancelledError:
             raise
+        except ModelsUnavailable as e:
+            log.warning("analysis %s stopped: models unavailable (%s)", self.analysis_id, e.reason)
+            await send("error", {"message": MODELS_DOWN.get(e.reason, MODELS_DOWN["no_credit"]), "recoverable": True})
+            await send("done", {"analysis_id": self.analysis_id, "cost_usd": round(self.telemetry_snapshot()["cost_usd"], 6)})
         except Exception as e:  # the stream must always end cleanly
             log.exception("analysis %s failed", self.analysis_id)
             await send("error", {"message": f"The analysis stopped: {type(e).__name__}.", "recoverable": False})

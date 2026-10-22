@@ -74,10 +74,51 @@ class _Attempt:
 
 
 class _CallError(Exception):
-    def __init__(self, status: str, retry_after: float | None = None) -> None:
+    def __init__(self, status: str, retry_after: float | None = None, error: str = "") -> None:
         super().__init__(status)
         self.status = status
         self.retry_after = retry_after
+        self.error = error
+
+
+class ModelsUnavailable(Exception):
+    """The models can't be reached at all (no credit, bad key, daily cap, Token Factory down): stop the run.
+    `reason` is one of "no_credit", "auth", "capped", "server_error"."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+HARD_STATUSES = ("no_credit", "auth", "capped")
+SERVER_ERROR_STREAK = 2   # Ultra/Super 5xx answers in a row that count as "down" (one can be a blip)
+
+
+class RunHealth:
+    """Per-run view of the calls' outcomes: `reason` is set once the models are known to be unreachable. A timeout,
+    a 429 or invalid JSON never sets it: those are "slow", not "down". Each Analysis keeps its own, because the
+    router is shared by every visitor's run."""
+
+    def __init__(self) -> None:
+        self.reason: str | None = None
+        self._streak = 0
+
+    def note(self, rec: CallRecord) -> None:
+        if rec.status in HARD_STATUSES:
+            self.reason = self.reason or rec.status
+        if rec.tier in ("ultra", "super"):
+            self._streak = self._streak + 1 if rec.status == "server_error" else 0
+            if self._streak >= SERVER_ERROR_STREAK:
+                self.reason = self.reason or "server_error"
+
+
+def _describe_status_error(e: openai.APIStatusError) -> str:
+    """"402 credit_balance_exhausted": the status code and the API's error code or type, nothing else (no headers,
+    request, key or prompt), at most 120 characters."""
+    body = e.body if isinstance(e.body, dict) else {}
+    body = body.get("error") if isinstance(body.get("error"), dict) else body
+    code = str(body.get("code") or body.get("type") or "").strip()
+    return f"{e.status_code} {code}".strip()[:120]
 
 
 def _estimate_tokens(messages: list[dict], max_tokens: int) -> int:
@@ -186,8 +227,12 @@ class NemotronRouter:
             raise _CallError("rate_limited", wait) from e
         except openai.APITimeoutError as e:
             raise _CallError("timeout") from e
+        except openai.APIStatusError as e:
+            code = e.status_code
+            status = "no_credit" if code == 402 else "auth" if code in (401, 403) else "server_error" if code >= 500 else "error"
+            raise _CallError(status, error=_describe_status_error(e)) from e
         except Exception as e:
-            raise _CallError("error") from e
+            raise _CallError("error", error=type(e).__name__[:120]) from e
         finally:
             att.text, att.reasoning = "".join(content), "".join(reasoning)
             att.stream_ms = (time.perf_counter() - t0) * 1000
@@ -247,6 +292,7 @@ class NemotronRouter:
             except _CallError as e:
                 self.limiter.settle(model, est, 0)
                 rec.status = e.status
+                rec.error = e.error
                 if e.status == "rate_limited":
                     rec.n_429 += 1
                     self.limiter.penalize(model, e.retry_after or 2.0)
