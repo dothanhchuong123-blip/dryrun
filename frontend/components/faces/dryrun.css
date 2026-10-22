@@ -387,8 +387,8 @@ body .fl-tip .fl-sl i.b, body .fl-tip .fl-sk i.b { background: repeating-linear-
 }
 
 /* plan × future grid: a pixel block meter in every cell, abstract tag chips on every future (DESIGN.md §12.6) */
-.gm-meter { flex: none; display: block; width: 11px; height: 22px; image-rendering: pixelated; background: var(--fl-card); box-shadow: 0 0 0 1px var(--fl-line-2); }
-.gm-up { fill: var(--fl-gain-bar); } .gm-dn { fill: var(--fl-loss-bar); } .gm-ev { fill: var(--fl-ink-3); }
+.gm-meter { flex: none; display: block; width: 10px; height: 26px; image-rendering: pixelated; background: var(--fl-card); box-shadow: 0 0 0 1px var(--fl-ink); }
+.gm-up { fill: var(--fl-gain-bar); } .gm-dn { fill: var(--fl-loss-bar); } .gm-ev { fill: var(--fl-ink-2); }
 .gm-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .gm-tx { display: block; min-width: 0; }
 .fl .fl-cell .gm-tx .v { font-size: 16px; }

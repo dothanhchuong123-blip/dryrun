@@ -7,10 +7,10 @@ const WORD = { up: "profit", down: "loss", even: "about even" } as const;
 export function BlockMeter({ meter }: { meter: Meter }) {
   const rows = Array.from({ length: meter.blocks }, (_, i) => i);
   return (
-    <svg className="gm-meter" viewBox="0 0 11 22" shapeRendering="crispEdges" role="img" aria-label={`${WORD[meter.dir]}${meter.dir === "even" ? "" : `, ${meter.blocks} of ${METER_MAX} blocks`}`}>
-      {meter.dir === "even" && <rect className="gm-ev" x="2" y="10" width="7" height="2" />}
+    <svg className="gm-meter" viewBox="0 0 10 26" shapeRendering="crispEdges" role="img" aria-label={`${WORD[meter.dir]}${meter.dir === "even" ? "" : `, ${meter.blocks} of ${METER_MAX} blocks`}`}>
+      {meter.dir === "even" && <rect className="gm-ev" x="3" y="12" width="4" height="2" />}
       {rows.map((i) => (
-        <rect key={i} className={meter.dir === "up" ? "gm-up" : "gm-dn"} x="2" width="7" height="3" y={meter.dir === "up" ? 18 - i * 4 : 1 + i * 4} />
+        <rect key={i} className={meter.dir === "up" ? "gm-up" : "gm-dn"} x="3" width="4" height="4" y={meter.dir === "up" ? 21 - i * 5 : 1 + i * 5} />
       ))}
     </svg>
   );
