@@ -2,8 +2,26 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { GridCellData } from "../../lib/events";
+import { formatDelta } from "../../lib/format";
 
 export const MINUS = "−";
+
+const ENGINE_TIP =
+  "The same plan with every shopper reaction counted as neutral. Only the simulator's price, cost and stock maths, no AI shopper mood.";
+
+/** The engine-only figure next to a gain (SPEC §15.5): the same plan with neutral shoppers. Nothing when absent. */
+export function EngineOnly({ v, long = false }: { v?: number | null; long?: boolean }) {
+  if (v == null) return null;
+  return long ? (
+    <span className="fl-eng long" title={ENGINE_TIP}>
+      Without the shoppers&apos; reactions (simulator alone): <b className={sign(v)}>{formatDelta(v)}</b>
+    </span>
+  ) : (
+    <span className="fl-eng" title={ENGINE_TIP}>
+      sim alone {formatDelta(v)}
+    </span>
+  );
+}
 
 /** Light/dark: follows the system until the user picks; the pick is saved (same key as app/layout.tsx). */
 export function ThemeToggle() {

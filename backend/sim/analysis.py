@@ -229,6 +229,8 @@ class Analysis:
 
         # state, filled by every event (computed or replayed)
         self._cal: planner.Calibration | None = None
+        # the shoppers' mood weight this run uses; a replayed recording keeps the one it was recorded with
+        self.sentiment_weight: float = planner.SENTIMENT_WEIGHT
         self.news: dict | None = None
         self.live_news: list[dict] = []
         self.scenarios: dict | None = None
@@ -273,13 +275,15 @@ class Analysis:
     @property
     def cal(self) -> planner.Calibration:
         if self._cal is None:
-            self._cal = planner.calibrate(self.profile, seed=self.seed)
+            self._cal = planner.calibrate(self.profile, seed=self.seed, sentiment_weight=self.sentiment_weight)
         return self._cal
 
     def _absorb(self, event: str, data: Mapping[str, Any]) -> None:
         if event == "analysis":
             self.profile = dict(data["profile"])
             self.n_paths = int(data.get("n_paths", self.n_paths))
+            self.sentiment_weight = float(data.get("sentiment_weight", planner.LEGACY_SENTIMENT_WEIGHT))
+            self._cal = None
         elif event == "news":
             if self.news is None:
                 self.news = {"items": list(data.get("items", [])), "used_for_grid": data.get("used_for_grid")}
@@ -406,8 +410,9 @@ class Analysis:
             "analysis_id": self.analysis_id, "mode": self.mode, "example_id": self.example_id,
             "profile": self.profile, "horizon_weeks": HORIZON, "n_paths": self.n_paths,
             "as_of": self.as_of.isoformat() if self.as_of else None, "backtest_id": self.backtest_id,
+            "sentiment_weight": self.sentiment_weight,
         })
-        self._cal = await asyncio.to_thread(planner.calibrate, self.profile, self.seed)
+        self._cal = await asyncio.to_thread(planner.calibrate, self.profile, self.seed, self.sentiment_weight)
         if self._news_watch is None:
             raise RuntimeError("no news scout configured")
         live_news = self.mode == "live" and not getattr(self.scout, "offline", False)

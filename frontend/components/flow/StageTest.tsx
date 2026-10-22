@@ -8,10 +8,11 @@ import { DO_NOTHING, overCash } from "../../lib/labels";
 import { cellKey, reasoningKey, useMarketStore, type PlanRow } from "../../lib/store";
 import type { Beat } from "../../lib/timeline";
 import { leanOf, moodOf, shopperOf, traitLine } from "../../lib/faces";
+import { mixOf, shareOf } from "../../lib/mix";
 import { PixelFace } from "../faces/PixelFace";
 import { AddPlanPanel } from "../grid/AddPlanPanel";
 import { topBubbles } from "../grid/tips";
-import { DivBar, maxAbs, sign, tone, useCountUp, useHeld, useTyped } from "./parts";
+import { DivBar, EngineOnly, maxAbs, sign, tone, useCountUp, useHeld, useTyped } from "./parts";
 
 const TAG: Record<string, string> = { think: "Thinking", test: "Testing", result: "Result", shoppers: "Shoppers", finish: "Decided", fallback: "Fallback" };
 
@@ -110,7 +111,10 @@ function Analyst({ shown, active }: { shown: Shown; active: boolean }) {
                         <span className="fl-spin" /> testing
                       </>
                     ) : c ? (
-                      <span className={sign(c.mean_delta_usd)}>{formatDelta(c.mean_delta_usd)}</span>
+                      <>
+                        <span className={sign(c.mean_delta_usd)}>{formatDelta(c.mean_delta_usd)}</span>
+                        <EngineOnly v={c.engine_only_delta_usd} />
+                      </>
                     ) : (
                       "tested"
                     )}
@@ -137,9 +141,17 @@ function Shoppers({ shown }: { shown: Shown }) {
   const [open, setOpen] = useState(false);
   const [sel, setSel] = useState<number | null>(null);
   useEffect(() => setSel(null), [plan]);
+  const mix = mixOf(useMarketStore((s) => s.profile));
+  const pct = (a: CrowdArchetype) => shareOf(shopperOf(a), mix);
   const toYou = arch.filter((a) => leanOf(a) > 0).length;
   const away = arch.filter((a) => leanOf(a) < 0).length;
   const same = arch.length - toYou - away;
+  // the bar is weighted by the customer mix: how many BUYERS lean each way, not how many kinds
+  const wSum = arch.reduce((t, a) => t + pct(a), 0) || 1;
+  const wYou = arch.filter((a) => leanOf(a) > 0).reduce((t, a) => t + pct(a), 0) / wSum;
+  const wAway = arch.filter((a) => leanOf(a) < 0).reduce((t, a) => t + pct(a), 0) / wSum;
+  const wSame = Math.max(0, 1 - wYou - wAway);
+  const asPct = (x: number) => `${Math.round(100 * x)}%`;
   const picked = arch.find((a) => a.id === sel);
   const said = (picked ? [picked] : topBubbles(arch)).filter((a) => a.bubble.trim());
   const disc = (a: CrowdArchetype) => (leanOf(a) > 0 ? "var(--px-you-soft)" : leanOf(a) < 0 ? "var(--px-rival-soft)" : "var(--px-none-soft)");
@@ -164,13 +176,14 @@ function Shoppers({ shown }: { shown: Shown }) {
       </div>
       {arch.length > 0 && (
         <div className="ts-sum">
-          <div className="ts-bar" role="img" aria-label={`${toYou} lean to you, ${same} don't mind, ${away} lean to the rival`}>
-            <i className="u" style={{ flexGrow: toYou }} />
-            <i className="z" style={{ flexGrow: same }} />
-            <i className="d" style={{ flexGrow: away }} />
+          <div className="ts-bar" role="img" aria-label={`${asPct(wYou)} of buyers lean to you, ${asPct(wSame)} don't mind, ${asPct(wAway)} lean to the rival`}>
+            <i className="u" style={{ flexGrow: wYou }} />
+            <i className="z" style={{ flexGrow: wSame }} />
+            <i className="d" style={{ flexGrow: wAway }} />
           </div>
           <p className="fl-sub" style={{ margin: "6px 0 0" }}>
-            <b className="you">{toYou}</b> lean to you · <b>{same}</b> don&apos;t mind · <b className="riv">{away}</b> lean to the rival
+            <b className="you">{asPct(wYou)}</b> of buyers lean to you ({toYou} kinds) · <b>{asPct(wSame)}</b> don&apos;t mind ({same}) ·{" "}
+            <b className="riv">{asPct(wAway)}</b> lean to the rival ({away})
           </p>
         </div>
       )}
@@ -198,7 +211,7 @@ function Shoppers({ shown }: { shown: Shown }) {
                 )}
               </span>
               <span className="nm">{who.name}</span>
-              <span className="tr">{waiting ? "waiting for a plan" : traitLine(who)}</span>
+              <span className="tr">{waiting ? "waiting for a plan" : `${traitLine(who)} · ${asPct(pct(a))} of buyers`}</span>
             </button>
           );
         })}
@@ -441,6 +454,7 @@ function Simulator({ shown }: { shown: Shown }) {
               Average <b className={sign(cell.mean_delta_usd)}>{formatDelta(cell.mean_delta_usd)}</b>
             </span>
           </div>
+          <EngineOnly v={cell.engine_only_delta_usd} long />
           <p className="fl-sub res" style={{ marginTop: 4 }}>
             Better than doing nothing in {Math.round(cell.p_better * 100)} of 100 runs. 1 in 20 is worse than {formatDelta(cell.p5_delta_usd)}.
           </p>
@@ -525,6 +539,7 @@ function TipBody({ cell, shock, rival, cash }: { cell: GridCellData; shock: Shoc
       <p className={`v ${sign(cell.mean_delta_usd)}`} key={cellKey(cell.plan_name, cell.shock_id)}>
         {formatDelta(cell.mean_delta_usd)}
       </p>
+      <EngineOnly v={cell.engine_only_delta_usd} long />
       <p className="tx">
         Average over {formatRuns(cell.n)} runs vs doing nothing. In 1 run out of 20 it&apos;s worse than <b>{formatDelta(cell.p5_delta_usd)}</b>. Better in{" "}
         {formatPercent(cell.p_better, 0)} of runs.

@@ -161,7 +161,7 @@ def make_analyst(router, rec, shocks=None, news=NEWS, **kw):
 
 # --- the full run ---------------------------------------------------------------------------------
 
-CELL_KEYS = {"plan_name", "shock_id", "n", "mean_delta_usd", "p5_delta_usd", "p_better", "mean_profit_usd", "source",
+CELL_KEYS = {"plan_name", "shock_id", "n", "mean_delta_usd", "engine_only_delta_usd", "p5_delta_usd", "p_better", "mean_profit_usd", "source",
              "bridge", "steady_rival_delta_usd", "peak_cash_usd", "payback_week", "over_cash"}
 STEP_KEYS = {"round", "kind", "text", "plan_name", "tier", "latency_ms"}
 MEMO_KEYS = {"plan_name", "headline", "why", "watch_out", "recheck_when", "numbers", "cost_line", "sources", "not_modelled",

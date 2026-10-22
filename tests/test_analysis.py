@@ -79,13 +79,14 @@ SHOCK_KEYS = {"id", "label", "delta_c_raw", "delta_lead_time", "demand_shock", "
               "rival_price_change_pct", "share_shift_pct", "likelihood", "why", "source_ids", "origin", "cost_line",
               "cost_path"}
 KEYS = {
-    "analysis": {"analysis_id", "mode", "example_id", "profile", "horizon_weeks", "n_paths", "as_of", "backtest_id"},
+    "analysis": {"analysis_id", "mode", "example_id", "profile", "horizon_weeks", "n_paths", "as_of", "backtest_id",
+                 "sentiment_weight"},
     "news": {"items", "used_for_grid"},
     "scenarios": {"thought", "unmodelled", "fallback_used"},
     "shocks": {"cases"},
     "plan": {"name", "source", "round", "spec"},
     "crowd": {"plan_name", "archetypes"},
-    "grid_cell": {"plan_name", "shock_id", "n", "mean_delta_usd", "p5_delta_usd", "p_better", "mean_profit_usd", "source",
+    "grid_cell": {"plan_name", "shock_id", "n", "mean_delta_usd", "engine_only_delta_usd", "p5_delta_usd", "p_better", "mean_profit_usd", "source",
                   "bridge", "steady_rival_delta_usd", "peak_cash_usd", "payback_week", "over_cash"},
     "grid_summary": {"baseline_profit_usd", "best_today", "safest", "verified"},
     "agent_step": {"round", "kind", "text", "plan_name", "tier", "latency_ms"},
@@ -101,7 +102,7 @@ NEWS_ITEM_KEYS = {"id", "kind", "title", "url", "source", "published", "quote", 
                   "impact_p5_usd", "live", "applied"}
 CROWD_KEYS = {"id", "label", "mu", "sigma", "bubble"}
 BRIDGE_KEYS = {"cost_usd", "price_usd", "volume_usd", "marketing_usd", "holding_usd"}
-MEMO_NUMBER_KEYS = {"shock_id", "mean_delta_usd", "p5_delta_usd", "p_better", "n", "verified", "bridge",
+MEMO_NUMBER_KEYS = {"shock_id", "mean_delta_usd", "engine_only_delta_usd", "p5_delta_usd", "p_better", "n", "verified", "bridge",
                     "steady_rival_delta_usd", "peak_cash_usd", "payback_week", "over_cash", "cash_available"}
 TICK_KEYS = {"tick", "universe", "price", "qty", "demand", "sales", "unmet", "spill_in", "lost", "inventory", "raw_inv",
              "rop", "orders", "profit", "cum_profit", "shares", "c_raw", "lead_time", "mc", "atc", "bullwhip",

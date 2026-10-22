@@ -4,7 +4,7 @@ See SPEC §4.1-4.3, §4.7. Implemented in task T01 (prompts/1_oct15_all-parallel
 """
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -36,11 +36,42 @@ _LOYALTY_BIAS: float = 0.3
 _GOODWILL_EPS: float = 1e-6
 
 
-def make_archetypes(n_consumers: int, rng: np.random.Generator) -> Archetypes:
-    """Build the 12 consumer archetypes and assign consumers evenly across them.
+def archetype_weights(
+    income_mix: Sequence[float], price_hunter_share: float, loyal_share: float
+) -> np.ndarray:
+    """(12,) share of shoppers per archetype from the three customer-mix dials (SPEC §15.3).
+
+    income_mix is (low, mid, high), normalised here; price_hunter_share and loyal_share (loyal to A,
+    the user's firm) are clipped to [0.05, 0.95] so no whole side of the market disappears.
+    Order matches make_archetypes: income x (hunter, moderate) x (A, B).
+    """
+    inc = np.clip(np.asarray(income_mix, dtype=np.float64)[:3], 0.0, None)
+    inc = inc / inc.sum() if inc.shape == (3,) and inc.sum() > 0 else np.full(3, 1.0 / 3.0)
+    h = float(np.clip(price_hunter_share, 0.05, 0.95))
+    a = float(np.clip(loyal_share, 0.05, 0.95))
+    w = inc[:, None, None] * np.array([h, 1.0 - h])[None, :, None] * np.array([a, 1.0 - a])[None, None, :]
+    return w.reshape(N_ARCHETYPES)
+
+
+def _counts_from_weights(n_consumers: int, weights: np.ndarray) -> np.ndarray:
+    """Largest-remainder split of n_consumers by weights (ties go to the lower index)."""
+    w = np.clip(np.asarray(weights, dtype=np.float64), 0.0, None)
+    w = w / w.sum() if w.sum() > 0 else np.full(N_ARCHETYPES, 1.0 / N_ARCHETYPES)
+    raw = w * n_consumers
+    counts = np.floor(raw).astype(np.int64)
+    rest = n_consumers - int(counts.sum())
+    counts[np.argsort(-(raw - counts), kind="stable")[:rest]] += 1
+    return counts
+
+
+def make_archetypes(
+    n_consumers: int, rng: np.random.Generator, weights: np.ndarray | None = None
+) -> Archetypes:
+    """Build the 12 consumer archetypes and assign consumers to them.
 
     Nested order (IDs 1..12, indices 0..11):
     income in {low, mid, high} x sensitivity in {hunter, moderate} x loyalty in {A, B}.
+    `weights` (12,) sets each archetype's share of consumers (see archetype_weights); None = even split.
     """
     incomes = ("Low-income", "Mid-income", "High-income")
     sensitivities = ("price-hunter", "moderate")
@@ -61,7 +92,11 @@ def make_archetypes(n_consumers: int, rng: np.random.Generator) -> Archetypes:
                 labels.append(f"{inc} · {sens} · {brand}-loyal")
                 idx += 1
 
-    consumer_archetype = np.arange(n_consumers, dtype=np.int64) % N_ARCHETYPES
+    if weights is None:
+        consumer_archetype = np.arange(n_consumers, dtype=np.int64) % N_ARCHETYPES
+    else:
+        counts = _counts_from_weights(n_consumers, weights)
+        consumer_archetype = np.repeat(np.arange(N_ARCHETYPES, dtype=np.int64), counts)
     rng.shuffle(consumer_archetype)
 
     return Archetypes(

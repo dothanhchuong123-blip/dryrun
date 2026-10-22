@@ -41,7 +41,7 @@ N_PATHS = 1000
 SWEEP_PATHS = 300
 SWEEP_TOP = 3
 REALIZED_ID = "realized"
-CASE_ID = re.compile(r"^bt_[a-z0-9_]{1,40}$")
+CASE_ID = re.compile(r"^(bt|ho)_[a-z0-9_]{1,40}$")  # ho_ = held-out cases (never listed in the app)
 # The hindsight sweep (SPEC §15.12): price change % x start week x end week x extra stock weeks (placed in week 0).
 SWEEP_PRICES = (-5.0, 0.0, 3.0, 5.0, 8.0, 12.0)
 SWEEP_STARTS = (0, 2, 4)
@@ -328,6 +328,7 @@ def _sweep_reaction(
 def _row(cell: Mapping[str, Any]) -> dict:
     return {
         "plan_name": cell["plan_name"], "mean_delta_usd": round(float(cell["mean_delta_usd"]), 2),
+        "engine_only_delta_usd": round(float(cell.get("engine_only_delta_usd", cell["mean_delta_usd"])), 2),
         "p5_delta_usd": round(float(cell["p5_delta_usd"]), 2), "p_better": round(float(cell["p_better"]), 4),
         "bridge": {k: round(float(v), 2) for k, v in cell["bridge"].items()},
     }
@@ -386,10 +387,11 @@ def score(
     best_spec = PlanSpec.from_dict({**best_spec.to_dict(), "name": best_name})
 
     if pick == DO_NOTHING or pick not in cells:
-        pick_delta, pick_cell = 0.0, None
+        pick_delta, pick_engine, pick_cell = 0.0, 0.0, None
     else:
         pick_cell = cells[pick]
         pick_delta = pick_cell["mean_delta_usd"]
+        pick_engine = pick_cell["engine_only_delta_usd"]
     ranking = sorted([cells[n]["mean_delta_usd"] for n in names] + [0.0], reverse=True)
     rank = 1 + sum(1 for v in ranking if v > pick_delta + 1e-9)
     return {
@@ -398,6 +400,8 @@ def score(
         "pick": pick, "pick_rank": rank, "n_plans": len(ranking),
         "beat_do_nothing": bool(pick_delta > 0.0),
         "pick_delta_usd": round(pick_delta, 2),
+        # the same pick on the real path with neutral shoppers: the engine alone, no Lightning reactions
+        "pick_engine_only_usd": round(pick_engine, 2),
         "hindsight_best": {
             "name": best_name, "spec": best_spec.to_dict(), "mean_delta_usd": round(best_mean, 2),
             "plain": plain_words(best_spec, cal.profile),
@@ -514,6 +518,7 @@ def event(
         "cells": list(scored["cells"]),
         "pick": scored["pick"], "pick_rank": scored["pick_rank"], "n_plans": scored["n_plans"],
         "beat_do_nothing": scored["beat_do_nothing"], "pick_delta_usd": scored["pick_delta_usd"],
+        "pick_engine_only_usd": scored["pick_engine_only_usd"],
         "hindsight_best": dict(scored["hindsight_best"]), "regret_usd": scored["regret_usd"],
         "baselines": list(scored["baselines"]),
         "futures_cover": futures_cover(columns, realized.cost_path),

@@ -765,6 +765,7 @@ class Analyst:
         return {
             "shock_id": NEWS_ID,
             "mean_delta_usd": round(cell["mean_delta_usd"], 2),
+            "engine_only_delta_usd": round(cell.get("engine_only_delta_usd", cell["mean_delta_usd"]), 2),
             "p5_delta_usd": round(cell["p5_delta_usd"], 2),
             "p_better": round(cell["p_better"], 4),
             "n": cell["n"],
@@ -796,7 +797,8 @@ class Analyst:
     def _zero_cell(self) -> dict:
         z = {"cost_usd": 0.0, "price_usd": 0.0, "volume_usd": 0.0, "marketing_usd": 0.0, "holding_usd": 0.0}
         return {
-            "n": self.n_paths, "mean_delta_usd": 0.0, "p5_delta_usd": 0.0, "p_better": 0.0, "bridge": z,
+            "n": self.n_paths, "mean_delta_usd": 0.0, "engine_only_delta_usd": 0.0, "p5_delta_usd": 0.0, "p_better": 0.0,
+            "bridge": z,
             "steady_rival_delta_usd": 0.0, "peak_cash_usd": 0.0, "payback_week": None, "over_cash": False,
         }
 

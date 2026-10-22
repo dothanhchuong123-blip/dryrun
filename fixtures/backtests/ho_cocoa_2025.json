@@ -1,0 +1,88 @@
+{
+  "id": "ho_cocoa_2025",
+  "set": "held_out",
+  "title": "Brussels chocolate shop",
+  "subtitle": "Pralines from bought-in couverture, as of 15 Sep 2025",
+  "as_of": "2025-09-15",
+  "horizon_weeks": 24,
+  "text": "I run a chocolate shop in Brussels and sell about 400 boxes of pralines a week, in the shop and to hotels. A 250 g box sells for €18 and costs about €7 to make. We buy couverture from a Belgian supplier, about 3 weeks lead time, and keep about 4 weeks of stock. The chocolatier around the corner charges €17. I could put €8,000 into stock.",
+  "profile": {
+    "market_terms": [
+      "prix chocolat pralines Bruxelles"
+    ],
+    "guessed_fields": [
+      "exposed_cost_share",
+      "customer_mix"
+    ],
+    "business_name": "Brussels praline shop",
+    "product_unit": "250 g box of pralines",
+    "price": 19.44,
+    "unit_cost": 7.56,
+    "weekly_sales": 400.0,
+    "lead_time_weeks": 3,
+    "stock_weeks": 4.0,
+    "rival_name": "Chocolatier around the corner",
+    "rival_price": 18.36,
+    "supplier_region": "West Africa via Belgium",
+    "customers": "shoppers, tourists and hotels",
+    "search_terms": [
+      "cocoa price",
+      "cocoa Ivory Coast Ghana harvest supply"
+    ],
+    "country": "belgium",
+    "exposed_cost_share": 0.35,
+    "cash_available": 8640.0,
+    "income_mix": [
+      0.15,
+      0.45,
+      0.4
+    ],
+    "price_hunter_share": 0.2,
+    "loyal_share": 0.55
+  },
+  "series": {
+    "file": "cocoa.csv",
+    "column": "value",
+    "unit": "$/kg",
+    "label": "World cocoa price",
+    "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+    "licence": "CC BY 4.0"
+  },
+  "path_index": "spot_week",
+  "what_happened": [
+    {
+      "date": "2025-10",
+      "text": "Cocoa fell to a 20-month low near $6,090 a tonne as demand weakened and better West African harvests were expected.",
+      "url": "https://businessday.ng/agriculture/article/cocoa-price-tumbles-to-20-month-low-as-record-rally-ends/"
+    },
+    {
+      "date": "2026-01",
+      "text": "European cocoa grindings, a measure of demand, were reported at their weakest fourth quarter in years, and prices kept falling.",
+      "url": "https://www.xtb.com/cy/market-analysis/news-and-research/cocoa-dips-to-its-2-year-low-europe-says-no-to-chocolate"
+    },
+    {
+      "date": "2026-03",
+      "text": "The World Bank's monthly cocoa price was $3.24 a kg, down from $7.03 in September 2025.",
+      "url": "https://www.worldbank.org/en/research/commodity-markets"
+    }
+  ],
+  "spoiler_terms": [
+    "20-month low",
+    "two-year low",
+    "2-year low",
+    "3.24",
+    "6,090",
+    "4,400",
+    "49%"
+  ],
+  "claim_words": [
+    "cocoa",
+    "couverture"
+  ],
+  "caveats": [
+    "Cocoa is set at 35% of a box's cost. A 2026 industry note puts cocoa at about 60% of a mass-market milk bar's raw materials (natriumcapital.com); a praline box has more labour and packaging, so we took a lower share. It is our estimate.",
+    "Prices in euros are converted at €1 = $1.08, the app's fixed rate. Couverture is priced off cocoa beans and butter with a lag, and many shops buy forward, so the shop did not pay the spot price.",
+    "This case's date is close to Nemotron Ultra's stated pre-training cutoff (September 2025), so it may not know what followed, unlike the 2022-2024 cases.",
+    "Each monthly value is treated as the month's mid-point, with straight lines between them."
+  ]
+}

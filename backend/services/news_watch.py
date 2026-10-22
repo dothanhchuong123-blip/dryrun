@@ -300,6 +300,7 @@ class NewsWatch:
         by_url = {r["url"]: r for r in top}
         parsed = await asyncio.gather(*(self._parse(a, profile, as_of) for a in articles))
         items: list[dict] = []
+        stale = 0
         for article, shock in zip(articles, parsed, strict=True):
             if shock is None or _wrong_way(shock):
                 continue
@@ -307,8 +308,14 @@ class NewsWatch:
             item = await asyncio.to_thread(
                 self._supply_item, f"n{len(items) + 1}", article, shock, published, profile, impact, live=False
             )
-            if item["quote"] and any(item["shock"].values()):  # a headline that moves nothing says nothing
-                items.append(item)
+            if not (item["quote"] and any(item["shock"].values())):  # a headline that moves nothing says nothing
+                continue
+            if asof.stale_quote(item["quote"], as_of or date.today()):  # a move long finished is history, not news
+                stale += 1
+                continue
+            items.append(item)
+        if stale:
+            log.info("news: dropped %d item(s) whose quote only dates a long-finished move", stale)
         if not items or pin_assumption:
             items = [await asyncio.to_thread(self._fallback_item, profile, fallback_shock, impact), *items]
             for i, it in enumerate(items, 1):

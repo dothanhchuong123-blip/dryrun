@@ -1,0 +1,93 @@
+{
+  "id": "ho_palm_2022",
+  "set": "held_out",
+  "title": "Malaysian snack maker",
+  "subtitle": "Crisps fried in palm oil, as of 15 Apr 2022",
+  "as_of": "2022-04-15",
+  "horizon_weeks": 24,
+  "text": "We make fried banana and tapioca crisps in Selangor and sell about 3,000 packs a week to kedai runcit and minimarts. A 200 g pack sells for RM6.90 (about $1.60) and costs us about RM4.10 ($0.95) to make; frying oil is the biggest part. We buy palm olein in bulk, delivered within a week, and keep about 2 weeks of stock. A bigger brand sells a similar pack for RM6.50 ($1.50). I could put about RM13,000 ($3,000) into stocking up.",
+  "profile": {
+    "market_terms": [
+      "harga minyak masak naik peniaga kerepek"
+    ],
+    "guessed_fields": [
+      "exposed_cost_share",
+      "customer_mix"
+    ],
+    "business_name": "Selangor crisp maker",
+    "product_unit": "200 g pack of fried crisps",
+    "price": 1.6,
+    "unit_cost": 0.95,
+    "weekly_sales": 3000.0,
+    "lead_time_weeks": 1,
+    "stock_weeks": 2.0,
+    "rival_name": "Bigger snack brand",
+    "rival_price": 1.5,
+    "supplier_region": "Malaysia and Indonesia",
+    "customers": "grocery shops and minimarts",
+    "search_terms": [
+      "palm oil price Malaysia",
+      "palm olein cooking oil price"
+    ],
+    "country": "malaysia",
+    "exposed_cost_share": 0.35,
+    "cash_available": 3000.0,
+    "income_mix": [
+      0.4,
+      0.45,
+      0.15
+    ],
+    "price_hunter_share": 0.6,
+    "loyal_share": 0.45
+  },
+  "series": {
+    "file": "palm_oil.csv",
+    "column": "value",
+    "unit": "$/mt",
+    "label": "World palm oil price",
+    "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+    "licence": "CC BY 4.0"
+  },
+  "path_index": "spot_week",
+  "what_happened": [
+    {
+      "date": "2022-04-28",
+      "text": "Indonesia, the biggest producer, banned palm oil exports to bring down its own cooking oil prices.",
+      "url": "https://www.spglobal.com/commodity-insights/en/news-research/latest-news/agriculture/051922-indonesia-to-lift-ban-on-palm-oil-exports-from-may-23-trade-reactions-vary"
+    },
+    {
+      "date": "2022-05-23",
+      "text": "Indonesia lifted the ban after less than four weeks, saying its supply had more than tripled.",
+      "url": "https://engdev.benarnews.org/english/news/indonesian/palm-oil-exports-05192022140014.html"
+    },
+    {
+      "date": "2022-07",
+      "text": "Malaysian palm oil futures fell to a near 13-month low, about 40% below the April peak.",
+      "url": "https://krishijagran.com/commodity-news/palm-oil-prices-drop-to-13-month-low-on-rising-output-weak-export-demand/?amp=1"
+    },
+    {
+      "date": "2022-10",
+      "text": "The World Bank's monthly palm oil price was $889 a tonne, down from $1,683 in April.",
+      "url": "https://www.worldbank.org/en/research/commodity-markets"
+    }
+  ],
+  "spoiler_terms": [
+    "export ban",
+    "April 28",
+    "May 23",
+    "13-month low",
+    "889",
+    "47%",
+    "lowest since"
+  ],
+  "claim_words": [
+    "palm",
+    "olein",
+    "cooking oil"
+  ],
+  "caveats": [
+    "Frying oil is set at 35% of a pack's cost. This is our estimate for a small fried-snack maker; we found no published share.",
+    "The series is the world palm oil export price (Pink Sheet, monthly, $/mt). Malaysian retail cooking oil in small packs is subsidised; a bulk buyer pays closer to the market price, with a lag.",
+    "Each monthly value is treated as the month's mid-point, with straight lines between them."
+  ]
+}

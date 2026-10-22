@@ -1,0 +1,70 @@
+{
+  "id": "ho_wheat_2025",
+  "set": "held_out",
+  "title": "Neighbourhood bakery in Ohio",
+  "subtitle": "Bread from wholesale flour, as of 15 May 2025",
+  "as_of": "2025-05-15",
+  "horizon_weeks": 24,
+  "text": "We are a neighbourhood bakery in Columbus, Ohio, and sell about 1,200 loaves a week. A loaf sells for $7 and costs about $2.40 to make; flour is about a third of that. The mill delivers weekly and we keep about 2 weeks of flour. The supermarket bakery sells a similar loaf for $5.50. I could put $6,000 into stock.",
+  "profile": {
+    "market_terms": [],
+    "guessed_fields": [
+      "customer_mix"
+    ],
+    "business_name": "Columbus neighbourhood bakery",
+    "product_unit": "loaf of bread",
+    "price": 7.0,
+    "unit_cost": 2.4,
+    "weekly_sales": 1200.0,
+    "lead_time_weeks": 1,
+    "stock_weeks": 2.0,
+    "rival_name": "Supermarket bakery",
+    "rival_price": 5.5,
+    "supplier_region": "US Great Plains",
+    "customers": "local households and cafés",
+    "search_terms": [
+      "wheat price",
+      "flour prices tariffs bakery"
+    ],
+    "country": "united states",
+    "exposed_cost_share": 0.33,
+    "cash_available": 6000.0,
+    "income_mix": [
+      0.2,
+      0.55,
+      0.25
+    ],
+    "price_hunter_share": 0.35,
+    "loyal_share": 0.6
+  },
+  "series": {
+    "file": "wheat_hrw.csv",
+    "column": "value",
+    "unit": "$/mt",
+    "label": "US hard red winter wheat price",
+    "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+    "licence": "CC BY 4.0"
+  },
+  "path_index": "spot_week",
+  "what_happened": [
+    {
+      "date": "2025-11",
+      "text": "The World Bank's monthly price for US hard red winter wheat stayed between $231 and $246 a tonne from May to November 2025, against $237 in May.",
+      "url": "https://www.worldbank.org/en/research/commodity-markets"
+    }
+  ],
+  "spoiler_terms": [
+    "231",
+    "245.9",
+    "246"
+  ],
+  "claim_words": [
+    "wheat",
+    "flour"
+  ],
+  "caveats": [
+    "Flour is about a third of a loaf's cost in the owner's own words. Flour prices follow wheat with milling and freight on top, so they move less than wheat in percent.",
+    "The series is US hard red winter wheat (Pink Sheet, monthly, $/mt), the usual bread wheat. It is a 'nothing happened' case: the news in spring 2025 was about tariffs, but wheat stayed flat.",
+    "Each monthly value is treated as the month's mid-point, with straight lines between them."
+  ]
+}

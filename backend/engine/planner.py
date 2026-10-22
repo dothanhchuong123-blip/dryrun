@@ -27,7 +27,7 @@ from typing import Any
 import numpy as np
 
 from backend.engine.inventory import bullwhip_ratio
-from backend.engine.market import clear_market, make_archetypes, update_goodwill
+from backend.engine.market import archetype_weights, clear_market, make_archetypes, update_goodwill
 from backend.engine.types import N_ARCHETYPES, Archetypes, CrowdSentiment, MarketParams
 
 DO_NOTHING = "Do nothing"
@@ -46,6 +46,12 @@ _CAPACITY_MULT = 1.6
 _MARKETING_SHARE = 0.05        # starting marketing = 5% of gross margin
 _GAMMA_BOUNDS = (0.02, 0.35)
 _OUTSIDE_SHARE = 0.15          # share of shoppers who choose "don't buy" at the start (P2b)
+# How much the shoppers' mood (Lightning's mu, clipped to [-1, 1]) moves utility. MarketParams.delta is 0.8; the
+# held-out backtests (docs/BACKTEST_HELDOUT.md) showed the mood carried ~99% of a pick's claimed gain at 0.8, so it is
+# 0.05 since 2026-10-22 (owner's OK). Every cell also reports the engine-only number (weight 0) next to it.
+SENTIMENT_WEIGHT: float = 0.05
+# Recordings made before that change used 0.8; their `analysis` event has no `sentiment_weight` key.
+LEGACY_SENTIMENT_WEIGHT: float = 0.8
 _ALPHA_SCALE_BOUNDS = (0.5, 4.0)
 _CAL_ITERS = 200
 # Plan mechanics (SPEC §15.4)
@@ -74,7 +80,8 @@ _INPUT_WORDS: tuple[tuple[tuple[str, ...], str, str], ...] = (
     (("egg", "breakfast", "omelet", "omelette"), "Eggs", "Egg"),
     (("kitchen", "utensil", "cookware", "tableware"), "Duties", "Duty"),
     (("coffee", "espresso", "robusta", "arabica"), "Beans", "Bean"),
-    (("cocoa", "chocolate"), "Cocoa", "Cocoa"),
+    (("cocoa", "chocolate", "praline", "truffle"), "Cocoa", "Cocoa"),
+    (("fried", "frying", "fish and chips", "crisps", "cooking oil"), "Oil", "Oil"),  # before "chip" (computer chips)
     (("tea",), "Tea", "Tea"),
     (("graphics card", "gpu", "video card"), "GPUs", "GPU"),
     (("chip", "laptop", "computer", "pc ", "phone"), "Parts", "Parts"),
@@ -340,7 +347,19 @@ def _choice_probs(
     return ex / denom[:, None, :]
 
 
-def calibrate(profile: Mapping[str, Any], seed: int = 0) -> Calibration:
+def _mix_weights(profile: Mapping[str, Any]) -> np.ndarray | None:
+    """Archetype shares from the profile's customer-mix dials (SPEC §15.3); None (even split) if it has none."""
+    keys = ("income_mix", "price_hunter_share", "loyal_share")
+    if not any(k in profile for k in keys):
+        return None
+    return archetype_weights(
+        profile.get("income_mix") or (1.0, 1.0, 1.0),
+        float(profile.get("price_hunter_share", 0.5)),
+        float(profile.get("loyal_share", 0.5)),
+    )
+
+
+def calibrate(profile: Mapping[str, Any], seed: int = 0, sentiment_weight: float | None = None) -> Calibration:
     """Turn a BusinessProfile dict into engine units (SPEC §15.3).
 
     Engine prices put your price at 100. Three "about right today" assumptions, solved together
@@ -369,8 +388,9 @@ def calibrate(profile: Mapping[str, Any], seed: int = 0) -> Calibration:
         eta=0.0,
         holding_cost=_HOLDING_RATE * c0,
         lead_time0=int(prof.get("lead_time_weeks", 3)),
+        delta=SENTIMENT_WEIGHT if sentiment_weight is None else float(sentiment_weight),
     )
-    archetypes = make_archetypes(params.n_consumers, np.random.default_rng(seed))
+    archetypes = make_archetypes(params.n_consumers, np.random.default_rng(seed), _mix_weights(prof))
     alpha0, loyalty_t, counts = _arch_arrays(archetypes)
     n_cons = float(counts.sum())
     prices = np.array([[_ENGINE_PRICE, p_b]])
@@ -881,6 +901,8 @@ def _cell_stats(
         "shock_id": shock.id,
         "n": int(delta.shape[0]),
         "mean_delta_usd": float(delta.mean()),
+        # the same plan with neutral shoppers: what the engine alone says (SPEC §15.5, 2026-10-22)
+        "engine_only_delta_usd": float(parts.get("engine_delta", parts["delta"]).mean() * usd),
         "p5_delta_usd": float(np.percentile(delta, 5)),
         "p_better": float(np.mean(delta > _TOL_USD)),
         "mean_profit_usd": float(parts["profit_p"].mean() * usd),
@@ -908,21 +930,33 @@ def _run_column(
     seed: int,
     steady_rival: bool,
 ) -> list[dict[str, np.ndarray]]:
-    """Per-path metrics for plans[1:] vs plans[0] ("Do nothing") in one column, chunked over paths."""
+    """Per-path metrics for plans[1:] vs plans[0] ("Do nothing") in one column, chunked over paths.
+
+    A plan whose shoppers reacted also runs as an "engine only" twin with neutral shoppers, on the same streams;
+    its per-path delta comes back as `engine_delta` (for a plan with no reaction it equals `delta`)."""
     sents = [
         np.zeros((2, N_ARCHETYPES)) if i == 0 else _sent_term(cal, _crowd_for(crowd, p.name))
         for i, p in enumerate(plans)
     ]
+    twins = [i for i in range(1, len(plans)) if np.any(sents[i])]
+    run_plans = [*plans, *(plans[i] for i in twins)]
+    run_sents = [*sents, *(np.zeros((2, N_ARCHETYPES)) for _ in twins)]
     variants = (False, True) if steady_rival else (False,)
     chunks: list[list[dict[str, np.ndarray]]] = []
     for start in range(0, n_paths, _CHUNK_PATHS):
         n = min(_CHUNK_PATHS, n_paths - start)
-        sim = _simulate(cal, plans, sents, shock, _streams(seed, start, n, horizon), variants, horizon)
-        chunks.append([_path_metrics(sim, p, steady_rival) for p in range(len(plans))])
-    return [
+        sim = _simulate(cal, run_plans, run_sents, shock, _streams(seed, start, n, horizon), variants, horizon)
+        chunks.append([_path_metrics(sim, p, steady_rival) for p in range(len(run_plans))])
+    parts = [
         {k: np.concatenate([c[p][k] for c in chunks], axis=0) for k in chunks[0][p]}
-        for p in range(len(plans))
+        for p in range(len(run_plans))
     ]
+    out = parts[: len(plans)]
+    for p in out:
+        p["engine_delta"] = p["delta"]
+    for j, i in enumerate(twins):
+        out[i]["engine_delta"] = parts[len(plans) + j]["delta"]
+    return out
 
 
 def _coerce_crowd_map(crowd: Mapping[str, Any] | None) -> dict[str, Any]:

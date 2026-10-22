@@ -19,6 +19,8 @@ from tests.test_analysis import ARTICLE, SHOCK, Rec
 from tests.test_api import client, make_app, names, wait_done
 
 CASE_IDS = ["bt_cocoa_2024", "bt_eggs_2025", "bt_robusta_2024", "bt_tariff_2025"]
+# Held-out cases (ho_*): never shown in the app, used only to test general fixes; the four above stay frozen.
+HELD_OUT_IDS = ["ho_arabica_2021", "ho_cocoa_2025", "ho_palm_2022", "ho_rice_2023", "ho_sunflower_2022", "ho_wheat_2025"]
 AS_OF = date(2024, 1, 15)
 
 
@@ -76,7 +78,7 @@ def test_realized_case_and_label():
     assert "by October" in bt.realized_event(tariff, tariff["profile"])["cost_line"]   # arrival months, not order months
 
 
-@pytest.mark.parametrize("case_id", CASE_IDS)
+@pytest.mark.parametrize("case_id", CASE_IDS + HELD_OUT_IDS)
 def test_case_files_are_complete_and_do_not_spoil(case_id):
     case = bt.load_case(case_id)
     BusinessProfile.model_validate(case["profile"])
@@ -244,7 +246,7 @@ async def test_backtest_run_event_order_prompts_and_shape(tmp_path):
 
     d = rec.of("backtest")[0]
     assert set(d) == {"backtest_id", "as_of", "horizon_end", "series", "realized_case", "cells", "pick", "pick_rank",
-                      "n_plans", "beat_do_nothing", "pick_delta_usd", "hindsight_best", "regret_usd", "baselines",
+                      "n_plans", "beat_do_nothing", "pick_delta_usd", "pick_engine_only_usd", "hindsight_best", "regret_usd", "baselines",
                       "futures_cover", "leak_check", "dropped_news", "what_happened", "caveats"}
     assert d["backtest_id"] == "bt_cocoa_2024" and d["horizon_end"] == "2024-07-01"
     assert set(d["series"]) == {"label", "unit", "source_url", "as_of_value", "points"} and d["series"]["as_of_value"] == 4.4
@@ -252,7 +254,7 @@ async def test_backtest_run_event_order_prompts_and_shape(tmp_path):
     rc = d["realized_case"]
     assert rc["id"] == "realized" and rc["origin"] == "realized" and len(rc["cost_path"]) == 24 and rc["cost_line"]
     assert d["pick"] == rec.of("memo")[0]["plan_name"]
-    assert d["cells"] and all(set(c) == {"plan_name", "mean_delta_usd", "p5_delta_usd", "p_better", "bridge"} for c in d["cells"])
+    assert d["cells"] and all(set(c) == {"plan_name", "mean_delta_usd", "engine_only_delta_usd", "p5_delta_usd", "p_better", "bridge"} for c in d["cells"])
     assert sorted({c["plan_name"] for c in d["cells"]}) == sorted(p["name"] for p in rec.of("plan"))
     assert 1 <= d["pick_rank"] <= d["n_plans"] == len(d["cells"]) + 1
     assert d["beat_do_nothing"] == (d["pick_delta_usd"] > 0)
@@ -360,7 +362,25 @@ def test_all_four_cases_have_recordings():
     assert all(c["has_replay"] for c in bt.list_cases())
 
 
+def test_held_out_cases_stay_out_of_the_app():
+    listed = {c["id"] for c in bt.list_cases()}
+    assert listed == set(CASE_IDS)
+    assert all(bt.load_case(h)["set"] == "held_out" for h in HELD_OUT_IDS)
+
+
 def test_supplier_caveat_only_when_a_tested_plan_switches():
     case = bt.load_case("bt_cocoa_2024")
     assert not any("switches supplier" in c for c in bt.caveats(case, [PlanSpec(name="x", price_change_pct=3)]))
     assert any("switches supplier" in c for c in bt.caveats(case, [PlanSpec(name="x", switch_supplier=True)]))
+
+
+@pytest.mark.parametrize(("quote", "as_of", "stale"), [
+    ("By December 2023, wheat prices had dropped 44.5 percent.", date(2025, 5, 15), True),   # held-out wheat headline
+    ("The average retail price of eggs has risen 38% since November 2023.", date(2024, 12, 15), False),  # still running
+    ("egg prices could rise by more than 40% this year", date(2025, 5, 15), False),          # no date: a forecast
+    ("prices rose 20% in 2024", date(2025, 5, 15), False),                                    # bare year: up to Dec 2024
+    ("In March 2025 prices jumped 30%", date(2025, 5, 15), False),                            # recent
+    ("prices fell 10% in 2022 and are forecast to rise in 2026", date(2025, 5, 15), False),   # any recent/later date wins
+])
+def test_stale_quote(quote, as_of, stale):
+    assert asof.stale_quote(quote, as_of) is stale

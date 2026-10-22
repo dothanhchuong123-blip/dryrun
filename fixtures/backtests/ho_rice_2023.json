@@ -1,0 +1,90 @@
+{
+  "id": "ho_rice_2023",
+  "set": "held_out",
+  "title": "Cơm tấm restaurant in HCMC",
+  "subtitle": "Broken rice plates, as of 15 Apr 2023",
+  "as_of": "2023-04-15",
+  "horizon_weeks": 24,
+  "text": "Tôi có quán cơm tấm ở Quận 3, TP.HCM. We sell about 2,100 plates a week at 45,000 VND each; a plate costs us about 22,000 VND, and rice is about a fifth of that. Our rice dealer delivers weekly and we keep about 2 weeks of rice. The shop across the street charges 40,000 VND. I could put about 50 million VND into stock.",
+  "profile": {
+    "market_terms": [
+      "giá gạo tăng quán cơm tấm TP.HCM"
+    ],
+    "guessed_fields": [
+      "customer_mix"
+    ],
+    "business_name": "Cơm tấm Quận 3",
+    "product_unit": "plate of broken rice",
+    "price": 1.8,
+    "unit_cost": 0.88,
+    "weekly_sales": 2100.0,
+    "lead_time_weeks": 1,
+    "stock_weeks": 2.0,
+    "rival_name": "Shop across the street",
+    "rival_price": 1.6,
+    "supplier_region": "Mekong Delta, Vietnam",
+    "customers": "office workers and students",
+    "search_terms": [
+      "Vietnam rice export price",
+      "rice prices El Nino Asia"
+    ],
+    "country": "vietnam",
+    "exposed_cost_share": 0.2,
+    "cash_available": 2000.0,
+    "income_mix": [
+      0.45,
+      0.45,
+      0.1
+    ],
+    "price_hunter_share": 0.65,
+    "loyal_share": 0.45
+  },
+  "series": {
+    "file": "rice_vn5.csv",
+    "column": "value",
+    "unit": "$/mt",
+    "label": "Vietnam 5% broken rice export price",
+    "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+    "licence": "CC BY 4.0"
+  },
+  "path_index": "spot_week",
+  "what_happened": [
+    {
+      "date": "2023-07-20",
+      "text": "India banned exports of non-basmati white rice, effective at once.",
+      "url": "https://www.spglobal.com/commodity-insights/en/news-research/latest-news/agriculture/072023-india-bans-export-of-non-basmati-white-rice-dgft"
+    },
+    {
+      "date": "2023-07-27",
+      "text": "Vietnam's 5% broken rice export price rose to its highest since 2011.",
+      "url": "https://en.vneconomy.vn/vietnamese-rice-price-rises-following-indias-export-ban.htm"
+    },
+    {
+      "date": "2023-08-29",
+      "text": "Vietnamese 5% broken rice reached $638 a tonne, $105 above its level the day before India's ban.",
+      "url": "https://tuoitrenews.vn/news/business/20230829/vietnam-maintains-lead-in-global-rice-export-prices/75241.html"
+    },
+    {
+      "date": "2023-10",
+      "text": "The World Bank's monthly price was $616 a tonne, up from $455 in April.",
+      "url": "https://www.worldbank.org/en/research/commodity-markets"
+    }
+  ],
+  "spoiler_terms": [
+    "non-basmati",
+    "July 20",
+    "highest since 2011",
+    "638",
+    "616",
+    "32%"
+  ],
+  "claim_words": [
+    "rice",
+    "gạo"
+  ],
+  "caveats": [
+    "Rice is about a fifth of a plate's cost in the owner's own words. Prices in VND are converted at 25,000 VND = $1, the app's fixed rate.",
+    "The series is Vietnam's rice EXPORT price (Pink Sheet, monthly, $/mt). Rice bought at home moved less than the export price, so the swing scored here is larger than the restaurant's.",
+    "Each monthly value is treated as the month's mid-point, with straight lines between them."
+  ]
+}

@@ -34,6 +34,11 @@ export interface BusinessProfile {
   exposed_cost_share: number;
   /** 0 = not given */
   cash_available: number;
+  /** customer mix (SPEC §15.3); absent on profiles recorded before it = the even split */
+  income_mix?: number[];
+  price_hunter_share?: number;
+  loyal_share?: number;
+  /** may include "customer_mix" for the three dials together */
   guessed_fields: string[];
 }
 
@@ -259,6 +264,8 @@ export interface GridCellData {
   p_better: number;
   mean_profit_usd: number;
   source: CellSource;
+  /** the same plan with shoppers' reactions counted as neutral: the engine alone (absent on old recordings) */
+  engine_only_delta_usd?: number;
   bridge: CellBridge;
   steady_rival_delta_usd: number | null;
   peak_cash_usd: number;
@@ -299,6 +306,9 @@ export interface ReasoningDoneData {
 export interface MemoNumbers {
   shock_id: string;
   mean_delta_usd: number;
+  /** the same plan with shoppers' reactions counted as neutral: the engine alone (absent on old recordings) */
+  engine_only_delta_usd?: number;
+
   p5_delta_usd: number;
   p_better: number;
   n: number;
@@ -438,6 +448,9 @@ export interface BacktestSeriesPoint {
 export interface BacktestCell {
   plan_name: string;
   mean_delta_usd: number;
+  /** the same plan with shoppers' reactions counted as neutral: the engine alone (absent on old recordings) */
+  engine_only_delta_usd?: number;
+
   p5_delta_usd: number;
   p_better: number;
   bridge: CellBridge;
@@ -456,6 +469,8 @@ export interface BacktestEventData {
   n_plans: number;
   beat_do_nothing: boolean;
   pick_delta_usd: number;
+  /** the pick on the real path with neutral shoppers: the engine alone */
+  pick_engine_only_usd?: number;
   hindsight_best: { name: string; spec: PlanSpec; mean_delta_usd: number; plain: string };
   regret_usd: number;
   baselines: { name: string; mean_delta_usd: number }[];

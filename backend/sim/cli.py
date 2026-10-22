@@ -68,7 +68,8 @@ def _print_backtest(d: dict) -> None:
     print(f"Real path: {d['realized_case']['label']} | {d['realized_case']['cost_line']}")
     verdict = "beat" if d["beat_do_nothing"] else "did not beat"
     print(f"Pick “{d['pick']}” {verdict} Do nothing: {wording.usd_k(d['pick_delta_usd'])} "
-          f"(rank {d['pick_rank']} of {d['n_plans']})")
+          f"(rank {d['pick_rank']} of {d['n_plans']}); engine alone, no shopper reactions: "
+          f"{wording.usd_k(d.get('pick_engine_only_usd', d['pick_delta_usd']))}")
     hb = d["hindsight_best"]
     print(f"Best in hindsight: “{hb['name']}” {wording.usd_k(hb['mean_delta_usd'])}; regret {wording.usd_k(d['regret_usd'], signed=False)}")
     for b in d["baselines"]:

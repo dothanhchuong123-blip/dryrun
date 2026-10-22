@@ -4,16 +4,19 @@
 # ///
 """Download the price series the B1 backtests score against and save them as CSVs under fixtures/prices/.
 
-    uv run scripts/fetch_prices.py
+    uv run scripts/fetch_prices.py                 # every series
+    uv run scripts/fetch_prices.py palm_oil ...    # only these (leaves the frozen B1 series untouched)
 
 - World Bank Pink Sheet, monthly prices (CMO-Historical-Data-Monthly.xlsx, CC BY 4.0): Cocoa, Coffee Robusta,
-  Coffee Arabica, in $/kg. The xlsx goes to a temp folder and is not kept.
+  Coffee Arabica in $/kg, plus the held-out cases' Palm oil, Sunflower oil, Wheat HRW and Rice Viet Nam 5% in
+  $/mt. The xlsx goes to a temp folder and is not kept.
 - BLS series APU0000708111 (US city average, eggs grade A large, $/dozen) through the public API v1 (no key).
 Each CSV starts with `#` comment lines (source URL, licence, retrieval date) and then `month,value`
 (month = YYYY-MM-01). A month the source marks unavailable is left out.
 """
 import csv
 import json
+import sys
 import tempfile
 import urllib.request
 from datetime import date
@@ -32,6 +35,15 @@ PINK_PAGE = "https://www.worldbank.org/en/research/commodity-markets"
 BLS_URL = "https://api.bls.gov/publicAPI/v1/timeseries/data/"
 BLS_SERIES = "APU0000708111"
 PINK_COLUMNS = {"cocoa": "Cocoa", "coffee_robusta": "Coffee, Robusta", "coffee_arabica": "Coffee, Arabica"}
+# Held-out backtest series (fixtures/backtests/ho_*.json): column -> unit, and from 2021 so the 2021-22 cases fit.
+HELD_OUT_COLUMNS = {
+    "palm_oil": ("Palm oil", "($/mt)"),
+    "sunflower_oil": ("Sunflower oil", "($/mt)"),
+    "wheat_hrw": ("Wheat, US HRW", "($/mt)"),
+    "rice_vn5": ("Rice, Viet Namese 5%", "($/mt)"),
+    "coffee_arabica_2021": ("Coffee, Arabica", "($/kg)"),
+}
+HELD_OUT_FIRST_YEAR = 2021
 
 
 def _fetch(url: str, data: bytes | None = None, headers: dict | None = None) -> bytes:
@@ -52,7 +64,7 @@ def _write(name: str, header: list[str], rows: list[tuple[str, float]]) -> None:
     print(f"wrote {path.relative_to(ROOT)} ({len(rows)} months, {rows[0][0]} to {rows[-1][0]})")
 
 
-def pink_sheet(today: str) -> None:
+def pink_sheet(today: str, only: set[str] | None = None) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         xlsx = Path(tmp) / "CMO.xlsx"
         xlsx.write_bytes(_fetch(PINK_URL))
@@ -60,19 +72,24 @@ def pink_sheet(today: str) -> None:
         rows = list(wb["Monthly Prices"].iter_rows(values_only=True))
     head = next(r for r in rows if r and "Cocoa" in [str(x) for x in r if x])
     units = rows[rows.index(head) + 1]
-    for name, column in PINK_COLUMNS.items():
-        col = [str(x) if x else "" for x in head].index(column)
-        assert units[col] == "($/kg)", (column, units[col])
+    series = {n: (c, "($/kg)", FIRST_YEAR) for n, c in PINK_COLUMNS.items()}
+    series |= {n: (c, u, HELD_OUT_FIRST_YEAR) for n, (c, u) in HELD_OUT_COLUMNS.items()}
+    for name, (column, unit, first_year) in series.items():
+        if only is not None and name not in only:
+            continue
+        col = [str(x).strip() if x else "" for x in head].index(column)
+        assert units[col] == unit, (column, units[col])
         out = []
         for r in rows:
             tag = str(r[0] or "")
-            if len(tag) == 7 and tag[4] == "M" and tag[:4].isdigit() and int(tag[:4]) >= FIRST_YEAR:
+            if len(tag) == 7 and tag[4] == "M" and tag[:4].isdigit() and int(tag[:4]) >= first_year:
                 if isinstance(r[col], int | float):
                     out.append((f"{tag[:4]}-{tag[5:]}-01", float(r[col])))
         _write(
             name,
             [
-                f"World Bank Commodity Price Data (The Pink Sheet), monthly prices, column '{column}', $/kg nominal",
+                f"World Bank Commodity Price Data (The Pink Sheet), monthly prices, column '{column}', "
+                f"{unit.strip('()')} nominal",
                 f"Source: {PINK_PAGE} (file {PINK_URL})",
                 "Licence: CC BY 4.0",
                 f"Retrieved: {today}",
@@ -107,5 +124,7 @@ def eggs(today: str) -> None:
 
 if __name__ == "__main__":
     stamp = date.today().isoformat()
-    pink_sheet(stamp)
-    eggs(stamp)
+    names = set(sys.argv[1:]) or None
+    pink_sheet(stamp, names)
+    if names is None or "eggs_bls" in names:
+        eggs(stamp)

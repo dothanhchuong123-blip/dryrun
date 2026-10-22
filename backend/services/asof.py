@@ -91,3 +91,27 @@ def usable_result(result: dict, as_of: date) -> bool:
     if ud is not None and _after(*ud, as_of):
         return False
     return not later_dated(str(result.get("title", "")), as_of)
+
+
+def _months_before(year: int, month: int | None, as_of: date) -> int:
+    """Whole months from (year, month) to as_of; a bare year counts from its December (the latest it can mean)."""
+    return (as_of.year - year) * 12 + as_of.month - (month or 12)
+
+
+_SINCE = re.compile(r"(?i)\b(?:since|from)\s+(?:the\s+)?(?:(?:start|end|beginning)\s+of\s+)?(?:[a-z]+\.?\s+)?20\d\d\b")
+
+
+def stale_quote(quote: str, as_of: date, months: int = 9) -> bool:
+    """True when every date the quote names lies at least `months` before `as_of`, e.g. "By December 2023, wheat
+    prices had dropped 44.5 percent" read in May 2025. Such a move already happened: it is history, not news, so it
+    must not become a future cost shock. A quote with no date, or with any recent or later date, is not stale."""
+    if _SINCE.search(quote):  # "up 38% since November 2023" runs up to today: a live move, not history
+        return False
+    found: list[int] = []
+    for m in _MONTH_YEAR.finditer(quote):
+        found.append(_months_before(int(m.group(4)), _MONTHS[m.group(2).lower()], as_of))
+    for m in _ISO.finditer(quote):
+        found.append(_months_before(int(m.group(1)), int(m.group(2)), as_of))
+    taken = " ".join(m.group(0) for m in [*_MONTH_YEAR.finditer(quote), *_ISO.finditer(quote)])
+    found += [_months_before(int(m.group(1)), None, as_of) for m in _YEAR.finditer(quote) if m.group(0) not in taken]
+    return bool(found) and min(found) >= months

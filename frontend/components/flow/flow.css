@@ -165,6 +165,24 @@
 .fl-fact .u { font-size: 12px; color: var(--fl-ink-3); white-space: nowrap; }
 .fl-fact .h { font-size: 12px; color: var(--fl-loss); }
 .fl-fact.bad { border-color: var(--fl-loss); }
+/* Who buys: the customer-mix dials */
+.fl-mix { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.fl-mixrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fl-mixrow .k { font-size: 12px; color: var(--fl-ink-3); min-width: 52px; }
+.fl-mixrow .k.wide { flex: 1; min-width: 0; font-size: 13px; color: var(--fl-ink-2); }
+.fl-mixrow.inc { gap: 8px 14px; }
+.fl-mixrow.inc label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fl-ink-3); }
+.fl-incbar { flex: 1; display: flex; gap: 2px; height: 10px; border-radius: 999px; overflow: hidden; background: var(--fl-sunk); min-width: 120px; }
+.fl-incbar i { display: block; flex-basis: 0; min-width: 0; transition: flex-grow 0.4s ease; }
+.fl-incbar .b0, .fl-mix .dot.b0 { background: var(--fl-accent-line); }
+.fl-incbar .b1, .fl-mix .dot.b1 { background: var(--fl-accent); }
+.fl-incbar .b2, .fl-mix .dot.b2 { background: var(--fl-accent-ink); }
+.fl-mix .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.fl-pct { display: inline-flex; align-items: baseline; gap: 2px; padding: 4px 8px; border: 1px solid var(--fl-line); border-radius: 8px; background: var(--fl-sunk); font-size: 12px; color: var(--fl-ink-3); }
+.fl-pct:focus-within { border-color: var(--fl-accent); background: var(--fl-card); }
+.fl-pct.bad { border-color: var(--fl-loss); }
+.fl-pct input { width: 3ch; border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; font-weight: 600; color: var(--fl-ink); padding: 0; text-align: right; }
+.fl-mixnote { margin: -4px 0 0; font-size: 12px; color: var(--fl-amber-ink); }
 .fl-terms { display: flex; flex-wrap: wrap; gap: 6px; }
 .fl-term { font-size: 13px; padding: 5px 10px; border-radius: 8px; background: var(--fl-sunk); border: 1px solid var(--fl-line); color: var(--fl-ink-2); }
 .fl-term.loc { border-style: dashed; }
@@ -376,3 +394,11 @@
   .fl *, .fl *::before, .fl *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; }
   .fl-quote mark { background-size: 100% 100%; }
 }
+
+/* engine-only figure next to a gain: the same plan with neutral shoppers */
+.fl-eng { display: block; font-size: 11px; font-weight: 500; color: var(--fl-ink-3); white-space: nowrap; cursor: help; }
+.fl-eng.long { display: block; font-size: 13px; margin-top: 4px; white-space: normal; }
+.fl-eng.long b { font-weight: 700; }
+.bt-hind .fl-eng.long { display: inline; font-size: inherit; margin: 0; }
+.am-big .fl-eng.long { color: inherit; opacity: 0.85; font-size: 12px; }
+.am-big .fl-eng.long b { color: inherit; font: inherit; font-weight: 700; letter-spacing: normal; line-height: inherit; display: inline; }

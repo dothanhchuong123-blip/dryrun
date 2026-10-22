@@ -1,0 +1,88 @@
+{
+  "id": "ho_sunflower_2022",
+  "set": "held_out",
+  "title": "Fish and chip shop in Leeds",
+  "subtitle": "Frying in sunflower oil, as of 15 Jan 2022",
+  "as_of": "2022-01-15",
+  "horizon_weeks": 24,
+  "text": "We run a fish and chip shop in Leeds and sell about 1,400 portions a week. A portion averages £8.50 and costs about £3.40 to make; frying oil is around an eighth of that. Our wholesaler delivers weekly and we keep about 2 weeks of oil. The chippy down the road charges £8.20. I could put about £4,000 into stock.",
+  "profile": {
+    "market_terms": [],
+    "guessed_fields": [
+      "customer_mix"
+    ],
+    "business_name": "Leeds fish and chip shop",
+    "product_unit": "portion of fish and chips",
+    "price": 11.56,
+    "unit_cost": 4.62,
+    "weekly_sales": 1400.0,
+    "lead_time_weeks": 1,
+    "stock_weeks": 2.0,
+    "rival_name": "Chippy down the road",
+    "rival_price": 11.15,
+    "supplier_region": "Ukraine and Black Sea",
+    "customers": "local families and takeaway customers",
+    "search_terms": [
+      "sunflower oil price",
+      "Ukraine sunflower oil supply"
+    ],
+    "country": "united kingdom",
+    "exposed_cost_share": 0.12,
+    "cash_available": 5440.0,
+    "income_mix": [
+      0.3,
+      0.5,
+      0.2
+    ],
+    "price_hunter_share": 0.4,
+    "loyal_share": 0.55
+  },
+  "series": {
+    "file": "sunflower_oil.csv",
+    "column": "value",
+    "unit": "$/mt",
+    "label": "World sunflower oil price",
+    "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+    "licence": "CC BY 4.0"
+  },
+  "path_index": "spot_week",
+  "what_happened": [
+    {
+      "date": "2022-02-24",
+      "text": "Russia invaded Ukraine, the largest exporter of sunflower oil, and its ports were blockaded.",
+      "url": "https://www.euronews.com/2022/05/26/britain-economy-fish-chip"
+    },
+    {
+      "date": "2022-03",
+      "text": "The World Bank's monthly sunflower oil price reached $2,361 a tonne, up from $1,412 in January.",
+      "url": "https://www.worldbank.org/en/research/commodity-markets"
+    },
+    {
+      "date": "2022-05-26",
+      "text": "UK chip shops reported sunflower oil up about 60% in a year; the trade body warned a third of shops could close.",
+      "url": "https://learningenglish.voanews.com/amp/rising-prices-threaten-fish-and-chips-a-traditional-british-food/6591077.html"
+    },
+    {
+      "date": "2022-08",
+      "text": "The monthly price was back to $1,496 a tonne as Black Sea exports resumed.",
+      "url": "https://www.worldbank.org/en/research/commodity-markets"
+    }
+  ],
+  "spoiler_terms": [
+    "invaded",
+    "2,361",
+    "blockade",
+    "a third of shops",
+    "1,496"
+  ],
+  "claim_words": [
+    "sunflower",
+    "frying oil",
+    "oil"
+  ],
+  "caveats": [
+    "Frying oil is about an eighth of a portion's cost in the owner's own words. In 2022 chip shops were also hit by fish, flour and energy prices; only the oil is scored here.",
+    "Prices in pounds are converted at £1 = $1.36, the January 2022 rate. The series is the world sunflower oil price (Pink Sheet, monthly, $/mt); a shop buys refined oil from a wholesaler, which moved later.",
+    "Each monthly value is treated as the month's mid-point, with straight lines between them."
+  ]
+}

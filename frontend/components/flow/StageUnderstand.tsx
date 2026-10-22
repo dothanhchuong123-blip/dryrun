@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import type { BusinessProfile } from "../../lib/events";
+import { mixOf } from "../../lib/mix";
 import { useMarketStore } from "../../lib/store";
 import { NUM_FIELDS, checkNum, trimNum, type NumField } from "../setup/SetupScreen";
 
-/** the numbers the profile parser may guess (prompts.py _PROFILE_SYSTEM) */
-const GUESSABLE = 7;
+/** the numbers the profile parser may guess (prompts.py _PROFILE_SYSTEM); the customer mix counts as one */
+const GUESSABLE = 8;
 
 function hostOf(url: string): string {
   try {
@@ -94,6 +95,102 @@ function TextFact({ k, label, p, i }: { k: TextKey; label: string; p: BusinessPr
         <input id={`fl-${k}`} value={p[k]} aria-invalid={empty ? true : undefined} onChange={(e) => set(k, e.target.value)} />
       </div>
       {empty && <span className="h">Needs a name.</span>}
+    </div>
+  );
+}
+
+/** A 0-100 % box. Commits only valid whole-ish numbers; the parent stores fractions. */
+function PctBox({ id, value, onCommit, label }: { id: string; value: number; onCommit: (v: number) => void; label: string }) {
+  const shown = String(Math.round(value * 100));
+  const [draft, setDraft] = useState(shown);
+  const [editing, setEditing] = useState(false);
+  useEffect(() => {
+    if (!editing) setDraft(shown);
+  }, [shown, editing]);
+  const v = Number(draft);
+  const bad = draft.trim() === "" || !Number.isFinite(v) || v < 0 || v > 100;
+  return (
+    <span className={`fl-pct${bad ? " bad" : ""}`}>
+      <input
+        id={id}
+        inputMode="numeric"
+        aria-label={label}
+        aria-invalid={bad ? true : undefined}
+        value={draft}
+        onFocus={() => setEditing(true)}
+        onBlur={() => {
+          setEditing(false);
+          if (bad) setDraft(shown);
+        }}
+        onChange={(e) => {
+          const d = e.target.value;
+          setDraft(d);
+          const n = Number(d);
+          if (d.trim() !== "" && Number.isFinite(n) && n >= 0 && n <= 100) onCommit(n / 100);
+        }}
+      />
+      %
+    </span>
+  );
+}
+
+const INCOME = ["Low", "Mid", "High"] as const;
+
+/** The three customer-mix dials (SPEC §15.3). They set how much each of the 12 shopper types counts. */
+function WhoBuys({ p }: { p: BusinessProfile }) {
+  const set = useMarketStore((s) => s.setProfileField);
+  const m = mixOf(p);
+  const raw = p.income_mix && p.income_mix.length === 3 ? p.income_mix : m.income;
+  const sum = Math.round(raw.reduce((a, b) => a + b, 0) * 100);
+  const guessed = p.guessed_fields.includes("customer_mix") || p.income_mix == null;
+  return (
+    <div className="fl-card fl-in" style={{ ["--i" as string]: 4 }}>
+      <div className="fl-ch">
+        <div>
+          <h2>Who buys</h2>
+          <p className="fl-sub">How many of your buyers are each kind of customer. A plan that upsets a big group costs more.</p>
+        </div>
+        {guessed && <span className="fl-pill amb">{p.income_mix == null ? "Even split" : "Guessed"}</span>}
+      </div>
+      <div className="fl-mix">
+        <div className="fl-mixrow">
+          <span className="k">Income</span>
+          <div className="fl-incbar" aria-hidden>
+            {m.income.map((x, i) => (
+              <i key={INCOME[i]} className={`b${i}`} style={{ flexGrow: x }} />
+            ))}
+          </div>
+        </div>
+        <div className="fl-mixrow inc">
+          {INCOME.map((name, i) => (
+            <label key={name} htmlFor={`fl-inc-${i}`}>
+              <i className={`dot b${i}`} aria-hidden /> {name}
+              <PctBox
+                id={`fl-inc-${i}`}
+                label={`${name}-income share of buyers`}
+                value={raw[i]}
+                onCommit={(v) => set("income_mix", raw.map((x, j) => (j === i ? v : x)))}
+              />
+            </label>
+          ))}
+        </div>
+        {Math.abs(sum - 100) > 1 && <p className="fl-mixnote">These add up to {sum}%. We scale them to 100%.</p>}
+        <div className="fl-mixrow">
+          <label htmlFor="fl-hunt" className="k wide">
+            Shop mostly on price
+          </label>
+          <PctBox id="fl-hunt" label="Share of buyers who shop on price" value={m.hunter} onCommit={(v) => set("price_hunter_share", v)} />
+        </div>
+        <div className="fl-mixrow">
+          <label htmlFor="fl-loyal" className="k wide">
+            Lean to you over {p.rival_name || "the rival"}
+          </label>
+          <PctBox id="fl-loyal" label="Share of buyers who lean to you" value={m.loyal} onCommit={(v) => set("loyal_share", v)} />
+        </div>
+      </div>
+      <p className="fl-sub" style={{ marginTop: 8 }}>
+        {guessed ? "Nemotron Super guessed these from what you sell. Change any you know, e.g. from your sales records." : "From what you told us."}
+      </p>
     </div>
   );
 }
@@ -201,6 +298,7 @@ export function StageUnderstand() {
               </>
             )}
           </div>
+          <WhoBuys p={p} />
           <div className="fl-card fl-in" style={{ ["--i" as string]: 5 }}>
             <h3>Then</h3>
             <p className="fl-sub" style={{ marginTop: 8 }}>

@@ -126,6 +126,8 @@ def shock_to_engine(s: ShockVector) -> Shock:
 ProfileNumericField = Literal[
     "price", "unit_cost", "weekly_sales", "lead_time_weeks", "stock_weeks", "rival_price", "exposed_cost_share"
 ]
+# "customer_mix" covers the three mix dials together (income_mix, price_hunter_share, loyal_share).
+ProfileGuessField = Literal[ProfileNumericField, "customer_mix"]
 
 
 class BusinessProfile(BaseModel):
@@ -150,7 +152,18 @@ class BusinessProfile(BaseModel):
         ge=0.05, le=1.0, description="Share of unit_cost that moves with the news input; 1.0 if all of it"
     )
     cash_available: float = Field(ge=0, description="Cash the owner could put into extra stock, USD; 0 = not given")
-    guessed_fields: list[ProfileNumericField] = Field(max_length=7, description="Numeric fields that were guessed")
+    # Customer mix (SPEC §15.3): sets each of the 12 shopper types' share of the market. Defaults = the even split.
+    income_mix: list[float] = Field(
+        default_factory=lambda: [1 / 3, 1 / 3, 1 / 3], min_length=3, max_length=3,
+        description="Shares of buyers with low, mid and high income; summing to 1",
+    )
+    price_hunter_share: float = Field(
+        default=0.5, ge=0, le=1, description="Share of buyers who shop on price (deal hunters), 0-1"
+    )
+    loyal_share: float = Field(
+        default=0.5, ge=0, le=1, description="Of the buyers, the share who lean to you rather than the rival, 0-1"
+    )
+    guessed_fields: list[ProfileGuessField] = Field(max_length=8, description="Fields that were guessed")
 
     @model_validator(mode="after")
     def _clamp(self) -> BusinessProfile:
@@ -160,6 +173,10 @@ class BusinessProfile(BaseModel):
         self.search_terms = [t[:80] for t in self.search_terms]
         self.market_terms = [t[:80] for t in self.market_terms]
         self.country = self.country.strip().lower()
+        inc = [max(0.0, float(x)) for x in self.income_mix]
+        self.income_mix = [round(x / sum(inc), 4) for x in inc] if sum(inc) > 0 else [1 / 3, 1 / 3, 1 / 3]
+        self.price_hunter_share = min(0.95, max(0.05, self.price_hunter_share))
+        self.loyal_share = min(0.95, max(0.05, self.loyal_share))
         # A rival price copied from our own price is a guess; make sure the UI marks it.
         if self.rival_price == self.price and "rival_price" not in self.guessed_fields:
             self.guessed_fields = [*self.guessed_fields, "rival_price"]

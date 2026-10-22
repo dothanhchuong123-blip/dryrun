@@ -113,6 +113,9 @@ export const cellKey = (plan: string, shock: string) => `${plan}|${shock}`;
 export const reasoningKey = (role: string, round: number) => `${role}:${round}`;
 export const MAX_USER_PLANS = 4;
 
+/** editing any mix dial clears the one "customer_mix" guess flag */
+const MIX_KEYS: Set<string> = new Set(["income_mix", "price_hunter_share", "loyal_share"]);
+
 const emptyReplay = (): ReplayState => ({
   open: false,
   planName: null,
@@ -387,7 +390,7 @@ export const useMarketStore = create<MarketState>()((set, get) => {
       const p = get().profile;
       if (!p) return;
       set({
-        profile: { ...p, [key]: value, guessed_fields: p.guessed_fields.filter((f) => f !== key) },
+        profile: { ...p, [key]: value, guessed_fields: p.guessed_fields.filter((f) => f !== key && !(MIX_KEYS.has(key) && f === "customer_mix")) },
         exampleId: null,
       });
     },

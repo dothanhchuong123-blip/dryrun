@@ -16,7 +16,8 @@ All arrays indexed by firm are `[A, B]`: A = the user's business, B = the rival.
   "customers": "independent cafés", "search_terms": ["robusta coffee price Vietnam"],
   "country": "vietnam", "market_terms": ["chuỗi cà phê mới TP.HCM"],          // (v2.1)
   "exposed_cost_share": 0.85, "cash_available": 8000,                          // (v2.1) 0 = not given
-  "guessed_fields": ["lead_time_weeks", "stock_weeks", "exposed_cost_share"] }
+  "income_mix": [0.25, 0.5, 0.25], "price_hunter_share": 0.4, "loyal_share": 0.5, // (v2.2) customer mix; absent = even split
+  "guessed_fields": ["lead_time_weeks", "stock_weeks", "exposed_cost_share", "customer_mix"] }
 
 // PlanSpec (SPEC §15.4)
 { "name": "Stock up 4 wk + raise 3% wk 3", "price_change_pct": 3, "price_change_week": 3,
@@ -63,18 +64,18 @@ Each event is sent as `event: <name>` followed by `data: <json>`, in roughly thi
 
 | event | data |
 |---|---|
-| `analysis` | `{analysis_id, mode, example_id\|null, profile, horizon_weeks: 24, n_paths: 1000, as_of: "YYYY-MM-DD"\|null, backtest_id\|null}` **(v2.2: `as_of`, `backtest_id`; both `null` for an example or a custom profile. For a backtest `example_id` is `"backtest_<id>"`.)** |
+| `analysis` | `{analysis_id, mode, example_id\|null, profile, horizon_weeks: 24, n_paths: 1000, as_of: "YYYY-MM-DD"\|null, backtest_id\|null, sentiment_weight}` **(2026-10-22: `sentiment_weight`, the shoppers' mood weight the run used, 0.05 now; absent on older recordings = 0.8.) (v2.2: `as_of`, `backtest_id`; both `null` for an example or a custom profile. For a backtest `example_id` is `"backtest_<id>"`.)** |
 | `news` | `{items: [{id, kind, title, url, source, published, quote, shock: {delta_c_raw, delta_lead_time, demand_shock}\|null, cost_line\|null, impact_usd\|null, impact_p5_usd\|null, live, applied}], used_for_grid: id\|null}`. Sent once after the search; sent again (one item) for each "Check live news". **(v2.1)** `kind: "supply"\|"market"`. Supply items have ids `n1…` and carry `shock`, `cost_line` and impact. Market items (ids `m1…`, local-market search) have those fields `null` and `quote` holds a ≤ 200-char snippet. |
 | `scenarios` **(v2.1)** | `{thought, unmodelled: [{text, source_id\|null}], fallback_used}`: Ultra's step 0b note and the risks it couldn't put numbers on. Sent just before `shocks`. |
 | `shocks` | `{cases: [ShockCase × 2–6]}`: the grid's columns. `news` is first; then Ultra's `s1…s5`, or the 4 default columns if Ultra failed. **(v2.1: was × 4)** |
 | `plan` | `{name, source: "seed"\|"ai"\|"user", round, spec: PlanSpec}` |
 | `crowd` | `{plan_name, archetypes: [{id, label, mu: [a, b], sigma: [a, b], bubble}]}` **(v2: `plan_name` replaces `tick`)** |
-| `grid_cell` | `{plan_name, shock_id, n, mean_delta_usd, p5_delta_usd, p_better, mean_profit_usd, source: "local"\|"cloud", bridge: CellBridge, steady_rival_delta_usd, peak_cash_usd, payback_week\|null, over_cash}` **(v2.1: everything after `source`)** |
+| `grid_cell` | `{plan_name, shock_id, n, mean_delta_usd, engine_only_delta_usd, p5_delta_usd, p_better, mean_profit_usd, source: "local"\|"cloud", bridge: CellBridge, steady_rival_delta_usd, peak_cash_usd, payback_week\|null, over_cash}` **(v2.1: everything after `source`)** | **(2026-10-22: `engine_only_delta_usd` = the same plan with every shopper reaction neutral, the engine alone; also in `memo.numbers` and the backtest `cells`. Recordings made before it were backfilled by `scripts/backfill_engine_only.py`)**
 | `grid_summary` | `{baseline_profit_usd: {shock_id: usd}, best_today: plan_name, safest: plan_name, verified: bool}`. Sent after each round, and again when the cloud job finishes. |
 | `agent_step` | `{round, kind: "think"\|"test"\|"result"\|"shoppers"\|"finish"\|"fallback", text, plan_name\|null, tier: "ultra"\|"super"\|"fast"\|"engine", latency_ms\|null}`. `text` ≤ 300 characters, plain words. |
 | `reasoning` | `{role: "analyst"\|"scenarios", round, delta}` (v2.1: `scenarios` is step 0b, round 0): a streamed chunk of Ultra's raw thinking (behind "Show full Nemotron thinking") |
 | `reasoning_done` | `{role: "analyst"\|"scenarios", round}` |
-| `memo` | `{plan_name, headline, why, watch_out, recheck_when, numbers: {shock_id: "news", mean_delta_usd, p5_delta_usd, p_better, n, verified, bridge, steady_rival_delta_usd, peak_cash_usd, payback_week, over_cash, cash_available}, cost_line, sources: [{title, url, quote}], not_modelled: {fixed: [str], found: [{text, source_id\|null}]}, fallback_used, actions: [{week, text}], runner_up: {name, mean_delta_usd, p5_delta_usd, why_not}\|null}` **(v2.1: `bridge` … `cash_available`, `cost_line`, `not_modelled`; (review): `actions` is the pick as week-by-week steps built by code, e.g. `{week: 0, text: "Order 4 extra weeks of beans (about $7.3k)"}`; `runner_up` is the second-best plan in the `news` column, with `why_not` from Ultra's `why` only if it names that plan, else a template; `null` with a single plan)** |
+| `memo` | `{plan_name, headline, why, watch_out, recheck_when, numbers: {shock_id: "news", mean_delta_usd, engine_only_delta_usd, p5_delta_usd, p_better, n, verified, bridge, steady_rival_delta_usd, peak_cash_usd, payback_week, over_cash, cash_available}, cost_line, sources: [{title, url, quote}], not_modelled: {fixed: [str], found: [{text, source_id\|null}]}, fallback_used, actions: [{week, text}], runner_up: {name, mean_delta_usd, p5_delta_usd, why_not}\|null}` **(v2.1: `bridge` … `cash_available`, `cost_line`, `not_modelled`; (review): `actions` is the pick as week-by-week steps built by code, e.g. `{week: 0, text: "Order 4 extra weeks of beans (about $7.3k)"}`; `runner_up` is the second-best plan in the `news` column, with `why_not` from Ultra's `why` only if it names that plan, else a template; `null` with a single plan)** |
 | `backtest` **(v2.2)** | Backtests only. Sent after `memo` and before `telemetry` and `done`. The advice scored against what really happened (SPEC §15.12): see the shape below. |
 | `telemetry` | as v1: `{tiers: {ultra\|super\|fast: {calls, tokens_in, tokens_out, p50_ttft_ms, tok_per_s, errors}}, call_share, token_share, cost_usd, cost_all_ultra_usd, savings_pct, job: {id, status: "idle"\|"queued"\|"running"\|"verified"\|"failed"}}` |
 | `mode` | `{mode: "live"\|"replay", reason}` |
@@ -88,9 +89,10 @@ Each event is sent as `event: <name>` followed by `data: <json>`, in roughly thi
   "series": {"label": "World cocoa price", "unit": "$/kg", "source_url": "https://…", "as_of_value": 4.4,
              "points": [{"week": 0, "date": "2024-01-15", "value": 4.4, "change": 0.0}, … 25 points, weeks 0–24]},
   "realized_case": ShockCase,        // id "realized", origin "realized", cost_path (24 values), + cost_line
-  "cells": [{"plan_name", "mean_delta_usd", "p5_delta_usd", "p_better", "bridge": CellBridge}],  // tested plans, realized column, 1,000 paths
+  "cells": [{"plan_name", "mean_delta_usd", "engine_only_delta_usd", "p5_delta_usd", "p_better", "bridge": CellBridge}],  // tested plans, realized column, 1,000 paths
   "pick": "Stock up 6 wk now", "pick_rank": 1, "n_plans": 7,   // rank among the tested plans plus "Do nothing" (worth $0); n_plans counts both
   "beat_do_nothing": true, "pick_delta_usd": 4200,
+  "pick_engine_only_usd": 1100,      // (2026-10-22) the pick on the real path with neutral shoppers: the engine alone
   "hindsight_best": {"name": "Stock up 8 wk, +5% price wk 2", "spec": PlanSpec, "mean_delta_usd": 6100,
                      "plain": "week 0: Order 8 extra weeks of cocoa (about $10.4k); week 2: Raise price 5% …"},
   "regret_usd": 1900,                // hindsight_best − pick, never below 0

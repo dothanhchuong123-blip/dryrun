@@ -8,7 +8,7 @@ import { CellMath } from "../memo/CellMath";
 import { describePlan } from "../memo/MemoScreen";
 import "../memo/answer.css";
 import { BacktestReveal } from "./BacktestReveal";
-import { sign } from "./parts";
+import { EngineOnly, sign } from "./parts";
 
 /** Optional review fields (EVENTS v2.1) that lib/events.ts doesn't carry yet. */
 type MemoView = MemoEventData & {
@@ -74,7 +74,9 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
   const cmax = Math.max(1, ...rows.flatMap((r) => futures.map((s) => Math.abs(cells[cellKey(r, s.id)]?.mean_delta_usd ?? 0))));
 
   const asText = () => {
-    const L: string[] = [memo.headline, "", `Expected gain vs doing nothing: ${formatDelta(n.mean_delta_usd)} over 6 months`, `Bad case (1 run in 20): ${formatDelta(n.p5_delta_usd)}`];
+    const L: string[] = [memo.headline, "", `Expected gain vs doing nothing: ${formatDelta(n.mean_delta_usd)} over 6 months`,
+      ...(n.engine_only_delta_usd == null ? [] : [`Without the shoppers' reactions (simulator alone): ${formatDelta(n.engine_only_delta_usd)}`]),
+      `Bad case (1 run in 20): ${formatDelta(n.p5_delta_usd)}`];
     if (n.peak_cash_usd > 0) L.push(`Cash tied up: ${formatMoney(n.peak_cash_usd)}`);
     L.push("", `PLAN: ${planText}`);
     if (why.length) L.push("", "WHY THIS PLAN", ...why.map((w) => `- ${w}`));
@@ -111,6 +113,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
           <div className="am-big">
             <b className={sign(n.mean_delta_usd)}>{formatDelta(n.mean_delta_usd)}</b>
             <span>expected profit vs doing nothing, over 6 months</span>
+            <EngineOnly v={n.engine_only_delta_usd} long />
           </div>
         </header>
 
@@ -119,6 +122,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
             <small>Profit change</small>
             <b className={sign(n.mean_delta_usd)}>{formatDelta(n.mean_delta_usd)}</b>
             <span>{Math.round(n.p_better * 100)}% of runs beat doing nothing</span>
+            <EngineOnly v={n.engine_only_delta_usd} />
           </div>
           <div className="am-kpi">
             <small>Bad case</small>
@@ -173,12 +177,14 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
                       </td>
                       {futures.map((s) => {
                         const v = cells[cellKey(r, s.id)]?.mean_delta_usd;
+                        const eng = cells[cellKey(r, s.id)]?.engine_only_delta_usd;
                         if (v == null) return <td key={s.id}>n/a</td>;
                         const on = open?.plan === r && open.shock === s.id;
                         return (
                           <td key={s.id} className={`c ${sign(v)}${on ? " on" : ""}`}>
                             <button type="button" className="am-cellbtn" aria-expanded={on} onClick={() => setOpen(on ? null : { plan: r, shock: s.id })}>
                               {formatDelta(v)}
+                              <EngineOnly v={eng} />
                             </button>
                             <i style={{ background: v >= 0 ? "var(--fl-gain-bar)" : "var(--fl-loss-bar)", width: `calc(${(Math.abs(v) / cmax) * 100}% - 16px)`, left: v >= 0 ? 8 : "auto", right: v < 0 ? 8 : "auto" }} />
                           </td>

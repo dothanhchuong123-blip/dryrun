@@ -500,12 +500,17 @@ The visual plan with wireframes is `docs/PIVOT-PLAN.html`. The screens are speci
 | **`market_terms`** (v3.1) | list[str], 0–2, each ≤ 80 | Tavily queries about the *local market*: competitors, new entrants, demand. May be in the local language ("chuỗi cà phê mới TP.HCM") |
 | **`exposed_cost_share`** (v3.1) | float 0.05–1.0 | the share of `unit_cost` that moves with the news input (e.g. green beans are ~85% of a roasted bag's variable cost). 1.0 if the whole cost is that input |
 | **`cash_available`** (v3.1) | float ≥ 0, USD | cash the owner could put into extra stock. **0 = not given**, so no cash check runs |
-| `guessed_fields` | list[str] | names of fields Super had to guess; the UI marks them. Allowed: `price`, `unit_cost`, `weekly_sales`, `lead_time_weeks`, `stock_weeks`, `rival_price`, `exposed_cost_share` |
+| **`income_mix`** (v3.2, 2026-10-22) | list[float] of 3, normalised to sum 1; default `[⅓, ⅓, ⅓]` | shares of buyers with low, mid and high income. Super sets it from the product, its price and the country |
+| **`price_hunter_share`** (v3.2) | float, clamped 0.05–0.95; default 0.5 | share of buyers who shop mostly on price |
+| **`loyal_share`** (v3.2) | float, clamped 0.05–0.95; default 0.5 | of the buyers, the share who lean to you rather than the rival. Real customer facts in the text, page or file (repeat rate, loyalty members, share next to the rival) override Super's product-based guess |
+| `guessed_fields` | list[str] | names of fields Super had to guess; the UI marks them. Allowed: `price`, `unit_cost`, `weekly_sales`, `lead_time_weeks`, `stock_weeks`, `rival_price`, `exposed_cost_share`, `customer_mix` (one flag for the three mix dials) |
 
 **Calibration** works in fixed engine units and converts back to dollars, so the MNL constants tuned in §4.1 still hold:
 
 - Price scale `k_p = price / 100`.
   - Engine prices: your price = 100, the rival = `rival_price / k_p`, `p_ref = 105`, `c_raw0 = unit_cost / k_p`.
+- **Customer mix (v3.2, 2026-10-22).** The 500 engine shoppers are split across the 12 archetypes by `w = income_mix[i] × (h or 1−h) × (a or 1−a)` (largest remainder; `h = price_hunter_share`, `a = loyal_share`, A-loyal = yours). A profile without the dials keeps the old even split. Because the Lerner step below rescales α to today's price, the mix barely moves results on its own (±5% on coffee). Its weight comes through the crowd: each archetype's sentiment counts in proportion to its share, so a mix heavy in deal hunters who dislike a price rise can flip the pick (coffee replay: "Raise 10%" → "Stock up 4 weeks").
+- **Engine-only number (2026-10-22).** Every cell also reports `engine_only_delta_usd`: the same plan, same streams, with every shopper reaction neutral. The UI shows it next to each gain, and the backtest adds `pick_engine_only_usd`. On the held-out backtests the shopper-weighted forecasts summed to +$129k against +$6.7k from the engine alone (`docs/BACKTEST_HELDOUT.md`). The sentiment weight is `planner.SENTIMENT_WEIGHT`: 0.05 since 2026-10-22 (it was `MarketParams.delta` = 0.8). The `analysis` event carries `sentiment_weight`, and a recording without it replays at 0.8 (`LEGACY_SENTIMENT_WEIGHT`).
 - `fc = 0`, `eta = 0`, `holding_cost = 0.004 × c_raw0` per unit per week (≈ 20% a year), `lead_time0 = lead_time_weeks`.
 - **Quantity scale:**
   - Compute the expected engine demand for A at the starting prices, with neutral sentiment and no shock. Call it `d0`.

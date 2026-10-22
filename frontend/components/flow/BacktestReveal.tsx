@@ -3,7 +3,7 @@
 import type { BacktestEventData } from "../../lib/events";
 import { formatDelta, formatMoney } from "../../lib/format";
 import { useMarketStore } from "../../lib/store";
-import { MINUS, sign } from "./parts";
+import { EngineOnly, MINUS, sign } from "./parts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /** "2024-04-15" -> "15 Apr 2024" ("2024-05" -> "May 2024") */
@@ -171,6 +171,11 @@ export function BacktestReveal() {
           {verdict} <span className="bt-rank">{rank}</span>
         </p>
         <p className="bt-hind">{hind}</p>
+        {!doNothing && b.pick_engine_only_usd != null && (
+          <p className="bt-hind">
+            <EngineOnly v={b.pick_engine_only_usd} long />. Most of the gap is the AI shoppers&apos; mood, which no real data checks; the simulator alone is the steadier number.
+          </p>
+        )}
         {forecast && (
           <p className="bt-hind">
             Why this differs from the memo&apos;s {formatDelta(forecast.mean_delta_usd)}: that was the forecast{forecastIn ? ` for “${forecastIn}”` : ""}, made on {niceDate(b.as_of)} with only the news of that day. This number is the same plan run on the price that really happened.
