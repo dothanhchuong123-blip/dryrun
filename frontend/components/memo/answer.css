@@ -46,7 +46,6 @@
 .am-tbl tr.base td { color: var(--fl-ink-3); }
 .am-tbl td.c { font-weight: 600; }
 .am-tbl td.c.pos { color: var(--fl-gain); } .am-tbl td.c.neg { color: var(--fl-loss); }
-.am-tbl td.c i { position: absolute; left: 8px; right: 8px; bottom: 3px; height: 3px; border-radius: 2px; opacity: 0.55; }
 .am-tbl .tag { display: inline-block; margin-left: 6px; font-size: 10.5px; font-weight: 650; padding: 1px 6px; border-radius: 999px; background: var(--fl-accent); color: #fff; vertical-align: 1px; }
 .am-src { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
 .am-src li { font-size: 14px; line-height: 1.45; }

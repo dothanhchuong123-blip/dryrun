@@ -9,7 +9,9 @@ import { cellKey, reasoningKey, useMarketStore, type PlanRow } from "../../lib/s
 import type { Beat } from "../../lib/timeline";
 import { leanOf, moodOf, shopperOf, traitLine } from "../../lib/faces";
 import { mixOf, shareOf } from "../../lib/mix";
+import { BlockMeter, FutureHead } from "../faces/GridMarks";
 import { PixelFace } from "../faces/PixelFace";
+import { cellMeter, futureTitle } from "../../lib/gridmarks";
 import { AddPlanPanel } from "../grid/AddPlanPanel";
 import { topBubbles } from "../grid/tips";
 import { DivBar, EngineOnly, maxAbs, sign, tone, useCountUp, useHeld, useTyped } from "./parts";
@@ -821,8 +823,8 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
                 </span>
               </th>
               {shocks.map((c) => (
-                <th key={c.id} scope="col">
-                  <b>{c.label}</b>
+                <th key={c.id} scope="col" title={futureTitle(c)} className={c.id === "news" ? "gm-today" : undefined}>
+                  <FutureHead shock={c} />
                   {srcNames(c).map((s) => (
                     <span key={s} className="fl-pill tav" style={{ marginRight: 4 }}>
                       {s}
@@ -886,8 +888,13 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
                       }}
                     >
                       {overCash(cell, cash) && <span className="over" title="Needs more cash than you have">cash!</span>}
-                      <span className="v">{formatDelta(cell.mean_delta_usd)}</span>
-                      <span className="b">bad case {formatDelta(cell.p5_delta_usd)}</span>
+                      <span className="gm-row">
+                        <BlockMeter meter={cellMeter(cell.mean_delta_usd, max)} />
+                        <span className="gm-tx">
+                          <span className="v">{formatDelta(cell.mean_delta_usd)}</span>
+                          <span className="b">bad case {formatDelta(cell.p5_delta_usd)}</span>
+                        </span>
+                      </span>
                     </td>
                   );
                 })}

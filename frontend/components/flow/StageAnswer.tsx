@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { MemoEventData } from "../../lib/events";
 import { formatDelta, formatMoney, formatRuns } from "../../lib/format";
 import { cellKey, useMarketStore } from "../../lib/store";
+import { cellMeter, futureTitle, gridMax } from "../../lib/gridmarks";
+import { BlockMeter, FutureHead } from "../faces/GridMarks";
 import { CellMath } from "../memo/CellMath";
 import { describePlan } from "../memo/MemoScreen";
 import "../memo/answer.css";
@@ -71,8 +73,8 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
     .sort((a, b) => b.a - a.a)
     .slice(0, 2)
     .map((x) => x.name);
+  const gmax = gridMax(Object.values(cells).map((c) => c.mean_delta_usd));
   const rows = futures.length ? [memo.plan_name, ...others] : [];
-  const cmax = Math.max(1, ...rows.flatMap((r) => futures.map((s) => Math.abs(cells[cellKey(r, s.id)]?.mean_delta_usd ?? 0))));
 
   const asText = () => {
     const L: string[] = [memo.headline, "", `Expected gain vs doing nothing: ${formatDelta(n.mean_delta_usd)} over 6 months`,
@@ -164,8 +166,8 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
                   <tr>
                     <th scope="col">Plan</th>
                     {futures.map((s) => (
-                      <th scope="col" key={s.id}>
-                        {s.label}
+                      <th scope="col" key={s.id} title={futureTitle(s)}>
+                        <FutureHead shock={s} />
                       </th>
                     ))}
                   </tr>
@@ -185,10 +187,12 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
                         return (
                           <td key={s.id} className={`c ${sign(v)}${on ? " on" : ""}`}>
                             <button type="button" className="am-cellbtn" aria-expanded={on} onClick={() => setOpen(on ? null : { plan: r, shock: s.id })}>
-                              {formatDelta(v)}
-                              <EngineOnly v={eng} />
+                              <BlockMeter meter={cellMeter(v, gmax)} />
+                              <span className="am-num">
+                                {formatDelta(v)}
+                                <EngineOnly v={eng} />
+                              </span>
                             </button>
-                            <i style={{ background: v >= 0 ? "var(--fl-gain-bar)" : "var(--fl-loss-bar)", width: `calc(${(Math.abs(v) / cmax) * 100}% - 16px)`, left: v >= 0 ? 8 : "auto", right: v < 0 ? 8 : "auto" }} />
                           </td>
                         );
                       })}

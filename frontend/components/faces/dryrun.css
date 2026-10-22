@@ -177,14 +177,12 @@ body .fl-tip .fl-sl i.b, body .fl-tip .fl-sk i.b { background: repeating-linear-
 .fl .fl-note { border-radius: 0; background: var(--fl-sunk); color: var(--fl-ink-2); border: 1px dashed var(--fl-ink-3); font-family: var(--mono); font-size: 12px; letter-spacing: 0.01em; line-height: 1.55; }
 /* skill vs luck */
 .fl .am-luck { padding: 10px 12px; background: var(--fl-sunk); border: 1px dashed var(--fl-ink-3); border-left: 3px solid var(--fl-accent); font-size: 13px; }
-/* how it compares: heatmap colours, accent bar on the recommended row, pixel-block bars */
+/* how it compares: heatmap colours, accent bar on the recommended row */
 .fl .am-tbl th { font-family: var(--mono); font-weight: 500; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fl-ink-2); }
 .fl .am-tbl td { font-variant-numeric: tabular-nums; border-top-style: dashed; }
 .fl .am-tbl td.c { font-weight: 700; color: var(--fl-ink); }
 .fl .am-tbl td.c.pos { background: var(--g1); color: var(--fl-ink); }
 .fl .am-tbl td.c.neg { background: var(--r1); color: var(--fl-ink); }
-.fl .am-tbl td.c i { height: 6px; bottom: 4px; border-radius: 0; opacity: 1; background-image: none;
-  -webkit-mask: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 6px); mask: repeating-linear-gradient(90deg, #000 0 5px, transparent 5px 6px); }
 .fl .am-tbl tr.rec td { background: var(--fl-accent-soft); }
 .fl .am-tbl tr.rec td.c.pos, .fl .am-tbl tr.rec td.c.neg { background: var(--fl-accent-soft); }
 .fl .am-tbl tr.rec td:first-child { box-shadow: inset 3px 0 0 var(--fl-accent); padding-left: 10px; }
@@ -387,3 +385,23 @@ body .fl-tip .fl-sl i.b, body .fl-tip .fl-sk i.b { background: repeating-linear-
   .fl .bt-big { font-size: 17px; }
   .fl .bt-banner { padding: 7px 16px; text-align: left; }
 }
+
+/* plan × future grid: a pixel block meter in every cell, abstract tag chips on every future (DESIGN.md §12.6) */
+.gm-meter { flex: none; display: block; width: 11px; height: 22px; image-rendering: pixelated; background: var(--fl-card); box-shadow: 0 0 0 1px var(--fl-line-2); }
+.gm-up { fill: var(--fl-gain-bar); } .gm-dn { fill: var(--fl-loss-bar); } .gm-ev { fill: var(--fl-ink-3); }
+.gm-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.gm-tx { display: block; min-width: 0; }
+.fl .fl-cell .gm-tx .v { font-size: 16px; }
+.fl .fl-cell .gm-tx .b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gm-fh { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.gm-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 5px; border-radius: 3px; font: 600 10.5px/1.2 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; color: var(--fl-ink-2); background: var(--fl-sunk); box-shadow: inset 0 0 0 1px var(--fl-line-2); }
+.gm-chip.bad { color: var(--fl-loss); background: var(--fl-loss-soft, color-mix(in srgb, var(--fl-loss) 14%, var(--fl-card))); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fl-loss) 45%, transparent); }
+.gm-chip.good { color: var(--fl-gain); background: var(--fl-gain-soft, color-mix(in srgb, var(--fl-gain) 14%, var(--fl-card))); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fl-gain) 45%, transparent); }
+.gm-arrow { display: block; flex: none; fill: currentColor; image-rendering: pixelated; }
+.gm-news { margin-left: 2px; padding: 1px 4px; font: 500 9.5px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: #fff; background: var(--fl-accent); }
+.gm-top { display: flex; align-items: center; gap: 4px; }
+.fl .fl-grid thead th.gm-today { box-shadow: inset 0 -2px 0 var(--fl-accent); }
+.fl .am-tbl th .gm-fh { align-items: flex-end; }
+.fl .am-tbl th { white-space: nowrap; }
+.fl .am-cellbtn { display: inline-flex; align-items: center; gap: 8px; border-bottom: 0; white-space: nowrap; }
+.fl .am-cellbtn .am-num { display: inline-flex; align-items: center; gap: 4px; border-bottom: 1px dashed currentColor; }
