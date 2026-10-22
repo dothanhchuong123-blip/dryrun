@@ -95,6 +95,7 @@ Then (optional, advice only): Argon review **A2** (prompt red-team on the analys
 | [x] | F1 screens 1–2: your business, news | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F1-setup-news.md` |
 | [x] | F2 screens 3–4: analyst log, plans × futures grid | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F2-analyst-grid.md` |
 | [x] | F3 screens 5–6: replay drawer (arena), decision memo | Claude Sonnet 5.5 (effort medium) | `prompts/ui_oct17-20_frontend/F3-replay-memo.md` |
+| [x] | F5 drop a file in the box (PDF, photo) + "not enough" gate | Claude Opus 5.5 (effort high) | `prompts/ui_oct21_one-task/F5-drop-files.md` |
 
 ### Wave 4 · Oct 19–20 · **Milestone B** (deployed) · `prompts/4_oct19-20_in-order/`. **T08 first, then T09.**
 | Done | Task | Builder | File |
@@ -107,7 +108,7 @@ Then (optional, advice only): Argon review **A2** (prompt red-team on the analys
 | Done | Task | Builder | Start |
 |---|---|---|---|
 | [x] | B1a backtest backend: engine knobs, 4 cases, as-of news, scoring, recordings | Claude Sonnet 5.5 (effort high) | `Do Parts A–C (B1a) of prompts/oct22-24_backtest/B1-backtest.md` |
-| [ ] | B1b backtest frontend: real-case cards, "What actually happened" reveal | Claude Sonnet 5.5 (effort medium) | `Do Part D (B1b) of prompts/oct22-24_backtest/B1-backtest.md` |
+| [x] | B1b backtest frontend: real-case cards, "What actually happened" reveal | Claude Sonnet 5.5 (effort medium) | `Do Part D (B1b) of prompts/oct22-24_backtest/B1-backtest.md` |
 
 ### Oct 21–24 · connect, polish, review (no new prompt files)
 - Point the frontend at the deployed backend (`NEXT_PUBLIC_API_BASE`) and fix whatever the real stream shows that the mock didn't.

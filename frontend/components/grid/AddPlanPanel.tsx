@@ -11,11 +11,12 @@ const sgn = (n: number) => (n < 0 ? `−${Math.abs(n)}` : n > 0 ? `+${n}` : "0")
 export function autoName(s: {
   price: number;
   week: number;
+  end?: number;
   stock: number;
   supplier: boolean;
 }): string {
   const parts: string[] = [];
-  if (s.price !== 0) parts.push(`${sgn(s.price)}% wk ${s.week}`);
+  if (s.price !== 0) parts.push(`${sgn(s.price)}% wk ${s.week}${s.end != null && s.end < 24 && s.end > s.week ? `-${s.end}` : ""}`);
   if (s.stock > 0) parts.push(`stock ${s.stock} wk`);
   if (s.supplier) parts.push("new supplier");
   const body = parts.join(", ");
@@ -31,6 +32,7 @@ export function AddPlanPanel({ profile, onClose }: { profile: BusinessProfile; o
   const userPlans = useMarketStore((s) => s.plans.filter((p) => p.source === "user").length);
   const [price, setPrice] = useState(4);
   const [week, setWeek] = useState(2);
+  const [end, setEnd] = useState(24); // 24 = the change stays to the end
   const [stock, setStock] = useState(3);
   const [supplier, setSupplier] = useState(false);
   const [altCost, setAltCost] = useState(8);
@@ -39,7 +41,8 @@ export function AddPlanPanel({ profile, onClose }: { profile: BusinessProfile; o
   const [error, setError] = useState<string | null>(null);
   const uid = useId();
 
-  const name = autoName({ price, week, stock, supplier });
+  const endWeek = end > week ? end : 24;
+  const name = autoName({ price, week, end: endWeek, stock, supplier });
   const upfront = stock * profile.weekly_sales * profile.unit_cost;
   const over = profile.cash_available > 0 && upfront > profile.cash_available;
   const nothing = price === 0 && stock === 0 && !supplier;
@@ -50,6 +53,7 @@ export function AddPlanPanel({ profile, onClose }: { profile: BusinessProfile; o
       name,
       price_change_pct: price,
       price_change_week: week,
+      price_end_week: endWeek,
       extra_stock_weeks: stock,
       stock_week: 0,
       marketing_change_pct: 0,
@@ -58,7 +62,7 @@ export function AddPlanPanel({ profile, onClose }: { profile: BusinessProfile; o
       alt_lead_time_weeks: altLead,
       alt_shock_exposure: 0.3,
     }),
-    [name, price, week, stock, supplier, altCost, altLead],
+    [name, price, week, endWeek, stock, supplier, altCost, altLead],
   );
 
   const submit = async () => {
@@ -90,6 +94,11 @@ export function AddPlanPanel({ profile, onClose }: { profile: BusinessProfile; o
         <label htmlFor={`${uid}w`}>From week</label>
         <input id={`${uid}w`} type="range" min={0} max={23} step={1} value={week} disabled={price === 0} onChange={(e) => setWeek(+e.target.value)} />
         <output className="num">{price === 0 ? "–" : `week ${week}`}</output>
+      </div>
+      <div className="pg-sl">
+        <label htmlFor={`${uid}e`}>Ends in week</label>
+        <input id={`${uid}e`} type="range" min={week + 1} max={24} step={1} value={Math.max(end, week + 1)} disabled={price === 0} onChange={(e) => setEnd(+e.target.value)} />
+        <output className="num">{price === 0 || endWeek >= 24 ? "stays" : `week ${endWeek}`}</output>
       </div>
       <div className="pg-sl">
         <label htmlFor={`${uid}s`}>Extra stock</label>

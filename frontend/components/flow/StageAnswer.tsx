@@ -6,6 +6,7 @@ import { formatDelta, formatMoney, formatRuns } from "../../lib/format";
 import { cellKey, useMarketStore } from "../../lib/store";
 import { describePlan } from "../memo/MemoScreen";
 import "../memo/answer.css";
+import { BacktestReveal } from "./BacktestReveal";
 import { sign } from "./parts";
 
 /** Optional review fields (EVENTS v2.1) that lib/events.ts doesn't carry yet. */
@@ -293,6 +294,8 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
           {memo.fallback_used ? " Some steps used a plain fallback." : ""}
         </footer>
       </article>
+
+      <BacktestReveal />
 
       <div className="am-bar">
         <button type="button" className="fl-btn2" onClick={() => void openReplay(memo.plan_name, n.shock_id)}>

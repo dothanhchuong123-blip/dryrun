@@ -96,11 +96,28 @@ export interface ParseProfileRequest {
   text: string;
 }
 /** Where the profile text came from when the owner pasted a link (EVENTS.md /api/profile/parse). */
-export interface ProfileSource {
+export interface LinkSource {
+  kind?: "link";
   url: string;
   title: string;
   method: "extract" | "search";
   credits: number;
+}
+/** A file dropped in the box (EVENTS.md /api/profile/parse-file). */
+export interface FileSource {
+  kind: "file";
+  name: string;
+  method: "pdf_text" | "vision" | "text";
+  pages: number;
+}
+export type ProfileSource = LinkSource | FileSource;
+
+/** The 422 body when the gate says the input is not enough / not about a business. */
+export type MissingItem = "what_you_sell" | "where" | "price" | "cost";
+export interface InputRejection {
+  code: "too_little" | "not_business";
+  reason: string;
+  missing: MissingItem[];
 }
 
 export interface ParseProfileResponse {

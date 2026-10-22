@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { reducedMotion } from "../../lib/follow";
+import { FILE_ACCEPT, MISSING, NEEDS_LIVE, REJECT_COPY, checkFile, fileSize, hasFiles } from "../../lib/files";
+import type { MissingItem } from "../../lib/events";
 import { formatDelta, formatPrice } from "../../lib/format";
 import { useMarketStore } from "../../lib/store";
+import { suggest } from "../../lib/suggest";
 import { usePacer, useTimeline } from "../../lib/timeline";
 import { ReplayDrawer } from "../replay/ReplayDrawer";
 import { CustomerPreview } from "../faces/CustomerPreview";
@@ -33,6 +36,13 @@ const STARTERS: { label: string; text: string }[] = [
   { label: "Clothing", text: "I run a small clothing shop in " },
   { label: "Salon", text: "I run a small hair salon in " },
 ];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const LONG_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+/** "2024-01-15" -> "Jan 2024" */
+const monthYear = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""} ${iso.slice(0, 4)}`;
+/** "2024-01-15" -> "15 January 2024" */
+const longDate = (iso: string) => `${Number(iso.slice(8, 10))} ${LONG_MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""} ${iso.slice(0, 4)}`;
+
 const HOW = [
   { t: "Describe your business", d: "One line is enough, or paste a link. We guess the rest and mark it." },
   { t: "We search the news", d: "Tavily finds this week's news that actually hits your costs and customers." },
@@ -175,8 +185,24 @@ export function Flow() {
   }, [view, glide]);
 
   // ---- the box ------------------------------------------------------------------------------------
+  // a notification that slides in when the box is sent back for more (too little, or not about a business)
+  const [toast, setToast] = useState<string | null>(null);
+  const toastId = useRef(0);
+  const notify = (msg: string) => {
+    setToast(msg);
+    const id = ++toastId.current;
+    window.setTimeout(() => toastId.current === id && setToast(null), 6000);
+  };
+  useEffect(() => {
+    if (s.profileReject) notify(REJECT_COPY[s.profileReject.code]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.profileReject]);
   const read = (text: string) => {
-    if (!text.trim()) return;
+    // same free check as the server: no file and almost no letters -> stay home and say so, no screen change
+    if (!s.profileFile && Array.from(text.replace(/https?:\/\/\S+/g, "")).filter((c) => /\p{L}/u.test(c)).length < 8) {
+      notify(text.trim() && /https?:\/\//.test(text) ? REJECT_COPY.too_little : "There's almost nothing to read in that. Tell us what you sell and where.");
+      return;
+    }
     void s.parseProfile(text);
     go(0);
   };
@@ -185,6 +211,10 @@ export function Flow() {
     if (!ex) return;
     s.pickExample(id);
     void useMarketStore.getState().parseProfile(ex.text);
+    go(0);
+  };
+  const pickBacktest = (id: string) => {
+    void s.pickBacktest(id);
     go(0);
   };
   const restart = () => {
@@ -214,6 +244,64 @@ export function Flow() {
   };
   const offline = s.backend === "mock";
 
+  // ---- ghost text: Tab fills in the next missing fact, then the suggestion cycles on ---------------
+  const [focused, setFocused] = useState(false);
+  const ghostRef = useRef<HTMLDivElement>(null);
+  const ghost = focused && !linkMode && !/https?:\/\/|www\./i.test(s.profileText) ? suggest(s.profileText) : null;
+  const acceptGhost = () => {
+    if (!ghost) return;
+    s.setProfileText(s.profileText + ghost.add);
+    window.setTimeout(() => {
+      const el = boxRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }, 0);
+  };
+
+  // ---- files: drop, pick or paste one into the box ------------------------------------------------
+  const [dragging, setDragging] = useState(false);
+  const [fileMsg, setFileMsg] = useState<string | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  const attach = (f: File | null | undefined) => {
+    if (!f) return;
+    const bad = checkFile(f);
+    if (bad) {
+      setFileMsg(bad);
+      return;
+    }
+    setFileMsg(useMarketStore.getState().backend === "mock" ? NEEDS_LIVE : null);
+    s.setProfileFile(f);
+  };
+  const dropFile = (f: File | null | undefined) => {
+    setDragging(false);
+    attach(f);
+  };
+  // a file dropped anywhere else must not make the browser open it
+  useEffect(() => {
+    const stop = (e: DragEvent) => {
+      if (hasFiles(e)) e.preventDefault();
+    };
+    window.addEventListener("dragover", stop);
+    window.addEventListener("drop", stop);
+    return () => {
+      window.removeEventListener("dragover", stop);
+      window.removeEventListener("drop", stop);
+    };
+  }, []);
+  const addMissing = (m: MissingItem) => {
+    const cur = useMarketStore.getState().profileText;
+    s.setProfileText(cur + (cur && !/\s$/.test(cur) && !MISSING[m].phrase.startsWith(" ") && !MISSING[m].phrase.startsWith(",") ? " " : "") + MISSING[m].phrase);
+    window.setTimeout(() => {
+      const el = boxRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    }, 0);
+  };
+  const file = s.profileFile;
+  const canGo = (!!s.profileText.trim() || !!file) && s.profileStatus !== "reading";
+
   // ---- gates --------------------------------------------------------------------------------------
   const frontier = view === reached;
   const nNews = s.news.length,
@@ -229,7 +317,8 @@ export function Flow() {
       btn: "Search the web",
       ready: ok,
       act: () => {
-        void s.startAnalysis();
+        // a real case is already running: it started when its card was picked
+        if (!s.analysis.backtestId) void s.startAnalysis();
         go(1);
       },
       autoOk: exReplay,
@@ -303,10 +392,24 @@ export function Flow() {
   };
 
   const calls = s.telemetry ? s.telemetry.tiers.ultra.calls + s.telemetry.tiers.super.calls + s.telemetry.tiers.fast.calls : 0;
-  const modeLabel = offline ? "OFFLINE DEMO" : s.analysis.mode === "live" ? "LIVE" : s.exampleId || s.analysis.mode === "replay" ? "EXAMPLE REPLAY" : null;
+  const modeLabel = offline
+    ? "OFFLINE DEMO"
+    : s.analysis.mode === "live"
+      ? "LIVE"
+      : s.analysis.backtestId
+        ? "REAL CASE REPLAY"
+        : s.exampleId || s.analysis.mode === "replay"
+          ? "EXAMPLE REPLAY"
+          : null;
 
   return (
     <div className="fl">
+      {toast && (
+        <div className="fl-toast" role="alert">
+          <span>{toast}</span>
+          <button type="button" aria-label="Dismiss" onClick={() => setToast(null)}>×</button>
+        </div>
+      )}
       <header className="fl-top">
         <button type="button" className="fl-logo" onClick={restart} aria-label="Dry Run, start over">
           <PixelLogo />
@@ -335,6 +438,12 @@ export function Flow() {
         <ThemeToggle />
       </header>
 
+      {up && s.analysis.asOf && (
+        <div className="bt-banner" role="status">
+          <b>Replaying {longDate(s.analysis.asOf)}.</b> Dry Run only sees news from before this date.
+        </div>
+      )}
+
       <div className="fl-scroll" ref={scroller}>
         <main className="fl-main">
           <div className={`fl-hero${up ? " up" : ""}`} style={{ paddingTop: up ? 8 : "min(6vh, 48px)" }}>
@@ -352,7 +461,23 @@ export function Flow() {
             </div>
           )}
 
-          <div className={`fl-box${up ? " up" : ""}`}>
+          <div
+            className={`fl-box${up ? " up" : ""}${dragging ? " drag" : ""}`}
+            onDragOver={(e) => {
+              if (up || !hasFiles(e)) return;
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+            }}
+            onDrop={(e) => {
+              if (up || !hasFiles(e)) return;
+              e.preventDefault();
+              dropFile(e.dataTransfer.files[0]);
+            }}
+          >
+            {dragging && <div className="fl-dropveil">Drop your file</div>}
             {up ? (
               <div className="fl-sum">
                 <div className="head">
@@ -382,7 +507,7 @@ export function Flow() {
                 ) : (
                   <p className="trunc">{s.profileText}</p>
                 )}
-                {p && (
+                {p && !s.analysis.backtestId && (
                   <>
                     <button type="button" className="more" aria-expanded={showFull} onClick={() => setShowFull((v) => !v)}>
                       {showFull ? "Hide full text" : "Show full text"}
@@ -393,20 +518,74 @@ export function Flow() {
               </div>
             ) : (
               <>
-                <textarea
-                  ref={boxRef}
-                  aria-label="Describe your business"
-                  rows={4}
-                  value={s.profileText}
-                  onChange={(e) => s.setProfileText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) read(s.profileText);
-                  }}
-                  placeholder={placeholder}
-                />
+                <div className="fl-ta">
+                  {ghost && (
+                    <div className="fl-ghost" ref={ghostRef} aria-hidden>
+                      <span className="t">{s.profileText}</span>
+                      <span className="g">{ghost.add}</span>
+                    </div>
+                  )}
+                  <textarea
+                    ref={boxRef}
+                    aria-label="Describe your business"
+                    rows={4}
+                    value={s.profileText}
+                    onChange={(e) => s.setProfileText(e.target.value)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    onScroll={(e) => {
+                      if (ghostRef.current) ghostRef.current.scrollTop = e.currentTarget.scrollTop;
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) read(s.profileText);
+                      else if (e.key === "Tab" && !e.shiftKey && ghost && e.currentTarget.selectionStart === s.profileText.length) {
+                        e.preventDefault();
+                        acceptGhost();
+                      }
+                    }}
+                    placeholder={placeholder}
+                    onPaste={(e) => {
+                      const img = Array.from(e.clipboardData.files).find((f) => f.type.startsWith("image/"));
+                      if (img) {
+                        e.preventDefault();
+                        attach(img);
+                      }
+                    }}
+                  />
+                  {ghost && (
+                    <button type="button" className="fl-tab" tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={acceptGhost} aria-label="Accept suggestion">
+                      <kbd>Tab</kbd> {MISSING[ghost.item].label.toLowerCase()}
+                    </button>
+                  )}
+                </div>
+                {file && (
+                  <div className="fl-file" role="group" aria-label="Attached file">
+                    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+                      <path d="M3 1h7l3 3v11H3z M10 1v3h3" stroke="currentColor" strokeWidth="1.6" fill="none" />
+                    </svg>
+                    <span className="nm" title={file.name}>{file.name}</span>
+                    <small>{fileSize(file.size)}</small>
+                    <button type="button" aria-label="Remove file" onClick={() => { s.setProfileFile(null); setFileMsg(null); }}>×</button>
+                  </div>
+                )}
                 <div className="fl-boxbar">
                   <span>One line is enough: we guess the rest and mark it. Or paste your website, Google Maps or shop link · <kbd>⌘</kbd> <kbd>Enter</kbd> to start</span>
-                  <button type="button" className="fl-btn" disabled={!s.profileText.trim() || s.profileStatus === "reading"} onClick={() => read(s.profileText)}>
+                  <input
+                    ref={picker}
+                    type="file"
+                    hidden
+                    accept={FILE_ACCEPT}
+                    onChange={(e) => {
+                      attach(e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button type="button" className="fl-clip" aria-label="Attach a file: PDF, photo or text" title="Attach a PDF, photo or text file" onClick={() => picker.current?.click()}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+                      <path d="M11 5.5 6.2 10.3a1.4 1.4 0 0 0 2 2L13 7.5a3 3 0 0 0-4.2-4.2L3.9 8.2a4.5 4.5 0 0 0 6.4 6.4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                  <button type="button" className="fl-btn" disabled={s.profileStatus === "reading"} onClick={() => read(s.profileText)}>
                     Test my business
                     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
                       <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -445,6 +624,36 @@ export function Flow() {
                   );
                 })}
               </div>
+            </div>
+          )}
+          {!up && s.backtests.length > 0 && (
+            <div className="fl-ex bt-ex">
+              <p>Real cases: would it have helped? We replay a past date with only the news from before it, then check the advice against what really happened.</p>
+              <div className="fl-exg">
+                {s.backtests.map((b) => (
+                  <button key={b.id} type="button" className="fl-exb bt-card" onClick={() => pickBacktest(b.id)}>
+                    <span className="bt-chip">{monthYear(b.as_of)}</span>
+                    <b>{b.title}</b>
+                    <span>{b.subtitle}</span>
+                    <small>Replay this date →</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {!up && file && <p className="fl-keepnote">We read it once and don&apos;t keep it.</p>}
+          {!up && (fileMsg || s.profileReject) && (
+            <div className="fl-note" role="status">
+              <p>{fileMsg ?? REJECT_COPY[s.profileReject!.code]}</p>
+              {!fileMsg && s.profileReject!.code === "too_little" && s.profileReject!.missing.length > 0 && (
+                <div className="miss">
+                  {s.profileReject!.missing.map((m) => (
+                    <button key={m} type="button" className="fl-starter" onClick={() => addMissing(m)}>
+                      + {MISSING[m].label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {!up && s.profileError && <p className="fl-err">{s.profileError}</p>}

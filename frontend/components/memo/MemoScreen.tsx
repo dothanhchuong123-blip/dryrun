@@ -18,6 +18,9 @@ type MemoView = MemoEventData & {
 const MINUS = "−";
 
 /** The plan in plain words: "Buy 4 extra weeks of stock this week · raise price 3% from week 3". */
+/** (v2.2) a price change that stops before the horizon ends, e.g. a surcharge */
+const endsEarly = (s: PlanSpec) => (s.price_end_week ?? 24) < 24 && (s.price_end_week ?? 24) > s.price_change_week;
+
 export function describePlan(s: PlanSpec): string {
   const parts: string[] = [];
   if (s.extra_stock_weeks > 0) {
@@ -25,7 +28,7 @@ export function describePlan(s: PlanSpec): string {
   }
   if (s.price_change_pct !== 0) {
     const p = Math.abs(s.price_change_pct);
-    parts.push(`${s.price_change_pct > 0 ? "raise" : "lower"} price ${p}% ${s.price_change_week <= 0 ? "now" : `from week ${s.price_change_week}`}`);
+    parts.push(`${s.price_change_pct > 0 ? "raise" : "lower"} price ${p}% ${s.price_change_week <= 0 ? "now" : `from week ${s.price_change_week}`}${endsEarly(s) ? ` until week ${s.price_end_week}` : ""}`);
   }
   if (s.marketing_change_pct !== 0) {
     parts.push(`${s.marketing_change_pct > 0 ? "spend" : "cut"} ${Math.abs(s.marketing_change_pct)}% ${s.marketing_change_pct > 0 ? "more" : "less"} on marketing`);

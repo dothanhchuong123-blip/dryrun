@@ -10,6 +10,7 @@ import type {
   AddPlanResponse,
   AnalysisEvent,
   AnalysisEventName,
+  BacktestsResponse,
   BusinessProfile,
   CreateAnalysisRequest,
   CreateAnalysisResponse,
@@ -25,6 +26,7 @@ import type {
 } from "./events";
 import { ANALYSIS_EVENT_NAMES, REPLAY_EVENT_NAMES } from "./events";
 import type { MockAnalysisHandle } from "../mock";
+import { playRecording, recordedBacktests, recordedRealizedCell } from "./recorded";
 
 export type BackendKind = "api" | "mock";
 
@@ -109,6 +111,8 @@ async function probe(): Promise<void> {
 let mockHandle: MockAnalysisHandle | null = null;
 let analysisSink: ((ev: AnalysisEvent) => void) | null = null;
 let currentAnalysisId: string | null = null;
+/** the real case being played offline (B1), or null */
+let mockBacktestId: string | null = null;
 
 // ---- REST --------------------------------------------------------------------------------------
 
@@ -124,6 +128,20 @@ export const api = {
       }
     }
     return (await mockModule()).mockExamples();
+  },
+
+  /** The real cases (B1). An empty list when the server has none or cannot be reached. */
+  async backtests(): Promise<BacktestsResponse> {
+    await probe();
+    if (kind === "api") {
+      try {
+        return await http<BacktestsResponse>("/api/backtests");
+      } catch (e) {
+        if (!isOffline(e)) throw e;
+        setKind("mock");
+      }
+    }
+    return recordedBacktests();
   },
 
   async parseProfile(text: string, url?: string | null): Promise<ParseProfileResponse> {
@@ -146,6 +164,33 @@ export const api = {
     return (await mockModule()).mockParseProfile(text);
   },
 
+  async parseProfileFile(file: File, note: string): Promise<ParseProfileResponse> {
+    await probe();
+    if (kind === "api") {
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        form.append("text", note);
+        const res = await fetch(`${getApiBase()}/api/profile/parse-file`, { method: "POST", body: form });
+        if (!res.ok) {
+          let body: unknown = null;
+          try {
+            body = await res.json();
+          } catch {
+            /* not JSON */
+          }
+          throw new ApiError(res.status, body, `HTTP ${res.status} /api/profile/parse-file`);
+        }
+        return (await res.json()) as ParseProfileResponse;
+      } catch (e) {
+        if (!isOffline(e)) throw e;
+        setKind("mock");
+      }
+    }
+    const reason = "Reading files needs the live server. Pick an example, or describe your business in a line.";
+    throw new ApiError(0, { reason }, reason);
+  },
+
   async createAnalysis(req: CreateAnalysisRequest): Promise<CreateAnalysisResponse> {
     await probe();
     if (kind === "api") {
@@ -158,6 +203,12 @@ export const api = {
         setKind("mock");
       }
     }
+    if (req.backtest_id) {
+      mockBacktestId = req.backtest_id;
+      currentAnalysisId = `mockbt-${req.backtest_id}`;
+      return { analysis_id: currentAnalysisId, mode: "replay" };
+    }
+    mockBacktestId = null;
     const r = (await mockModule()).mockCreateAnalysis(req);
     currentAnalysisId = r.analysis_id;
     return r;
@@ -269,6 +320,13 @@ export function connectAnalysisStream(
   onEvent: (ev: AnalysisEvent) => void,
   onGiveUp: (reason: string) => void,
 ): () => void {
+  if (kind === "mock" && mockBacktestId && analysisId === `mockbt-${mockBacktestId}`) {
+    return playRecording(
+      `backtest_${mockBacktestId}`,
+      (event, data) => onEvent({ event, data } as AnalysisEvent),
+      onGiveUp,
+    );
+  }
   if (kind === "mock") {
     analysisSink = onEvent;
     let stopped = false;
@@ -305,6 +363,20 @@ export function connectReplayStream(
   onGiveUp: (reason: string) => void,
   mockArgs?: { planName: string; shockId: string; spec?: PlanSpec },
 ): () => void {
+  if (kind === "mock" && mockBacktestId && mockArgs?.shockId === "realized") {
+    // offline, only the memo's pick was recorded on the real path
+    let stop: (() => void) | null = null;
+    let closed = false;
+    void recordedRealizedCell(mockBacktestId).then((name) => {
+      if (closed) return;
+      if (!name) return onGiveUp("This replay needs the live server.");
+      stop = playRecording(name, (event, data) => onEvent({ event, data } as ReplayEvent), onGiveUp);
+    });
+    return () => {
+      closed = true;
+      stop?.();
+    };
+  }
   if (kind === "mock") {
     let stop: (() => void) | null = null;
     let closed = false;

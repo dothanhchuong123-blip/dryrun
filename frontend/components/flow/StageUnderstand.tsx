@@ -136,7 +136,7 @@ export function StageUnderstand() {
   const terms = p.search_terms ?? [];
   const local = p.market_terms ?? [];
   const nGuessed = p.guessed_fields.length;
-  const domain = source ? hostOf(source.url) : "";
+  const domain = source && source.kind !== "file" ? hostOf(source.url) : "";
   return (
     <div className="fl-stage">
       <div className="fl-g2">
@@ -148,7 +148,12 @@ export function StageUnderstand() {
             </div>
             <span className="fl-pill ok">Nemotron Super</span>
           </div>
-          {source && (
+          {source?.kind === "file" && (
+            <span className="fl-pill tav fl-src" title={source.name}>
+              {source.method === "vision" ? `Read from ${source.name} with Nemotron VL` : `Read from ${source.name}`}
+            </span>
+          )}
+          {source && source.kind !== "file" && (
             <a className="fl-pill tav fl-src" href={source.url} target="_blank" rel="noopener noreferrer" title={source.title || source.url}>
               {source.method === "search" ? `Found with Tavily Search · ${domain}` : `Read from ${domain} with Tavily Extract`}
             </a>

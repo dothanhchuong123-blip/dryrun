@@ -27,6 +27,23 @@ function syncReplayFixtures() {
       path.join(publicReplaysDir, "manifest.json"),
       JSON.stringify({ replays: files.map((f) => f.replace(/\.jsonl$/, "")) }, null, 2)
     );
+    // the real cases (GET /api/backtests, for the offline demo): oldest as-of date first
+    const casesDir = path.resolve(process.cwd(), "..", "fixtures", "backtests");
+    if (fs.existsSync(casesDir)) {
+      const cases = fs
+        .readdirSync(casesDir)
+        .filter((f) => /^bt_.*\.json$/.test(f))
+        .map((f) => JSON.parse(fs.readFileSync(path.join(casesDir, f), "utf8")))
+        .map((c) => ({
+          id: c.id,
+          title: c.title,
+          subtitle: c.subtitle ?? "",
+          as_of: c.as_of,
+          has_replay: files.includes(`backtest_${c.id}.jsonl`),
+        }))
+        .sort((a, b) => (a.as_of + a.id < b.as_of + b.id ? -1 : 1));
+      fs.writeFileSync(path.join(publicReplaysDir, "backtests.json"), JSON.stringify(cases, null, 2));
+    }
   } catch {
     // Ignore filesystem errors in restricted environments
   }

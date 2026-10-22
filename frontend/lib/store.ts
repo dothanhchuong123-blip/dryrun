@@ -14,6 +14,8 @@ import { create } from "zustand";
 import type {
   AgentStepData,
   AnalysisEvent,
+  BacktestEventData,
+  BacktestSummary,
   BusinessProfile,
   CrowdArchetype,
   ErrorEventData,
@@ -35,6 +37,7 @@ import type {
   TickEventData,
 } from "./events";
 import { decodeChoicesB64 } from "./events";
+import type { InputRejection } from "./events";
 import { splitLink } from "./link";
 import {
   ApiError,
@@ -63,6 +66,9 @@ export interface AnalysisInfo {
   mode: RunMode | null;
   status: AnalysisStatus;
   exampleId: string | null;
+  /** (B1) a real case: the date the run pretends it is, and which case */
+  asOf: string | null;
+  backtestId: string | null;
   costUsd: number | null;
   /** reason from a `mode` event or an error, for the mode chip tooltip / error banner */
   note: string | null;
@@ -130,6 +136,8 @@ const emptyAnalysis = (): AnalysisInfo => ({
   mode: null,
   status: "idle",
   exampleId: null,
+  asOf: null,
+  backtestId: null,
   costUsd: null,
   note: null,
 });
@@ -148,6 +156,8 @@ interface RunData {
   reasoningByRound: Record<string, string>;
   reasoningDone: Record<string, boolean>;
   memo: MemoEventData | null;
+  /** (B1) the advice scored against what really happened */
+  backtest: BacktestEventData | null;
   telemetry: TelemetryData | null;
   replay: ReplayState;
 }
@@ -166,6 +176,7 @@ const emptyRun = (): RunData => ({
   reasoningByRound: {},
   reasoningDone: {},
   memo: null,
+  backtest: null,
   telemetry: null,
   replay: emptyReplay(),
 });
@@ -175,6 +186,8 @@ export interface MarketState extends RunData {
   backend: BackendKind;
 
   examples: ExampleSummary[];
+  /** (B1) the real cases under the examples */
+  backtests: BacktestSummary[];
   /** the free-text box on screen 1 */
   profileText: string;
   /** set by pickExample; cleared when the text or any field is edited */
@@ -185,13 +198,19 @@ export interface MarketState extends RunData {
   profileError: string | null;
   /** set when the profile was read from a pasted link */
   profileSource: ProfileSource | null;
+  /** F5: the file in the box (one at a time) and the gate's "not enough / not a business" answer */
+  profileFile: File | null;
+  profileReject: InputRejection | null;
 
   // actions
+  setProfileFile(file: File | null): void;
   loadExamples(): Promise<void>;
   setProfileText(text: string): void;
   parseProfile(text: string): Promise<void>;
   setProfileField<K extends keyof BusinessProfile>(key: K, value: BusinessProfile[K]): void;
   pickExample(id: string): void;
+  /** (B1) Plays a real case: the run starts at once, because the case brings its own business. */
+  pickBacktest(id: string): Promise<void>;
   startAnalysis(): Promise<void>;
   /** Adds a user plan row (engine only, free). Resolves to an error message, or null when accepted. */
   addPlan(spec: PlanSpec): Promise<string | null>;
@@ -287,6 +306,7 @@ export const useMarketStore = create<MarketState>()((set, get) => {
     step: "business",
     backend: backendKind(),
     examples: [],
+    backtests: [],
     profileText: "",
     exampleId: null,
     profile: null,
@@ -294,6 +314,12 @@ export const useMarketStore = create<MarketState>()((set, get) => {
     profileFallback: false,
     profileError: null,
     profileSource: null,
+    profileFile: null,
+    profileReject: null,
+
+    setProfileFile(file) {
+      set({ profileFile: file, profileReject: null, profileError: null, exampleId: null });
+    },
 
     async loadExamples() {
       if (get().examples.length) return;
@@ -301,6 +327,11 @@ export const useMarketStore = create<MarketState>()((set, get) => {
         set({ examples: await api.examples(), backend: backendKind() });
       } catch {
         set({ examples: [] });
+      }
+      try {
+        set({ backtests: (await api.backtests()).filter((b) => b.has_replay) });
+      } catch {
+        set({ backtests: [] });
       }
     },
 
@@ -310,18 +341,20 @@ export const useMarketStore = create<MarketState>()((set, get) => {
 
     async parseProfile(text) {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      const file = get().profileFile;
+      if (!trimmed && !file) return;
       const keepExample = get().exampleId && get().examples.find((e) => e.id === get().exampleId)?.text.trim() === trimmed;
       set({
         profileText: text,
         profileStatus: "reading",
         profileError: null,
         profileSource: null,
+        profileReject: null,
         exampleId: keepExample ? get().exampleId : null,
       });
       try {
         const { url, note } = splitLink(trimmed);
-        const res = await api.parseProfile(note, url);
+        const res = file ? await api.parseProfileFile(file, trimmed) : await api.parseProfile(note, url);
         set({
           profile: res.profile,
           profileFallback: res.fallback_used,
@@ -330,6 +363,15 @@ export const useMarketStore = create<MarketState>()((set, get) => {
           backend: backendKind(),
         });
       } catch (e) {
+        const body = e instanceof ApiError ? (e.body as Partial<InputRejection> | null) : null;
+        if (e instanceof ApiError && e.status === 422 && (body?.code === "too_little" || body?.code === "not_business")) {
+          // not an error: the box stays as it is and Flow shows what to add
+          set({
+            profileStatus: "idle",
+            profileReject: { code: body.code, reason: String(body.reason ?? ""), missing: body.missing ?? [] },
+          });
+          return;
+        }
         const reason = e instanceof ApiError ? (e.body as { reason?: unknown } | null)?.reason : null;
         const msg =
           typeof reason === "string" && e instanceof ApiError && [0, 422, 429].includes(e.status)
@@ -353,7 +395,56 @@ export const useMarketStore = create<MarketState>()((set, get) => {
     pickExample(id) {
       const ex = get().examples.find((e) => e.id === id);
       if (!ex) return;
-      set({ exampleId: id, profileText: ex.text, profile: null, profileStatus: "idle", profileError: null, profileSource: null });
+      set({
+        exampleId: id,
+        profileText: ex.text,
+        profile: null,
+        profileStatus: "idle",
+        profileError: null,
+        profileSource: null,
+        profileFile: null,
+        profileReject: null,
+      });
+    },
+
+    async pickBacktest(id) {
+      if (!get().backtests.some((b) => b.id === id)) return;
+      closeAnalysisStream?.();
+      closeAnalysisStream = null;
+      get().closeReplay();
+      stopClock();
+      reasoningBuf = {};
+      stepSeq = 0;
+      const asOf = get().backtests.find((b) => b.id === id)?.as_of ?? null;
+      set({
+        ...emptyRun(),
+        analysis: { ...emptyAnalysis(), status: "starting", mode: "replay", backtestId: id, asOf },
+        step: "news",
+        exampleId: null,
+        profile: null,
+        profileText: "",
+        profileStatus: "reading",
+        profileError: null,
+        profileSource: null,
+        profileFile: null,
+        profileReject: null,
+      });
+      try {
+        const res = await api.createAnalysis({ backtest_id: id, mode: "replay" });
+        set((s) => ({ analysis: { ...s.analysis, id: res.analysis_id, mode: "replay", status: "running" }, backend: backendKind() }));
+        closeAnalysisStream = connectAnalysisStream(
+          res.analysis_id,
+          (ev) => get().applyAnalysisEvent(ev),
+          (reason) => fail(reason),
+        );
+      } catch (e) {
+        const reason =
+          e instanceof ApiError && e.status === 409
+            ? "That case has no recording yet."
+            : "Could not start that case.";
+        fail(reason);
+        set({ step: "business", profileStatus: "error", profileError: reason });
+      }
     },
 
     async startAnalysis() {
@@ -528,6 +619,8 @@ export const useMarketStore = create<MarketState>()((set, get) => {
         profileStatus: "idle",
         profileError: null,
         profileSource: null,
+        profileFile: null,
+        profileReject: null,
       });
     },
 
@@ -537,12 +630,23 @@ export const useMarketStore = create<MarketState>()((set, get) => {
       switch (ev.event) {
         case "analysis":
           set((s) => ({
-            analysis: { ...s.analysis, id: ev.data.analysis_id || s.analysis.id, mode: ev.data.mode, exampleId: ev.data.example_id, status: "running" },
+            analysis: {
+              ...s.analysis,
+              id: ev.data.analysis_id || s.analysis.id,
+              // the recording was made LIVE; a real case is always played back
+              mode: ev.data.backtest_id ? "replay" : ev.data.mode,
+              exampleId: ev.data.example_id,
+              asOf: ev.data.as_of ?? s.analysis.asOf,
+              backtestId: ev.data.backtest_id ?? s.analysis.backtestId,
+              status: "running",
+            },
             profile: s.profile ?? ev.data.profile,
+            // a real case brings its own business, so there is nothing to read
+            profileStatus: ev.data.backtest_id ? "ready" : s.profileStatus,
           }));
           break;
         case "mode":
-          set((s) => ({ analysis: { ...s.analysis, mode: ev.data.mode, note: ev.data.reason } }));
+          set((s) => ({ analysis: { ...s.analysis, mode: s.analysis.backtestId ? "replay" : ev.data.mode, note: ev.data.reason } }));
           break;
         case "news":
           set((s) => {
@@ -599,6 +703,9 @@ export const useMarketStore = create<MarketState>()((set, get) => {
           break;
         case "memo":
           set({ memo: ev.data });
+          break;
+        case "backtest":
+          set({ backtest: ev.data });
           break;
         case "telemetry":
           set({ telemetry: ev.data });
