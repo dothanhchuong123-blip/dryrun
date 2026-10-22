@@ -9,9 +9,9 @@ import { cellKey, reasoningKey, useMarketStore, type PlanRow } from "../../lib/s
 import type { Beat } from "../../lib/timeline";
 import { leanOf, moodOf, shopperOf, traitLine } from "../../lib/faces";
 import { mixOf, shareOf } from "../../lib/mix";
-import { BlockMeter, FutureHead } from "../faces/GridMarks";
+import { BlockMeter, FutureHead, WinBadge } from "../faces/GridMarks";
 import { PixelFace } from "../faces/PixelFace";
-import { cellMeter, futureTitle } from "../../lib/gridmarks";
+import { cellMeter, futureTitle, winCount } from "../../lib/gridmarks";
 import { AddPlanPanel } from "../grid/AddPlanPanel";
 import { topBubbles } from "../grid/tips";
 import { DivBar, EngineOnly, maxAbs, sign, tone, useCountUp, useHeld, useTyped } from "./parts";
@@ -650,6 +650,11 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
   const rows: PlanRow[] = plans.filter((x) => shown.plans.has(x.name));
   const visible = new Set(shown.cells);
   const max = maxAbs(shown.cells.map((k) => cells[k]).filter(Boolean));
+  // "wins in N of M futures": only once every future of the row has its number
+  const rowWins = (plan: string) => {
+    const vals = shocks.map((c) => (visible.has(cellKey(plan, c.id)) ? cells[cellKey(plan, c.id)]?.mean_delta_usd : undefined));
+    return vals.length && vals.every((v) => v != null) ? winCount(vals as number[], max) : null;
+  };
   const best = shown.done ? summary?.best_today : null;
   const safest = shown.done ? summary?.safest : null;
   const cash = p?.cash_available ?? 0;
@@ -858,6 +863,7 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
                   {best === r.name && <span className="star">★ </span>}
                   {r.name}
                   {best === r.name && <span className="fl-rectag">Recommended</span>}
+                  <WinBadge wins={rowWins(r.name)} />
                   <small>
                     {r.source === "user" ? "your plan" : r.source === "seed" ? "starter plan" : `Nemotron · round ${r.round + 1}`}
                     {best === r.name && " · best today"}

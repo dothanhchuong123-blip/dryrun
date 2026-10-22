@@ -25,6 +25,18 @@ export function cellMeter(v: number, max: number): Meter {
   return { dir: v > 0 ? "up" : "down", blocks: Math.min(METER_MAX, Math.max(1, Math.round((Math.abs(v) / max) * METER_MAX))) };
 }
 
+/** How one plan row did across the futures: a win is a cell that is a profit by the same rule as the meter (about-even cells do not count). */
+export interface Wins {
+  wins: number;
+  total: number;
+  tone: "all" | "some" | "none";
+}
+export function winCount(values: number[], max: number): Wins | null {
+  if (!values.length) return null;
+  const wins = values.filter((v) => cellMeter(v, max).dir === "up").length;
+  return { wins, total: values.length, tone: wins === values.length ? "all" : wins === 0 ? "none" : "some" };
+}
+
 /** A driver of a future, as one tag chip: "COST ▲30%", "RIVAL ▼5%", "DELAY +2 WK", "NEW RIVAL". */
 export interface FutureChip {
   label: string;

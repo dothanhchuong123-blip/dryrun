@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MemoEventData } from "../../lib/events";
 import { formatDelta, formatMoney, formatRuns } from "../../lib/format";
 import { cellKey, useMarketStore } from "../../lib/store";
-import { cellMeter, futureTitle, gridMax } from "../../lib/gridmarks";
-import { BlockMeter, FutureHead } from "../faces/GridMarks";
+import { cellMeter, futureTitle, gridMax, winCount } from "../../lib/gridmarks";
+import { reducedMotion } from "../../lib/follow";
+import { BlockMeter, FutureHead, WinBadge } from "../faces/GridMarks";
 import { CellMath } from "../memo/CellMath";
 import { describePlan } from "../memo/MemoScreen";
 import "../memo/answer.css";
@@ -26,6 +27,11 @@ const sentences = (t: string | undefined | null): string[] =>
     .map((s) => s.trim())
     .filter(Boolean);
 
+/** The comparison table builds itself once per page load, the first time it is on screen (DESIGN §12.6). */
+let tableRevealed = false;
+const REVEAL_STEP_MS = 40;
+const REVEAL_BUDGET_MS = 1100; // cells; the bar and badge come in just after, so the whole thing stays under ~1.5 s
+
 const weekLabel = (w: number) => (w <= 0 ? "This week" : `Week ${w}`);
 
 export function StageAnswer({ onRestart }: { onRestart: () => void }) {
@@ -39,6 +45,23 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
   const openReplay = useMarketStore((s) => s.openReplay);
   const [note, setNote] = useState<string | null>(null);
   const [open, setOpen] = useState<{ plan: string; shock: string } | null>(null);
+  // reveal: armed on the first render if it has not played and motion is allowed; goes when the table is 40% on screen
+  const [reveal] = useState(() => !tableRevealed && !reducedMotion() && typeof IntersectionObserver !== "undefined");
+  const [go, setGo] = useState(false);
+  const tblRef = useRef<HTMLDivElement>(null);
+  const armed = reveal && !!memoRaw;
+  useEffect(() => {
+    const el = tblRef.current;
+    if (!armed || go || !el) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      tableRevealed = true;
+      setGo(true);
+      io.disconnect();
+    }, { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [armed, go]);
   if (!memoRaw) return null;
 
   const memo = memoRaw as MemoView;
@@ -76,6 +99,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
     .map((x) => x.name);
   const gmax = gridMax(Object.values(cells).map((c) => c.mean_delta_usd));
   const rows = futures.length ? [memo.plan_name, ...others] : [];
+  const step = Math.min(REVEAL_STEP_MS, REVEAL_BUDGET_MS / Math.max(1, rows.length * futures.length));
 
   const asText = () => {
     const L: string[] = [memo.headline, "", `Expected gain vs doing nothing: ${formatDelta(n.mean_delta_usd)} over 6 months`,
@@ -163,7 +187,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
           <section className="am-sec" aria-label="Plans compared">
             <h2>How it compares</h2>
             <p className="am-sub">Profit change vs doing nothing in each future we tested. Tap a number to see how it was computed.</p>
-            <div className="am-tbl-wrap">
+            <div className={`am-tbl-wrap${reveal ? (go ? " am-rev am-go" : " am-rev") : ""}`} ref={tblRef}>
               <table className="am-tbl">
                 <thead>
                   <tr>
@@ -177,18 +201,19 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
                 </thead>
                 <tbody>
                   {rows.map((r, i) => (
-                    <tr key={r} className={i === 0 ? "rec" : undefined}>
+                    <tr key={r} className={i === 0 ? "rec" : undefined} style={reveal && i === 0 ? ({ "--last": `${rows.length * futures.length * step + 80}ms` } as React.CSSProperties) : undefined}>
                       <td>
                         {r}
                         {i === 0 && <span className="tag">Recommended</span>}
+                        <WinBadge wins={winCount(futures.map((s) => cells[cellKey(r, s.id)]?.mean_delta_usd).filter((v): v is number => v != null), gmax)} />
                       </td>
-                      {futures.map((s) => {
+                      {futures.map((s, j) => {
                         const v = cells[cellKey(r, s.id)]?.mean_delta_usd;
                         const eng = cells[cellKey(r, s.id)]?.engine_only_delta_usd;
                         if (v == null) return <td key={s.id}>n/a</td>;
                         const on = open?.plan === r && open.shock === s.id;
                         return (
-                          <td key={s.id} className={`c ${sign(v)}${on ? " on" : ""}`}>
+                          <td key={s.id} className={`c ${sign(v)}${on ? " on" : ""}`} style={reveal ? ({ "--d": `${(i * futures.length + j) * step}ms` } as React.CSSProperties) : undefined}>
                             <button type="button" className="am-cellbtn" aria-expanded={on} onClick={() => setOpen(on ? null : { plan: r, shock: s.id })}>
                               <BlockMeter meter={cellMeter(v, gmax)} />
                               <span className="am-num">

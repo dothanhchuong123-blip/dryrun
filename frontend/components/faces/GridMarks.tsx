@@ -1,5 +1,5 @@
 import type { ShockCase } from "../../lib/events";
-import { METER_MAX, futureChips, type Meter } from "../../lib/gridmarks";
+import { METER_MAX, futureChips, type Meter, type Wins } from "../../lib/gridmarks";
 
 const WORD = { up: "profit", down: "loss", even: "about even" } as const;
 
@@ -13,6 +13,16 @@ export function BlockMeter({ meter }: { meter: Meter }) {
         <rect key={i} className={meter.dir === "up" ? "gm-up" : "gm-dn"} x="3" width="4" height="4" y={meter.dir === "up" ? 21 - i * 5 : 1 + i * 5} />
       ))}
     </svg>
+  );
+}
+
+/** "Wins in 4 of 5 futures": one square tag per plan row. Green when it wins everywhere, plain ink when it wins in some, coral when it wins nowhere. */
+export function WinBadge({ wins }: { wins: Wins | null }) {
+  if (!wins) return null;
+  return (
+    <span className={`gm-win ${wins.tone}`} title="Futures where this plan beats doing nothing">
+      Wins in <b>{wins.wins}</b> of <b>{wins.total}</b> {wins.total === 1 ? "future" : "futures"}
+    </span>
   );
 }
 
