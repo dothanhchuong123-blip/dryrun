@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import time
 import uuid
 from collections.abc import Callable, Iterable, Mapping
@@ -29,7 +30,7 @@ import numpy as np
 from backend.agents import wording
 from backend.agents.analyst import GUT_PREFIX, Analyst, _slug_spec, _unique_name, ask_crowd, gut_name
 from backend.agents.prompts import profile_parser_messages
-from backend.agents.schemas import BusinessProfile
+from backend.agents.schemas import BusinessProfile, ProfileNumericField, ProfileParse
 from backend.config import ROOT
 from backend.engine import planner
 from backend.engine.planner import DO_NOTHING, PlanSpec, ShockCase
@@ -73,12 +74,57 @@ def gut_preset(example: Mapping[str, Any], name: str | None = None) -> PlanSpec 
     raise ValueError(f"no gut plan named {name!r}; choose one of: {', '.join(p['name'] for p in presets)}")
 
 
-async def parse_profile(router: Any, text: str, page: dict | None = None) -> tuple[dict, bool]:
-    """Plain words -> BusinessProfile with one Super call (EVENTS.md /api/profile/parse). Raises if it fails."""
-    res = await router.call("super", profile_parser_messages(text, page), BusinessProfile, thinking=False, role="profile_parser")
-    if res.parsed is None:
+class InputRejected(Exception):
+    """The input is not enough to build a profile (F5 gate). `code` is "too_little" or "not_business"."""
+
+    def __init__(self, code: str, reason: str, missing: list[str] | None = None) -> None:
+        super().__init__(reason)
+        self.code, self.reason, self.missing = code, reason, list(missing or [])
+
+
+TOO_LITTLE_FREE = "There's almost nothing to read in that. Tell us what you sell and where."
+TOO_LITTLE = "We need a bit more. What do you sell, and roughly where?"
+NOT_BUSINESS = "This doesn't look like it's about a business. Try your price list, a sales report, or a line about your shop."
+MIN_LETTERS = 8  # "I run a cafe" (9 letters) must pass; "hello" (5) must not. Spec said ~20; the existing F4 test needs less
+GENERIC_UNITS = {"", "product", "products", "item", "items", "thing", "things", "goods", "stuff", "unit", "units"}
+_URL = re.compile(r"https?://\S+|www\.\S+")
+
+
+def letters_in(text: str) -> int:
+    """Real letters in `text` once links are removed (emoji, digits, punctuation and spaces do not count)."""
+    return sum(1 for ch in _URL.sub(" ", text) if ch.isalpha())
+
+
+def is_empty_profile(profile: dict) -> bool:
+    """Backstop after the model said "ok": every number is a guess AND the product is a generic word."""
+    guessed = set(profile.get("guessed_fields") or [])
+    all_guessed = set(ProfileNumericField.__args__) <= guessed
+    unit = re.sub(r"[^a-z ]", "", str(profile.get("product_unit", "")).lower()).strip()
+    return all_guessed and unit in GENERIC_UNITS
+
+
+async def parse_profile(
+    router: Any, text: str, page: dict | None = None, doc: dict | None = None
+) -> tuple[dict, bool]:
+    """Plain words (plus a page or file) -> BusinessProfile with one Super call (EVENTS.md /api/profile/parse).
+    Raises InputRejected when the input is not enough or not about a business; ValueError if the parse fails."""
+    res = await router.call(
+        "super", profile_parser_messages(text, page, doc), ProfileParse, thinking=False, role="profile_parser",
+        max_tokens=1000,
+    )
+    out = res.parsed
+    if out is None:
         raise ValueError("Could not read a business profile from that text.")
-    return BusinessProfile.model_validate(res.parsed.model_dump()).model_dump(), False
+    check = out.check
+    if check.verdict != "ok":
+        code = check.verdict
+        raise InputRejected(code, check.reason or (NOT_BUSINESS if code == "not_business" else TOO_LITTLE), check.missing)
+    if out.profile is None:
+        raise ValueError("The model said ok but gave no profile.")
+    profile = BusinessProfile.model_validate(out.profile.model_dump()).model_dump()
+    if is_empty_profile(profile):
+        raise InputRejected("too_little", TOO_LITTLE, ["what_you_sell"])
+    return profile, False
 
 
 def _sentiment(rows: Iterable[Mapping[str, Any]]) -> CrowdSentiment:

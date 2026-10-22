@@ -14,6 +14,7 @@ PRICES_PER_M = {
     "super": (0.30, 0.90),
     "fast": (0.06, 0.24),
     "fast_fallback": (0.06, 0.24),
+    "vision": (0.30, 0.90),  # placeholder = Super's price until the Day-0 check records the real one (SPEC §3.3)
 }
 
 
@@ -28,6 +29,7 @@ class Settings(BaseSettings):
     model_super: str = "nvidia/nemotron-3-super-120b-a12b"
     model_fast: str = "nvidia/Nemotron-3_5-Lightning"
     model_fast_fallback: str = "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+    model_vision: str = "nvidia/Nemotron-3.5-Super-VL"  # F5: reads photos of reports and price lists
     daily_spend_cap_usd: float = 1.00
     public_live_daily_cap_usd: float = 0.20
     # Public demo kill switch: LIVE_ENABLED=false in the host's env turns every paid Nemotron call off (replays still work).

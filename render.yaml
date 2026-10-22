@@ -9,6 +9,8 @@ services:
     envVars:
       - key: NEBIUS_API_KEY
         sync: false
+      - key: MODEL_VISION
+        value: nvidia/Nemotron-3.5-Super-VL
       - key: TAVILY_API_KEY
         sync: false
       # Kill switch: set to false in the dashboard (Environment) to stop every paid Nemotron call; replays keep working.

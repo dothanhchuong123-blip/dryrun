@@ -14,7 +14,16 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from backend.agents.schemas import AnalystStep, ArchetypeSentiment, CrowdBatch, MemoDraft, ScenarioSet
+from backend.agents.schemas import (
+    AnalystStep,
+    ArchetypeSentiment,
+    BusinessProfile,
+    CrowdBatch,
+    InputCheck,
+    MemoDraft,
+    ProfileParse,
+    ScenarioSet,
+)
 from backend.services.telemetry import CallRecord, TelemetryStore
 
 FAIL = object()  # a script entry that makes the call fail (parsed = None)
@@ -106,6 +115,9 @@ class ScriptedRouter:
         queue = self.script.get(schema)
         if queue:
             return queue.pop(0)
+        if schema is ProfileParse and not self.script.get(ProfileParse) and self.script.get(BusinessProfile):
+            # tests that script a plain profile get it back as an "ok" parse
+            return ProfileParse(check=InputCheck(verdict="ok", missing=[], reason=""), profile=self.script[BusinessProfile].pop(0))
         if schema is AnalystStep:
             return self._steps.pop(0) if self._steps else FAIL
         return self.defaults.get(schema, FAIL)

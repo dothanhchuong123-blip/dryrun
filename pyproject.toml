@@ -17,6 +17,10 @@ dependencies = [
   "openai>=1.40",
   "tavily-python>=0.5",
   "httpx>=0.27",
+  "python-multipart>=0.0.32",
+  "pypdf>=6.21.1",
+  "pillow>=13.0.0",
+  "pypdfium2>=5.14.0",
 ]
 
 [dependency-groups]

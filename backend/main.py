@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -31,9 +31,20 @@ from backend.agents.schemas import BusinessProfile
 from backend.config import ROOT, Settings, get_settings
 from backend.engine.planner import PlanSpec
 from backend.services import benchmark, replay
+from backend.services.doc_reader import MAX_BYTES, DocError, read_document
 from backend.services.telemetry import SpendGuard
 from backend.sim import backtest as bt
-from backend.sim.analysis import EXAMPLES_DIR, Analysis, load_example, parse_profile
+from backend.sim.analysis import (
+    EXAMPLES_DIR,
+    MIN_LETTERS,
+    NOT_BUSINESS,
+    TOO_LITTLE_FREE,
+    Analysis,
+    InputRejected,
+    letters_in,
+    load_example,
+    parse_profile,
+)
 from backend.sim.replay_cell import play_cell
 
 log = logging.getLogger(__name__)
@@ -136,6 +147,7 @@ class ParseRequest(BaseModel):
 
 
 BAD_URL = "That link doesn't look like a public web page. Paste a website, Google Maps, Facebook or Shopee link."
+TOO_BIG_FILE = "That file is over 8 MB. Try a smaller one, or paste the numbers."
 UNREADABLE = "Couldn't read that page. Describe your business in a line instead."
 
 
@@ -272,15 +284,33 @@ def create_app(
     def examples() -> list[dict]:
         return _examples()
 
-    @app.post("/api/profile/parse")
-    async def profile_parse(body: ParseRequest, request: Request) -> Any:
-        ip = client_ip(request)
+    def rejected(code: str, reason: str, missing: list[str] | None = None) -> JSONResponse:
+        return JSONResponse({"code": code, "reason": reason, "missing": list(missing or [])}, 422)
+
+    def parse_gate(ip: str) -> JSONResponse | None:
         if not live_on():
             return JSONResponse({"reason": LIVE_OFF}, 429)
         if parse_hits.full(ip):
             return JSONResponse({"reason": "You have read a few businesses already. Try again in an hour, or pick an example."}, 429)
         if not guard.allow():
             return JSONResponse({"reason": "Today's free live budget is used up. Pick an example, or try again tomorrow."}, 429)
+        return None
+
+    async def run_parse(text: str, page: dict | None, doc: dict | None, source: dict | None) -> Any:
+        try:
+            profile, fallback = await parse_profile(get_router(), text, page, doc)
+        except InputRejected as e:
+            return rejected(e.code, e.reason, e.missing)
+        except Exception as e:
+            log.warning("profile parse failed: %s", e)
+            raise HTTPException(502, {"reason": "Could not read a business from that text. Try again, or pick an example."}) from e
+        return {"profile": profile, "fallback_used": fallback, "source": source}
+
+    @app.post("/api/profile/parse")
+    async def profile_parse(body: ParseRequest, request: Request) -> Any:
+        ip = client_ip(request)
+        if (blocked := parse_gate(ip)) is not None:
+            return blocked
         text = body.text.strip()
         url = None
         if body.url is not None and body.url.strip():
@@ -308,15 +338,45 @@ def create_app(
             if read is None:
                 raise HTTPException(422, {"reason": UNREADABLE})
             page = {"url": url, "title": read.title, "text": read.text}
-            source = {"url": url, "title": read.title, "method": read.method, "credits": read.credits}
+            source = {"kind": "link", "url": url, "title": read.title, "method": read.method, "credits": read.credits}
         else:
+            if letters_in(text) < MIN_LETTERS:  # layer 1: free, before any model call, not counted
+                return rejected("too_little", TOO_LITTLE_FREE, ["what_you_sell", "where"])
             parse_hits.add(ip)
+        return await run_parse(text, page, None, source)
+
+    @app.post("/api/profile/parse-file")
+    async def profile_parse_file(request: Request, file: UploadFile = File(...), text: str = Form("")) -> Any:  # noqa: B008
+        ip = client_ip(request)
+        if (blocked := parse_gate(ip)) is not None:
+            return blocked
+        note = text.strip()
+        if len(note) > 4000:
+            raise HTTPException(422, {"reason": "Keep the note under 4,000 characters."})
         try:
-            profile, fallback = await parse_profile(get_router(), text, page)
-        except Exception as e:
-            log.warning("profile parse failed: %s", e)
-            raise HTTPException(502, {"reason": "Could not read a business from that text. Try again, or pick an example."}) from e
-        return {"profile": profile, "fallback_used": fallback, "source": source}
+            declared = int(request.headers.get("content-length") or 0)
+        except ValueError:
+            declared = 0
+        if declared > MAX_BYTES + 200_000:
+            raise HTTPException(413, {"reason": TOO_BIG_FILE})
+        data = await file.read(MAX_BYTES + 1)  # in memory only; never written anywhere
+        name = (file.filename or "file").replace("\\", "/").rsplit("/", 1)[-1][:80]
+        try:
+            doc = await read_document(get_router(), data, name)
+        except DocError as e:
+            raise HTTPException(e.status, {"reason": e.reason}) from e
+        finally:
+            data = b""
+        if doc.method == "vision":  # a model call was spent, so it counts toward the hourly limit
+            parse_hits.add(ip)
+        if letters_in(doc.text) + letters_in(note) < MIN_LETTERS:
+            return rejected("too_little", TOO_LITTLE_FREE, ["what_you_sell", "where"])
+        if doc.kind == "not_business" and letters_in(note) < MIN_LETTERS:
+            return rejected("not_business", NOT_BUSINESS)
+        if doc.method != "vision":
+            parse_hits.add(ip)
+        source = {"kind": "file", "name": name, "method": doc.method, "pages": doc.pages}
+        return await run_parse(note, None, {"name": name, "kind": doc.kind, "text": doc.text}, source)
 
     # --- analyses ---------------------------------------------------------------------------
     @app.get("/api/backtests")

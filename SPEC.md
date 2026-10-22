@@ -126,12 +126,14 @@ All model IDs live in env vars. **Verified IDs** ✅ (Day 1, `GET /v1/models`). 
 | Super | `nvidia/nemotron-3-super-120b-a12b` |
 | Nano | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` |
 | Lightning | `nvidia/Nemotron-3_5-Lightning` |
+| Super VL (F5, photos of reports and price lists) | `nvidia/Nemotron-3.5-Super-VL` ✅ (smoke 2026-10-21) |
 
 | Role | Env var | Expected ID | Thinking | Timeout | Fallback |
 |---|---|---|---|---|---|
 | CEO A / CEO B (game-theoretic pricing) | `MODEL_ULTRA` | `nvidia/Nemotron-3-Ultra-550b-a55b` ✅ (550B-A55B; 1M ctx, FP4) | ON, budget ~1.5–2k tokens | 30 s | Engine best-response to rival's last price (or the NE cell) |
 | Shock parser + Inventory manager (ω) | `MODEL_SUPER` | `nvidia/nemotron-3-super-120b-a12b` ✅ (Token Factory: 256K ctx, FP4) | OFF | 10 s | Previous ω, or rule-based (s,S) |
 | Consumer crowd (12 archetypes) | `MODEL_FAST` | `nvidia/Nemotron-3_5-Lightning` ✅ (Nano `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` as fallback) | OFF | 5 s | Previous (μ, σ) decayed 20% toward 0 |
+| File reader (F5: photo or scanned PDF -> text) | `MODEL_VISION` | `nvidia/Nemotron-3.5-Super-VL` ✅ (OpenAI `image_url` data URLs, strict `json_schema` works with images; 312 prompt tokens for a 600×400 PNG) | OFF | 15 s | Return 422 "couldn't read that photo"; paste the numbers instead |
 
 **Token Factory prices** ✅ (Nebius Nemotron pricing page, 2026-10-14; USD per 1M tokens, input / output):
 

@@ -48,7 +48,7 @@ async def test_url_is_read_and_counts_toward_the_cap(tmp_path):
         r = await c.post("/api/profile/parse", json={"text": "", "url": "https://cafesao.vn/menu"})
         assert r.status_code == 200
         body = r.json()
-        assert body["source"] == {"url": "https://cafesao.vn/menu", "title": "Cafe Sao", "method": "extract", "credits": 1}
+        assert body["source"] == {"kind": "link", "url": "https://cafesao.vn/menu", "title": "Cafe Sao", "method": "extract", "credits": 1}
         assert body["profile"]["business_name"] and pc.searches == []
         r = await c.post("/api/profile/parse", json={"text": "", "url": "https://other.vn"})
         assert r.status_code == 429 and "used up" in r.json()["reason"]

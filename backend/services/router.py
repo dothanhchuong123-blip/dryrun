@@ -22,9 +22,9 @@ from backend.config import get_settings
 from backend.services.limiter import DEFAULT_LIMITS, RateLimited, RateLimiter
 from backend.services.telemetry import CallRecord, SpendGuard, TelemetryStore, cost_usd
 
-Tier = Literal["ultra", "super", "fast"]
-DEFAULT_TIMEOUT: dict[str, float] = {"ultra": 30.0, "super": 10.0, "fast": 5.0}
-DEFAULT_MAX_TOKENS: dict[str, int] = {"ultra": 3000, "super": 600, "fast": 800}
+Tier = Literal["ultra", "super", "fast", "vision"]
+DEFAULT_TIMEOUT: dict[str, float] = {"ultra": 30.0, "super": 10.0, "fast": 5.0, "vision": 15.0}
+DEFAULT_MAX_TOKENS: dict[str, int] = {"ultra": 3000, "super": 600, "fast": 800, "vision": 1500}
 TEMPERATURE = 0.6
 TOP_P = 0.95
 
@@ -81,7 +81,13 @@ class _CallError(Exception):
 
 
 def _estimate_tokens(messages: list[dict], max_tokens: int) -> int:
-    chars = sum(len(str(m.get("content", ""))) for m in messages)
+    chars = 0
+    for m in messages:
+        c = m.get("content", "")
+        if isinstance(c, list):  # image parts count ~300 tokens each, not their base64 length
+            chars += sum(len(p.get("text", "")) if p.get("type") == "text" else 1200 for p in c)
+        else:
+            chars += len(str(c))
     return chars // 4 + max_tokens
 
 
@@ -104,6 +110,7 @@ class NemotronRouter:
             "super": s.model_super,
             "fast": s.model_fast,
             "fast_fallback": s.model_fast_fallback,
+            "vision": s.model_vision,
         }
         self.limiter = limiter or RateLimiter({self.models[k]: v for k, v in DEFAULT_LIMITS.items()})
         self.store = store or TelemetryStore()

@@ -70,6 +70,7 @@ DEFAULT_LIMITS: dict[str, tuple[float, float]] = {
     "super": (300, 200_000),
     "fast": (600, 400_000),
     "fast_fallback": (100, 800_000),
+    "vision": (60, 100_000),
 }
 
 

@@ -166,6 +166,30 @@ class BusinessProfile(BaseModel):
         return self
 
 
+# --- F5: the input gate and file reading -----------------------------------------------------
+
+MissingItem = Literal["what_you_sell", "where", "price", "cost"]
+
+
+class InputCheck(BaseModel):
+    verdict: Literal["ok", "too_little", "not_business"]
+    missing: list[MissingItem] = Field(max_length=4, description="What the owner should add (empty when ok)")
+    reason: str = Field(max_length=140, description="One kind sentence for the owner")
+
+
+class ProfileParse(BaseModel):
+    """What the profile parser returns: the verdict on the input, and the profile unless it was rejected."""
+
+    check: InputCheck
+    profile: BusinessProfile | None
+
+
+class DocRead(BaseModel):
+    text: str = Field(max_length=3000, description="Faithful transcription of the numbers, products, prices, names")
+    kind: Literal["report", "price_list", "menu", "receipt", "shop_page", "other", "not_business"]
+    language: str = Field(max_length=20)
+
+
 class PlanSpecModel(BaseModel):
     name: str = Field(max_length=40)
     price_change_pct: float = Field(ge=-20, le=20)
