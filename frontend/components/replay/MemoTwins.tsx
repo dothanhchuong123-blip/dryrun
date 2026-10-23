@@ -128,6 +128,16 @@ export function MemoTwins({ planName, shockId, onFull }: { planName: string; sho
   const u1 = rows.u1[week];
   const u2 = rows.u2[week];
   const gap = u1 && u2 ? u1.cum_profit[0] - u2.cum_profit[0] : 0;
+  // payback: first week after which the cumulative gap stays >= 0 (from the whole recorded run, so known once it has arrived)
+  const gaps = rows.u1.map((a, i) => a.cum_profit[0] - rows.u2[i].cum_profit[0]);
+  const dips = gaps.some((g) => g < 0);
+  let payback: number | null = null; // 0-based index of the payback week; null = never pays back (or not known yet)
+  if (done && dips && gaps[gaps.length - 1] >= 0) {
+    payback = gaps.length - 1;
+    while (payback > 0 && gaps[payback - 1] >= 0) payback -= 1;
+  }
+  const neverPays = done && dips && gaps[gaps.length - 1] < 0;
+  const early = !!(u1 && u2) && gap < 0 && (payback === null || week < payback);
   const you = profile?.business_name ?? "You";
   const rival = profile?.rival_name ?? "Rival";
 
@@ -138,11 +148,36 @@ export function MemoTwins({ planName, shockId, onFull }: { planName: string; sho
         <h2>One run, two futures</h2>
         <div className="mt-tags">
           <span className="mt-wk">WEEK {Math.min(week + 1, weeks)} / {weeks}</span>
-          <span className={`mt-gap ${gap >= 0 ? "pos" : "neg"}`}>
+          <span className={`mt-gap ${gap >= 0 ? "pos" : early ? "early" : "neg"}`}>
             GAP <b>{u1 && u2 ? formatDelta(gap) : "–"}</b>
           </span>
         </div>
       </div>
+      {(dips || early) && (
+        <div className="mt-pay">
+          <div className="mt-track" aria-hidden="true">
+            <i className="mt-fill" style={{ width: `${(Math.min(week + 1, weeks) / weeks) * 100}%` }} />
+            {payback !== null && (
+              <span className="mt-tick" style={{ left: `${((payback + 1) / weeks) * 100}%` }}>
+                <em>pays back wk {payback + 1}</em>
+              </span>
+            )}
+          </div>
+          <div className="mt-paynote" role="status">
+            {early
+              ? payback !== null
+                ? `Early weeks run behind (up-front costs) · pays back by week ${payback + 1}`
+                : neverPays
+                  ? "Early weeks run behind (up-front costs) · doesn't pay back in this run"
+                  : "Early weeks run behind (up-front costs)"
+              : neverPays
+                ? "Doesn't pay back in this run"
+                : payback !== null && week >= payback
+                  ? `Paid back in week ${payback + 1}`
+                  : ""}
+          </div>
+        </div>
+      )}
       <div className="rp-twins mt-twins">
         <TwinScene tick={u2} title="DO NOTHING" kind="none" you={you} rival={rival} />
         <TwinScene tick={u1} title="WITH THE PLAN" kind="plan" you={you} rival={rival} />
