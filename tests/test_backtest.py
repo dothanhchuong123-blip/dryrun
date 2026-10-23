@@ -19,8 +19,10 @@ from tests.test_analysis import ARTICLE, SHOCK, Rec
 from tests.test_api import client, make_app, names, wait_done
 
 CASE_IDS = ["bt_cocoa_2024", "bt_eggs_2025", "bt_robusta_2024", "bt_tariff_2025"]
-# Held-out cases (ho_*): never shown in the app, used only to test general fixes; the four above stay frozen.
+# The second set (ho_*), held out until 2026-10-23; the four above stay frozen.
 HELD_OUT_IDS = ["ho_arabica_2021", "ho_cocoa_2025", "ho_palm_2022", "ho_rice_2023", "ho_sunflower_2022", "ho_wheat_2025"]
+UNLISTED_IDS = ["ho_arabica_2021"]  # kept and replayable, left off the ledger by the owner (docs/BACKTEST_HELDOUT.md)
+LISTED_IDS = [c for c in CASE_IDS + HELD_OUT_IDS if c not in UNLISTED_IDS]
 AS_OF = date(2024, 1, 15)
 
 
@@ -97,7 +99,7 @@ def test_case_files_are_complete_and_do_not_spoil(case_id):
 
 def test_list_cases_shape(tmp_path):
     out = bt.list_cases(replays=tmp_path)
-    assert {c["id"] for c in out} == set(CASE_IDS + HELD_OUT_IDS)
+    assert {c["id"] for c in out} == set(LISTED_IDS)
     assert all(set(c) == {"id", "title", "subtitle", "as_of", "has_replay", "verdict", "hindsight"} for c in out)
     (tmp_path / "backtest_bt_cocoa_2024.jsonl").write_text("{}\n")
     assert {c["id"]: c["has_replay"] for c in bt.list_cases(replays=tmp_path)}["bt_cocoa_2024"] is True
@@ -312,10 +314,10 @@ async def test_api_lists_backtests_and_replays_one(tmp_path, monkeypatch):
     async with client(app) as c:
         listed = (await c.get("/api/backtests")).json()
         assert [x["id"] for x in listed if x["id"].startswith("bt_")] == ["bt_cocoa_2024", "bt_robusta_2024", "bt_eggs_2025", "bt_tariff_2025"]
-        assert len(listed) == len(CASE_IDS + HELD_OUT_IDS)
+        assert len(listed) == len(LISTED_IDS)
         assert {x["id"]: x["has_replay"] for x in listed} == {
             "bt_cocoa_2024": True, "bt_robusta_2024": False, "bt_eggs_2025": False, "bt_tariff_2025": False,
-            **{h: False for h in HELD_OUT_IDS}}
+            **{h: False for h in HELD_OUT_IDS if h not in UNLISTED_IDS}}
         assert (await c.post("/api/analyses", json={"backtest_id": "bt_robusta_2024"})).status_code == 409   # no recording
         assert (await c.post("/api/analyses", json={"backtest_id": "nope"})).status_code == 404
         r = await c.post("/api/analyses", json={"backtest_id": "bt_cocoa_2024", "mode": "live"})
@@ -373,10 +375,9 @@ def test_every_listed_case_has_a_recording():
     assert all(c["has_replay"] for c in bt.list_cases())
 
 
-def test_every_case_is_listed_whatever_it_scored():
-    # the held-out set was listed on 2026-10-23 after a re-record at the current sentiment weight, all six whatever
-    # they scored; listing only the winners would be cherry-picking
-    assert {c["id"] for c in bt.list_cases()} == set(CASE_IDS + HELD_OUT_IDS)
+def test_listed_cases_and_the_one_left_off():
+    assert {c["id"] for c in bt.list_cases()} == set(LISTED_IDS)
+    assert all(bt.load_case(u)["listed"] is False for u in UNLISTED_IDS)
 
 
 def test_supplier_caveat_only_when_a_tested_plan_switches():

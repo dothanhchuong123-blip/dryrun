@@ -126,6 +126,8 @@ def list_cases(directory: Path | None = None, replays: Path | None = None) -> li
     out = []
     for path in sorted([*(directory or CASES_DIR).glob("bt_*.json"), *(directory or CASES_DIR).glob("ho_*.json")]):
         case = json.loads(path.read_text(encoding="utf-8"))
+        if case.get("listed") is False:  # kept and replayable by id, but left off the ledger (docs/BACKTEST_HELDOUT.md)
+            continue
         out.append({
             "id": case["id"], "title": case["title"], "subtitle": case.get("subtitle", ""), "as_of": case["as_of"],
             "has_replay": replay.backtest_path(case["id"], replays).exists(),

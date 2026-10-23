@@ -58,6 +58,7 @@ function syncReplayFixtures() {
         .readdirSync(casesDir)
         .filter((f) => /^(bt|ho)_.*\.json$/.test(f))
         .map((f) => JSON.parse(fs.readFileSync(path.join(casesDir, f), "utf8")))
+        .filter((c) => c.listed !== false)
         .map((c) => ({
           id: c.id,
           title: c.title,

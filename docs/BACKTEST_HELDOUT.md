@@ -150,3 +150,10 @@ on the real path (it ranks first); otherwise it missed.
 - ho_palm_2022 stays a miss: its pick forecast +$6, above 0.
 
 Ledger after this: **Right in 7 of 10** (sunflower still at 0.8, so 6 of the 9 re-recorded or 0.05 cases).
+
+## ho_arabica_2021 left off the ledger (2026-10-23, owner's call)
+
+After the scores above were known, the owner chose to drop the Portland coffee shop row (a miss: −$314 on the real
+path, rank 4/9) from the app's ledger. This departs from the "list every case whatever it scores" rule above. The
+case file (now `"listed": false`), its recording and this record stay in the repo, and it still replays by id. The
+ledger shows 9 cases: **Right in 7 of 9**. Across all 10 recorded cases the record is 7 of 10.
