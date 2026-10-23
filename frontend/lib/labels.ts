@@ -2,7 +2,8 @@
  * Pure mirror of planner._labels (backend/engine/planner.py): which plan is "Best today" and which is
  * "Safest". Used live by F2's cash slider, so it must match the backend exactly:
  *  - "Best today": highest mean_delta in the `news` column (first column if there is none), skipping plans
- *    whose cell is over the user's cash (unless every plan is).
+ *    whose cell is over the user's cash (unless every plan is). "Do nothing" when that plan's mean_delta is not
+ *    above 0: no plan beats doing nothing.
  *  - "Safest": highest worst bad-case (p5) across the non-"unlikely" columns (all if every column is
  *    unlikely), skipping plans over cash in any of those columns (unless every plan is).
  *  - Ties go to the earlier plan. With no plans, both are "Do nothing".
@@ -55,7 +56,8 @@ export function labels(
 
   const bestPoolRaw = planNames.filter((p) => !over(p, newsId));
   const bestPool = bestPoolRaw.length ? bestPoolRaw : planNames;
-  const bestToday = argmax(bestPool, (p) => cell(p, newsId)?.mean_delta_usd ?? -Infinity);
+  const top = argmax(bestPool, (p) => cell(p, newsId)?.mean_delta_usd ?? -Infinity);
+  const bestToday = (cell(top, newsId)?.mean_delta_usd ?? -Infinity) > 0 ? top : DO_NOTHING;
 
   const safePoolRaw = planNames.filter((p) => !safeIds.some((s) => over(p, s)));
   const safePool = safePoolRaw.length ? safePoolRaw : planNames;

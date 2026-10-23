@@ -6,6 +6,7 @@ import { formatDelta, formatMoney, formatRuns } from "../../lib/format";
 import { cellKey, useMarketStore } from "../../lib/store";
 import { cellMeter, futureTitle, gridMax, winCount } from "../../lib/gridmarks";
 import { reducedMotion } from "../../lib/follow";
+import { DO_NOTHING } from "../../lib/labels";
 import { BlockMeter, FutureHead, WinBadge } from "../faces/GridMarks";
 import { CellMath } from "../memo/CellMath";
 import { describePlan } from "../memo/MemoScreen";
@@ -67,12 +68,15 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
   const memo = memoRaw as MemoView;
   const n = memo.numbers;
   const plan = plans.find((p) => p.name === memo.plan_name);
-  const planText = plan ? describePlan(plan.spec) : memo.plan_name;
+  // "Do nothing" is the pick when no affordable plan beats it (SPEC §15.5.2): no numbers of its own to show
+  const wait = memo.plan_name === DO_NOTHING;
+  const planText = wait ? "Change nothing for now, and test the plans again when the news moves." : plan ? describePlan(plan.spec) : memo.plan_name;
   const rival = profile?.rival_name || "your rival";
 
   // Confidence from the engine's own win rate and bad case.
-  const conf =
-    n.p_better >= 0.8 && n.p5_delta_usd >= 0 ? { cls: "hi", text: "High confidence" } : n.p_better >= 0.6 ? { cls: "mid", text: "Moderate confidence" } : { cls: "lo", text: "Higher risk" };
+  const conf = wait
+    ? { cls: "mid", text: "Wait and recheck" }
+    : n.p_better >= 0.8 && n.p5_delta_usd >= 0 ? { cls: "hi", text: "High confidence" } : n.p_better >= 0.6 ? { cls: "mid", text: "Moderate confidence" } : { cls: "lo", text: "Higher risk" };
 
   // Weeks to act: the last step in the checklist, else the plan's own start weeks.
   const lastWeek = memo.actions?.length ? Math.max(...memo.actions.map((a) => a.week)) : plan ? Math.max(plan.spec.stock_week, plan.spec.price_change_week) : null;
@@ -85,7 +89,9 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
   const steady = n.steady_rival_delta_usd;
 
   // Comparison: the recommended plan and up to two others, across the futures we tested.
-  const futures = shocks.filter((s) => cells[cellKey(memo.plan_name, s.id)]);
+  const futures = wait
+    ? shocks.filter((s) => plans.some((p) => cells[cellKey(p.name, s.id)]))
+    : shocks.filter((s) => cells[cellKey(memo.plan_name, s.id)]);
   const avg = (name: string) => {
     const xs = futures.map((s) => cells[cellKey(name, s.id)]?.mean_delta_usd).filter((v): v is number => v != null);
     return xs.length === futures.length && xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
@@ -95,14 +101,14 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
     .map((p) => ({ name: p.name, a: avg(p.name) }))
     .filter((x): x is { name: string; a: number } => x.a != null)
     .sort((a, b) => b.a - a.a)
-    .slice(0, 2)
+    .slice(0, wait ? 3 : 2)
     .map((x) => x.name);
   const gmax = gridMax(Object.values(cells).map((c) => c.mean_delta_usd));
-  const rows = futures.length ? [memo.plan_name, ...others] : [];
+  const rows = futures.length ? (wait ? others : [memo.plan_name, ...others]) : [];
   const step = Math.min(REVEAL_STEP_MS, REVEAL_BUDGET_MS / Math.max(1, rows.length * futures.length));
 
   const asText = () => {
-    const L: string[] = [memo.headline, "", `Expected gain vs doing nothing: ${formatDelta(n.mean_delta_usd)} over 6 months`,
+    const L: string[] = wait ? [memo.headline] : [memo.headline, "", `Expected gain vs doing nothing: ${formatDelta(n.mean_delta_usd)} over 6 months`,
       ...(n.engine_only_delta_usd == null ? [] : [`Without the shoppers' reactions (simulator alone): ${formatDelta(n.engine_only_delta_usd)}`]),
       `Bad case (1 run in 20): ${formatDelta(n.p5_delta_usd)}`];
     if (n.peak_cash_usd > 0) L.push(`Cash tied up: ${formatMoney(n.peak_cash_usd)}`);
@@ -139,14 +145,21 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
             </span>
           </div>
           <h1 id="am-h">{memo.headline}</h1>
-          <div className="am-big">
-            <b className={sign(n.mean_delta_usd)}>{formatDelta(n.mean_delta_usd)}</b>
-            <span>expected profit vs doing nothing, over 6 months</span>
-            <EngineOnly v={n.engine_only_delta_usd} long />
-          </div>
+          {wait ? (
+            <div className="am-big">
+              <b>Hold</b>
+              <span>no plan you can afford beat doing nothing in today&apos;s news case</span>
+            </div>
+          ) : (
+            <div className="am-big">
+              <b className={sign(n.mean_delta_usd)}>{formatDelta(n.mean_delta_usd)}</b>
+              <span>expected profit vs doing nothing, over 6 months</span>
+              <EngineOnly v={n.engine_only_delta_usd} long />
+            </div>
+          )}
         </header>
 
-        <div className="am-kpis">
+        {!wait && <div className="am-kpis">
           <div className="am-kpi">
             <small>Profit change</small>
             <b className={sign(n.mean_delta_usd)}>{formatDelta(n.mean_delta_usd)}</b>
@@ -174,9 +187,9 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
               <span>{lastWeek <= 0 ? "everything starts now" : "until the last step is in place"}</span>
             </div>
           )}
-        </div>
+        </div>}
 
-        <MemoTwins planName={memo.plan_name} shockId={n.shock_id} onFull={() => void openReplay(memo.plan_name, n.shock_id)} />
+        {!wait && <MemoTwins planName={memo.plan_name} shockId={n.shock_id} onFull={() => void openReplay(memo.plan_name, n.shock_id)} />}
 
         <section className="am-sec" aria-label="The plan">
           <h2>The plan</h2>
@@ -201,10 +214,10 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
                 </thead>
                 <tbody>
                   {rows.map((r, i) => (
-                    <tr key={r} className={i === 0 ? "rec" : undefined} style={reveal && i === 0 ? ({ "--last": `${rows.length * futures.length * step + 80}ms` } as React.CSSProperties) : undefined}>
+                    <tr key={r} className={i === 0 && !wait ? "rec" : undefined} style={reveal && i === 0 ? ({ "--last": `${rows.length * futures.length * step + 80}ms` } as React.CSSProperties) : undefined}>
                       <td>
                         {r}
-                        {i === 0 && <span className="tag">Recommended</span>}
+                        {i === 0 && !wait && <span className="tag">Recommended</span>}
                         <WinBadge wins={winCount(futures.map((s) => cells[cellKey(r, s.id)]?.mean_delta_usd).filter((v): v is number => v != null), gmax)} />
                       </td>
                       {futures.map((s, j) => {
@@ -226,8 +239,11 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
                       })}
                     </tr>
                   ))}
-                  <tr className="base">
-                    <td>Do nothing</td>
+                  <tr className={wait ? "base rec" : "base"}>
+                    <td>
+                      Do nothing
+                      {wait && <span className="tag">Recommended</span>}
+                    </td>
                     {futures.map((s) => (
                       <td key={s.id}>{formatDelta(0)}</td>
                     ))}
@@ -240,7 +256,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
               const sh = open && shocks.find((x) => x.id === open.shock);
               return c && sh ? <CellMath cell={c} shock={sh} profile={profile} onClose={() => setOpen(null)} /> : null;
             })()}
-            {steady != null && (
+            {steady != null && !wait && (
               <p className="am-luck">
                 <b>Skill vs luck.</b> Even if {rival} never runs out of stock, this plan makes <b>{formatDelta(steady)}</b>. The other <b>{formatDelta(n.mean_delta_usd - steady)}</b> only comes if they run short.
               </p>

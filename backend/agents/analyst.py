@@ -722,7 +722,7 @@ class Analyst:
         by_plan = {i + 1: {c["shock_id"]: c for c in r[1]} for i, r in enumerate(results)}
         best, safest = planner._labels(specs, self.shocks, by_plan)
         order = sorted(range(len(results)), key=lambda i: -by_plan[i + 1][NEWS_ID]["mean_delta_usd"])
-        chosen = [safest, best]
+        chosen = [n for n in (safest, best) if n != DO_NOTHING]
         for i in order:  # best_today equals safest: take the next best average instead
             if len(set(chosen)) >= 2:
                 break
@@ -740,15 +740,14 @@ class Analyst:
     # --- memo --------------------------------------------------------------------------------
     def _final_pick(self, ultra_pick: str | None) -> str:
         best = self.summary.get("best_today") or (self.specs[0].name if self.specs else DO_NOTHING)
+        if best == DO_NOTHING:  # no affordable plan beats doing nothing on average: that's the advice, whatever Ultra said
+            return DO_NOTHING
         if self.fallback_used and ultra_pick is None:
             return best
         names = {s.name.lower(): s.name for s in self.specs}
         if ultra_pick and ultra_pick.strip().lower() in names:
             picked = names[ultra_pick.strip().lower()]
             return self._better_than(picked) if self._stale else picked
-        means = self._news_means()
-        if ultra_pick and ultra_pick.strip().lower() == DO_NOTHING.lower() and means and max(means.values()) <= 0:
-            return DO_NOTHING
         return best
 
     def _worst_p5(self, name: str) -> float:
@@ -791,11 +790,13 @@ class Analyst:
     def _template_memo(pick: str, over_cash: bool) -> dict[str, str]:
         if pick == DO_NOTHING:
             headline = "Hold steady: no plan beat doing nothing"
-            why = "Every plan tested did worse than doing nothing on average in today's news case."
+            why = "No plan you can afford beat doing nothing on average in today's news case, so the best move is to wait and recheck."
         else:
             headline = f"Go with “{pick}”"[:90]
             why = "It had the best average result in today's news case among the plans tested, and it held up in the bad case. See the figures above."
         watch = "If the news turns out milder than the headline, the extra spend may not pay back. Check the bad case."
+        if pick == DO_NOTHING:
+            watch = "Waiting costs you if the news gets worse than the headline. Test the plans again when it moves."
         if over_cash:
             watch = "This plan needs more cash than you said you have. " + watch
         return {
@@ -820,6 +821,11 @@ class Analyst:
         assert cell is not None
         if self.last_why and name.lower() in self.last_why.lower():
             why_not = self.last_why
+        elif cell["over_cash"]:
+            why_not = (
+                f"{name} averages {wording.usd_k(cell['mean_delta_usd'])} in today's news case, but it needs "
+                f"{wording.usd_k(cell['peak_cash_usd'], signed=False)} of cash at its peak, more than you have."
+            )
         else:
             why_not = (
                 f"{name} averages {wording.usd_k(cell['mean_delta_usd'])} in today's news case against "

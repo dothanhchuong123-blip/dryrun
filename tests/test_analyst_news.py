@@ -1070,3 +1070,15 @@ async def test_same_visible_setting_reuses_one_reaction():
     assert set(asked) == {"Raise price 5% now"} and len(asked) == 2      # two halves, asked once for both plans
     assert np.allclose(a._sent["Stock 2 wk + raise 5% wk 3"].mu, a._sent["Raise price 5% now"].mu)
     assert a.crowd_rows["Stock 2 wk + raise 5% wk 3"] == a.crowd_rows["Raise price 5% now"]
+
+
+def test_final_pick_is_do_nothing_when_best_today_is_whatever_ultra_named():
+    from backend.agents.analyst import Analyst
+    from backend.engine.planner import DO_NOTHING, PlanSpec
+    a = object.__new__(Analyst)
+    a.specs, a.fallback_used, a._stale = [PlanSpec(name="Price +3% wk2")], False, False
+    a.summary = {"best_today": DO_NOTHING}
+    assert a._final_pick("Price +3% wk2") == DO_NOTHING      # the engine says no affordable plan gains
+    a.summary = {"best_today": "Price +3% wk2"}
+    assert a._final_pick("Price +3% wk2") == "Price +3% wk2"
+    assert a._final_pick(DO_NOTHING) == "Price +3% wk2"       # Ultra can't wait when a plan gains

@@ -34,6 +34,13 @@ test("no plans → Do nothing", () => {
   assert.deepEqual(labels([], fx.shocks, 0), { bestToday: "Do nothing", safest: "Do nothing" });
 });
 
+test("no plan above 0 → Do nothing is best today", () => {
+  const mk = (plan: string, mean: number): GridCellData => ({ ...fx.cells[0], plan_name: plan, shock_id: "news", mean_delta_usd: mean, p5_delta_usd: -10, peak_cash_usd: 0, over_cash: false });
+  const got = labels([mk("A", -59), mk("B", 0)], [{ id: "news", likelihood: "likely" }], 0);
+  assert.equal(got.bestToday, "Do nothing");
+  assert.equal(got.safest, "A");
+});
+
 test("ties go to the earlier plan", () => {
   const mk = (plan: string): GridCellData => ({ ...fx.cells[0], plan_name: plan, shock_id: "news", mean_delta_usd: 100, p5_delta_usd: 10, peak_cash_usd: 0, over_cash: false });
   const got = labels([mk("A"), mk("B")], [{ id: "news", likelihood: "likely" }], 0);

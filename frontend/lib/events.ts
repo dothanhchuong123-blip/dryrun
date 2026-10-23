@@ -150,6 +150,8 @@ export interface BacktestVerdict {
   rank: number;
   n_plans: number;
   beat_do_nothing: boolean;
+  /** (v2.5) The ledger's mark: a plan pick beat doing nothing, or a "Do nothing" pick that no tested plan beat. */
+  right?: boolean;
 }
 export type BacktestsResponse = BacktestSummary[];
 
@@ -480,6 +482,8 @@ export interface BacktestEventData {
   /** the tested plans plus "Do nothing" */
   n_plans: number;
   beat_do_nothing: boolean;
+  /** (v2.5) a plan pick beat doing nothing, or a "Do nothing" pick that no tested plan beat on the real path */
+  right?: boolean;
   pick_delta_usd: number;
   /** the pick on the real path with neutral shoppers: the engine alone */
   pick_engine_only_usd?: number;

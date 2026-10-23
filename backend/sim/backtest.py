@@ -97,7 +97,8 @@ def load_case(case_id: str, directory: Path | None = None) -> dict:
 
 def recorded_verdict(case_id: str, replays: Path | None = None) -> dict | None:
     """What the recording said and what the real path did, read from its `memo` and `backtest` events (no recompute):
-    `{pick, said_usd, real_usd, rank, n_plans, beat_do_nothing}`. None when there is no (complete) recording."""
+    `{pick, said_usd, real_usd, rank, n_plans, beat_do_nothing, right}`. None when there is no (complete) recording.
+    Recordings scored before `right` existed fall back to `beat_do_nothing` (the same thing for a plan pick)."""
     path = replay.backtest_path(case_id, replays)
     if not path.exists():
         return None
@@ -114,6 +115,7 @@ def recorded_verdict(case_id: str, replays: Path | None = None) -> dict | None:
     return {
         "pick": result["pick"], "said_usd": memo["numbers"]["mean_delta_usd"], "real_usd": result["pick_delta_usd"],
         "rank": result["pick_rank"], "n_plans": result["n_plans"], "beat_do_nothing": result["beat_do_nothing"],
+        "right": result.get("right", result["beat_do_nothing"]),
     }
 
 
@@ -373,7 +375,7 @@ def score(
     """Score the analysis against the real path (SPEC §15.12 Part C). Engine only, free.
 
     `plans` maps name -> spec for every plan the analysis tested (not "Do nothing"); `crowd_for(name)` gives each
-    plan's recorded shoppers. Returns `cells`, `pick`, `pick_rank`, `n_plans`, `beat_do_nothing`, `pick_delta_usd`,
+    plan's recorded shoppers. Returns `cells`, `pick`, `pick_rank`, `n_plans`, `beat_do_nothing`, `right`, `pick_delta_usd`,
     `hindsight_best`, `regret_usd`, `baselines` and the `realized_case` (a ShockCase, not yet an event dict)."""
     realized = realized_case(case, cal.profile)
     crowd = {n: s for n in plans if (s := crowd_for(n)) is not None}
@@ -424,6 +426,8 @@ def score(
         "cells": list(cells.values()),
         "pick": pick, "pick_rank": rank, "n_plans": len(ranking),
         "beat_do_nothing": bool(pick_delta > 0.0),
+        # a plan is right when it beat doing nothing; "Do nothing" is right when no tested plan beat it on the real path
+        "right": bool(rank == 1) if pick == DO_NOTHING else bool(pick_delta > 0.0),
         "pick_delta_usd": round(pick_delta, 2),
         # the same pick on the real path with neutral shoppers: the engine alone, no Lightning reactions
         "pick_engine_only_usd": round(pick_engine, 2),
@@ -542,7 +546,7 @@ def event(
                                                          shift_weeks=_arrival_shift(case, profile))},
         "cells": list(scored["cells"]),
         "pick": scored["pick"], "pick_rank": scored["pick_rank"], "n_plans": scored["n_plans"],
-        "beat_do_nothing": scored["beat_do_nothing"], "pick_delta_usd": scored["pick_delta_usd"],
+        "beat_do_nothing": scored["beat_do_nothing"], "right": scored["right"], "pick_delta_usd": scored["pick_delta_usd"],
         "pick_engine_only_usd": scored["pick_engine_only_usd"],
         "hindsight_best": dict(scored["hindsight_best"]), "regret_usd": scored["regret_usd"],
         "baselines": list(scored["baselines"]),

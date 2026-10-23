@@ -132,3 +132,21 @@ Same rules as above: `--record`, a run kept only if every Ultra and Super call s
 
 Spend: 11 live runs, 5 kept, **$0.71** Token Factory (telemetry
 estimate), 0 Tavily credits (all cached).
+
+## "Do nothing" can be the pick (2026-10-23, owner's OK)
+
+Found while reading the misses: `best_today` only ever chose among the active plans. In ho_rice_2023 the app's own
+forecast for its pick was −$59 (the only plan above 0, +$19, needed $7.4k of cash the owner didn't have), and it
+recommended it anyway. The rule, set from the app's own numbers and applied to every recording, not chosen by
+outcome: **when no affordable plan beats doing nothing on average in the news column, `best_today` and the memo's
+pick are "Do nothing"** (SPEC §15.5.2). A "Do nothing" pick is scored `right` when no tested plan beat doing nothing
+on the real path (it ranks first); otherwise it missed.
+
+`scripts/rescore_do_nothing.py --write` applied it to the recordings from their own numbers, no model calls:
+- **ho_rice_2023**: pick "Price +3% wk2, marketing +5% now" (−$99 on the real path, rank 3/8) → "Do nothing" ($0,
+  rank 1/8, regret $0): **Missed → Right**. Its memo words are now the engine's template ("Hold steady: no plan beat
+  doing nothing"), since the recorded Ultra memo argued for the old pick.
+- analysis_furniture_eu, ho_palm_2022: only an early-round "Best today" badge changes; their picks stand.
+- ho_palm_2022 stays a miss: its pick forecast +$6, above 0.
+
+Ledger after this: **Right in 7 of 10** (sunflower still at 0.8, so 6 of the 9 re-recorded or 0.05 cases).

@@ -254,7 +254,7 @@ async def test_backtest_run_event_order_prompts_and_shape(tmp_path):
 
     d = rec.of("backtest")[0]
     assert set(d) == {"backtest_id", "as_of", "horizon_end", "series", "realized_case", "cells", "pick", "pick_rank",
-                      "n_plans", "beat_do_nothing", "pick_delta_usd", "pick_engine_only_usd", "hindsight_best", "regret_usd", "baselines",
+                      "n_plans", "beat_do_nothing", "right", "pick_delta_usd", "pick_engine_only_usd", "hindsight_best", "regret_usd", "baselines",
                       "futures_cover", "leak_check", "dropped_news", "what_happened", "caveats"}
     assert d["backtest_id"] == "bt_cocoa_2024" and d["horizon_end"] == "2024-07-01"
     assert set(d["series"]) == {"label", "unit", "source_url", "as_of_value", "points"} and d["series"]["as_of_value"] == 4.4
@@ -266,6 +266,7 @@ async def test_backtest_run_event_order_prompts_and_shape(tmp_path):
     assert sorted({c["plan_name"] for c in d["cells"]}) == sorted(p["name"] for p in rec.of("plan"))
     assert 1 <= d["pick_rank"] <= d["n_plans"] == len(d["cells"]) + 1
     assert d["beat_do_nothing"] == (d["pick_delta_usd"] > 0)
+    assert d["right"] == (d["pick_rank"] == 1 if d["pick"] == "Do nothing" else d["beat_do_nothing"])
     hb = d["hindsight_best"]
     assert set(hb) == {"name", "spec", "mean_delta_usd", "plain"} and hb["mean_delta_usd"] >= d["pick_delta_usd"]
     assert PlanSpec.from_dict(hb["spec"]).name == hb["name"]
@@ -394,3 +395,18 @@ def test_supplier_caveat_only_when_a_tested_plan_switches():
 ])
 def test_stale_quote(quote, as_of, stale):
     assert asof.stale_quote(quote, as_of) is stale
+
+
+def test_do_nothing_pick_is_scored_by_whether_any_plan_beat_it():
+    # ho_rice_2023: every affordable plan lost on average in the news column, so the advice is "Do nothing"; no tested
+    # plan beat doing nothing on the real path either, so it ranks first and counts as right
+    v = bt.recorded_verdict("ho_rice_2023")
+    assert v == {"pick": "Do nothing", "said_usd": 0.0, "real_usd": 0.0, "rank": 1, "n_plans": 8,
+                 "beat_do_nothing": False, "right": True}
+
+
+def test_rescore_script_is_a_no_op_on_rescored_recordings():
+    from scripts.rescore_do_nothing import rescore
+    for path in sorted(replay.REPLAY_DIR.glob("*.jsonl")):
+        if path.name.startswith(("analysis_", "backtest_")):
+            assert rescore(replay.load(path))[1] == [], path.name

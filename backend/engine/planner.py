@@ -1002,7 +1002,8 @@ def _labels(
     cases: Sequence[ShockCase],
     by_plan: Mapping[int, Mapping[str, Mapping[str, Any]]],
 ) -> tuple[str, str]:
-    """best_today and safest (SPEC §15.5.2) over plans[1:]. Ties go to the earlier plan."""
+    """best_today and safest (SPEC §15.5.2) over plans[1:]. Ties go to the earlier plan. best_today is "Do nothing"
+    when no plan in its pool beats doing nothing on average in the news column: the engine's own numbers say wait."""
     if not cases or len(plans) < 2:
         return DO_NOTHING, DO_NOTHING
     news_id = next((c.id for c in cases if c.id == "news"), cases[0].id)
@@ -1014,9 +1015,10 @@ def _labels(
     idx = range(1, len(plans))
     best_pool = [i for i in idx if not cell(i, news_id)["over_cash"]] or list(idx)
     best = max(best_pool, key=lambda i: (cell(i, news_id)["mean_delta_usd"], -i))
+    best_name = plans[best].name if cell(best, news_id)["mean_delta_usd"] > 0.0 else DO_NOTHING
     safe_pool = [i for i in idx if not any(cell(i, c)["over_cash"] for c in safe_ids)] or list(idx)
     safe = max(safe_pool, key=lambda i: (min(cell(i, c)["p5_delta_usd"] for c in safe_ids), -i))
-    return plans[best].name, plans[safe].name
+    return best_name, plans[safe].name
 
 
 def evaluate_cell(

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { reducedMotion } from "../../lib/follow";
+import { DO_NOTHING } from "../../lib/labels";
 import { FILE_ACCEPT, MISSING, NEEDS_LIVE, REJECT_COPY, checkFile, fileSize, hasFiles } from "../../lib/files";
 import type { MissingItem } from "../../lib/events";
 import { formatDelta, formatPrice } from "../../lib/format";
@@ -646,13 +647,14 @@ export function Flow() {
               <p>We replay a past date with only the news from before it, then score the advice against what really happened. We show the misses too.
                 {(() => {
                   const scored = s.backtests.filter((b) => b.verdict);
-                  const right = scored.filter((b) => b.verdict!.beat_do_nothing).length;
+                  const right = scored.filter((b) => b.verdict!.right ?? b.verdict!.beat_do_nothing).length;
                   return scored.length > 0 ? <> <strong>Right in {right} of {scored.length}.</strong></> : null;
                 })()}
               </p>
               <ul>
                 {s.backtests.map((b) => {
                   const v = b.verdict;
+                  const right = v ? (v.right ?? v.beat_do_nothing) : false;
                   return (
                     <li key={b.id}>
                       <button type="button" className="bt-row" onClick={() => pickBacktest(b.id)}>
@@ -666,17 +668,17 @@ export function Flow() {
                             <span className="bt-cell">
                               <small>Said</small>
                               <span>{v.pick}</span>
-                              <em>{signedK(v.said_usd)} vs doing nothing</em>
+                              <em>{v.pick === DO_NOTHING ? "no plan forecast a gain" : `${signedK(v.said_usd)} vs doing nothing`}</em>
                             </span>
                             <span className="bt-cell">
                               <small>What happened</small>
-                              <span className={v.beat_do_nothing ? "gain" : "loss"}>{signedK(v.real_usd)} vs doing nothing</span>
+                              <span className={v.pick === DO_NOTHING ? (right ? "gain" : "loss") : v.real_usd > 0 ? "gain" : "loss"}>{v.pick === DO_NOTHING ? (right ? "No plan beat waiting" : "A plan would have paid") : `${signedK(v.real_usd)} vs doing nothing`}</span>
                               <em>ranked {v.rank} of {v.n_plans}</em>
                             </span>
-                            <span className={`bt-mark ${v.beat_do_nothing ? "gain" : "loss"}`} aria-label={v.beat_do_nothing ? "Beat doing nothing" : "Lost to doing nothing"}>
-                              {v.beat_do_nothing ? "Right" : "Missed"}
+                            <span className={`bt-mark ${right ? "gain" : "loss"}`} aria-label={right ? "The advice was right" : "The advice missed"}>
+                              {right ? "Right" : "Missed"}
                             </span>
-                            {!v.beat_do_nothing && (
+                            {!right && (
                               <span className="bt-miss">Best bet on the news known that day. {b.hindsight ?? "The real path went another way, and that happens."}</span>
                             )}
                           </>

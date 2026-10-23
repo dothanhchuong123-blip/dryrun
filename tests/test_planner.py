@@ -348,6 +348,18 @@ def test_labels_skip_over_cash_and_unlikely(cal):
     assert only["best_today"] == STOCK_UP.name
 
 
+def test_best_today_is_do_nothing_when_no_affordable_plan_gains():
+    from backend.engine.planner import _labels
+    plans = [PlanSpec.do_nothing(), PlanSpec(name="A"), PlanSpec(name="B")]
+    cases = [ShockCase(id="news", label="News")]
+
+    def row(mean, over=False):
+        return {"news": {"mean_delta_usd": mean, "p5_delta_usd": mean - 100, "over_cash": over}}
+    assert _labels(plans, cases, {1: row(-59), 2: row(19, over=True)}) == ("Do nothing", "A")
+    assert _labels(plans, cases, {1: row(-59), 2: row(0)})[0] == "Do nothing"
+    assert _labels(plans, cases, {1: row(-59), 2: row(6)})[0] == "B"
+
+
 def test_share_shift_cuts_sales(cal):
     lost = ShockCase(id="chain", label="New chain opens", share_shift_pct=20, onset_week=2, ramp_weeks=3)
     base = _do_nothing_paths(cal, NO_SHOCK, n=300)["sales"]

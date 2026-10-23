@@ -22,6 +22,7 @@ function recordedVerdict(dir, id) {
       rank: result.pick_rank,
       n_plans: result.n_plans,
       beat_do_nothing: result.beat_do_nothing,
+      right: result.right ?? result.beat_do_nothing,
     };
   } catch {
     return null;

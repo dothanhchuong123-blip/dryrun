@@ -634,7 +634,7 @@ where `ramp(t)` goes 0 → 1 from `onset_week` over `ramp_weeks`. With the alter
   - **`over_cash`** (v3.1): `cash_available > 0 and peak_cash_usd > cash_available`. The UI shows an "Over your cash" badge, and the analyst table marks the cell.
 - **Sizes:** n = 1,000 paths per cell locally. **The Nebius Serverless Job runs n = 10,000 per cell** for the "verified" badge (`python -m backend.engine.planner --job in.json --n 10000 --out out.json`).
 - **Engine labels:**
-  - `best_today`: the highest `mean_delta_usd` in the `news` column, among plans that are not `over_cash` (if all are, ignore the flag).
+  - `best_today`: the highest `mean_delta_usd` in the `news` column, among plans that are not `over_cash` (if all are, ignore the flag). **(2026-10-23)** If that mean is not above 0, `best_today` is "Do nothing", and so is the memo's pick whatever Ultra named: when no affordable plan beats doing nothing, the advice is to wait.
   - `safest`: the highest, over plans, of the worst `p5_delta_usd` across the columns whose `likelihood` isn't `unlikely`. Same `over_cash` rule.
   - Ties go to the earlier plan.
 - **Performance** (the steady-rival re-run doubles the work):
