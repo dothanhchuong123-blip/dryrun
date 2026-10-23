@@ -310,6 +310,8 @@ body .fl-tip .fl-sl i.b, body .fl-tip .fl-sk i.b { background: repeating-linear-
 .fl .bt-ledger > p { margin: 4px 0 10px; font-size: 13px; color: var(--fl-ink-3); }
 .fl .bt-ledger > small { display: block; margin-top: 8px; font: 11.5px var(--mono); color: var(--fl-ink-3); }
 .fl .bt-ledger ul { list-style: none; margin: 0; padding: 0; border-top: 2px dashed var(--fl-line-2); }
+.fl .bt-ledger .bt-more { display: block; margin: 10px auto 0; padding: 6px 14px; font: 600 12.5px var(--mono); color: var(--fl-ink); background: var(--fl-card); border: 2px solid var(--px-hard); box-shadow: 2px 2px 0 var(--px-hard); cursor: pointer; }
+.fl .bt-ledger .bt-more:hover { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--px-hard); }
 .fl .bt-ledger li { border-bottom: 2px dashed var(--fl-line-2); }
 .fl .bt-row { display: grid; grid-template-columns: auto minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 1.1fr) auto; align-items: center; gap: 6px 16px; width: 100%; padding: 12px 6px; text-align: left; font: inherit; color: var(--fl-ink); background: transparent; border: 0; cursor: pointer; }
 .fl .bt-row:hover { background: var(--fl-sunk); }

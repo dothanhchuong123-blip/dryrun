@@ -140,6 +140,8 @@ function useEasedHeight() {
   return { outer, inner };
 }
 
+const BT_PREVIEW = 3;
+
 export function Flow() {
   const s = useMarketStore();
   const p = s.profile;
@@ -235,6 +237,7 @@ export function Flow() {
   };
   const up = view >= 0;
   const [showFull, setShowFull] = useState(false);
+  const [btMore, setBtMore] = useState(false);
   const exReplay = !!s.examples.find((e) => e.id === (s.exampleId ?? s.analysis.exampleId))?.has_replay || s.analysis.mode === "replay";
   const autoEff = auto ?? exReplay;
   const [linkMode, setLinkMode] = useState(false);
@@ -652,7 +655,7 @@ export function Flow() {
                 })()}
               </p>
               <ul>
-                {s.backtests.map((b) => {
+                {(btMore ? s.backtests : s.backtests.slice(0, BT_PREVIEW)).map((b) => {
                   const v = b.verdict;
                   const right = v ? (v.right ?? v.beat_do_nothing) : false;
                   return (
@@ -690,6 +693,11 @@ export function Flow() {
                   );
                 })}
               </ul>
+              {s.backtests.length > BT_PREVIEW && (
+                <button type="button" className="bt-more" aria-expanded={btMore} onClick={() => setBtMore((m) => !m)}>
+                  {btMore ? "See less" : `See more (${s.backtests.length - BT_PREVIEW} more cases)`}
+                </button>
+              )}
               <small>Click a row to replay it. “Right” means the advice beat doing nothing on the real path. No advice is right every time.</small>
             </div>
           )}
