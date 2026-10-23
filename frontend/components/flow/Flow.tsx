@@ -26,6 +26,8 @@ const STEPS = [
   { title: "Your answer", sub: "what to do" },
 ];
 const AUTO_MS = 4000;
+// auto-continue keeps the news step on screen at least this long after its headlines first appear
+const NEWS_HOLD_MS = 5000;
 const SAMPLE_PLACEHOLDER = "e.g. I run a small bakery-café in Austin, Texas… or paste a link";
 const LINK_PLACEHOLDER = "Paste your website, Google Maps, Facebook or Shopee link…";
 const STARTERS: { label: string; text: string }[] = [
@@ -339,7 +341,7 @@ export function Flow() {
       ready: ok,
       act: () => go(2),
       autoOk: true,
-      ms: exReplay ? 2500 : AUTO_MS,
+      ms: NEWS_HOLD_MS,
     };
   } else if (view === 2) {
     const ok = shown.done;
@@ -363,14 +365,19 @@ export function Flow() {
   const gateMs = gate?.ms ?? AUTO_MS;
   const autoOn = autoEff && !!gate?.ready && !!gate.autoOk && frontier;
   const gateAct = gate?.act;
+  // when the headlines first showed on the news step; the hold is measured from here, not from mount
+  const newsAt = useRef<number | null>(null);
+  if (nNews === 0 || view !== 1) newsAt.current = null;
+  else if (newsAt.current === null) newsAt.current = performance.now();
   useEffect(() => {
     if (!autoOn || !gateAct) {
       setAutoLeft(gateMs);
       return;
     }
     const t0 = performance.now();
+    const end = view === 1 && newsAt.current !== null ? Math.max(t0 + 1200, newsAt.current + NEWS_HOLD_MS) : t0 + gateMs;
     const id = window.setInterval(() => {
-      const left = gateMs - (performance.now() - t0);
+      const left = end - performance.now();
       setAutoLeft(Math.max(0, left));
       if (left <= 0) {
         window.clearInterval(id);
@@ -728,6 +735,12 @@ export function Flow() {
 
           <div className="fl-grow" ref={outer}>
             <div ref={inner}>
+              {(view === 2 || view === 3) && s.news.length > 0 && (
+                <details className="fl-basis">
+                  <summary>Based on {s.news.length} {s.news.length === 1 ? "article" : "articles"}</summary>
+                  <span>{[...new Set(s.news.map((n) => n.source))].join(" · ")}</span>
+                </details>
+              )}
               {view === 0 && <StageUnderstand key="v0" />}
               {view === 1 && <StageSearch key="v1" />}
               {view === 2 && <StageTest key="v2" shown={shown} active={view === 2} scroller={sc} />}
