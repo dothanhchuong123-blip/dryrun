@@ -48,6 +48,10 @@ const yearSpan = (isos: string[]) => {
   return lo === hi ? `${lo}` : `${lo}–${String(hi).slice(2)}`;
 };
 /** "2024-01-15" -> "15 January 2024" */
+const signedK = (n: number) => {
+  const k = Math.abs(n) / 1000;
+  return `${n < 0 ? "−" : "+"}$${k >= 10 ? k.toFixed(0) : k.toFixed(1)}k`;
+};
 const longDate = (iso: string) => `${Number(iso.slice(8, 10))} ${LONG_MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""} ${iso.slice(0, 4)}`;
 
 /** Critically damped spring scroll: glides to a target, gives way the moment the user scrolls. */
@@ -628,18 +632,45 @@ export function Flow() {
           </div>
 
           {!up && s.backtests.length > 0 && (
-            <div className="fl-ex bt-ex" id="real-cases">
-              <p>Real cases: would it have helped? We replay a past date with only the news from before it, then check the advice against what really happened.</p>
-              <div className="fl-exg">
-                {s.backtests.map((b) => (
-                  <button key={b.id} type="button" className="fl-exb bt-card" onClick={() => pickBacktest(b.id)}>
-                    <span className="bt-chip">{monthYear(b.as_of)}</span>
-                    <b>{b.title}</b>
-                    <span>{b.subtitle}</span>
-                    <small>Replay this date →</small>
-                  </button>
-                ))}
-              </div>
+            <div className="bt-ledger" id="real-cases">
+              <h2>We tested it on the past</h2>
+              <p>We replay a past date with only the news from before it, then score the advice against what really happened.</p>
+              <ul>
+                {s.backtests.map((b) => {
+                  const v = b.verdict;
+                  return (
+                    <li key={b.id}>
+                      <button type="button" className="bt-row" onClick={() => pickBacktest(b.id)}>
+                        <span className="bt-chip">{monthYear(b.as_of)}</span>
+                        <span className="bt-what">
+                          <b>{b.title}</b>
+                          <span>{b.subtitle}</span>
+                        </span>
+                        {v ? (
+                          <>
+                            <span className="bt-cell">
+                              <small>Said</small>
+                              <span>{v.pick}</span>
+                              <em>{signedK(v.said_usd)} vs doing nothing</em>
+                            </span>
+                            <span className="bt-cell">
+                              <small>What happened</small>
+                              <span className={v.beat_do_nothing ? "gain" : "loss"}>{signedK(v.real_usd)} vs doing nothing</span>
+                              <em>ranked {v.rank} of {v.n_plans}</em>
+                            </span>
+                            <span className={`bt-mark ${v.beat_do_nothing ? "gain" : "loss"}`} aria-label={v.beat_do_nothing ? "Beat doing nothing" : "Lost to doing nothing"}>
+                              {v.beat_do_nothing ? "✓" : "✗"}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="bt-cell bt-open">Replay this date →</span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <small>Click a row to replay it. Checked means it beat doing nothing on the real path.</small>
             </div>
           )}
           {!up && s.examples.length > 0 && (
