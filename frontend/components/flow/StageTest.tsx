@@ -936,20 +936,97 @@ function Grid({ shown, scroller }: { shown: Shown; scroller: HTMLElement | null 
   );
 }
 
+/** One line that stands in for the three panels once the run is done. A button: it opens them again. */
+function FoldRow({ shown, open, onToggle, id }: { shown: Shown; open: boolean; onToggle: () => void; id: string }) {
+  const steps = useMarketStore((s) => s.agentSteps);
+  const cells = useMarketStore((s) => s.cells);
+  const crowd = useMarketStore((s) => s.crowdByPlan);
+  const best = useMarketStore((s) => s.summary?.best_today);
+  const rounds = steps.filter((st) => shown.steps.has(st.seq)).reduce((m, st) => Math.max(m, st.round + 1), 0);
+  const runs = shown.cells.reduce((n, k) => n + (cells[k]?.n ?? 0), 0);
+  const last = shown.crowd[shown.crowd.length - 1];
+  const arch = (best && crowd[best]) || (last ? crowd[last] : undefined) || [];
+  return (
+    <button type="button" className="ts-foldrow" aria-expanded={open} aria-controls={id} onClick={onToggle}>
+      <span className="k">Analyst</span>
+      <span>
+        {rounds || 1} {rounds === 1 ? "round" : "rounds"} <span className="ok">✓</span>
+      </span>
+      {arch.length > 0 && (
+        <span className="fs" aria-label="Customer reactions" role="img">
+          {arch.slice(0, 12).map((a) => (
+            <span key={a.id}>
+              <PixelFace shopper={shopperOf(a)} mood={moodOf(a)} bg="var(--px-disc)" />
+            </span>
+          ))}
+        </span>
+      )}
+      <span>{formatRuns(runs)} runs</span>
+      <span className="more">
+        {open ? "Hide details" : "Show details"} <span aria-hidden>{open ? "↑" : "↓"}</span>
+      </span>
+    </button>
+  );
+}
+
 export function StageTest({ shown, active, scroller }: { shown: Shown; active: boolean; scroller: HTMLElement | null }) {
-  const shocksReady = useMarketStore((s) => s.shocks.length > 0);
+  const nShocks = useMarketStore((s) => s.shocks.length);
+  const shocksReady = nShocks > 0;
+  // null = nobody has touched the row: the panels follow the run (open while it works, folded once it is done)
+  const [pick, setPick] = useState<boolean | null>(null);
+  const folded = pick === null ? shown.done : !pick;
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [gridSeen, setGridSeen] = useState(false);
+
+  // the teaser hides once the grid itself is on screen
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !shocksReady) return;
+    const io = new IntersectionObserver(([e]) => setGridSeen(e.isIntersecting), { root: scroller, rootMargin: "0px 0px -110px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [scroller, shocksReady]);
+
+  const jump = () => {
+    const el = gridRef.current;
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const box = scroller?.getBoundingClientRect() ?? { top: 0 };
+    const bar = box.top + (document.querySelector<HTMLElement>(".fl-stepper")?.offsetHeight ?? 0);
+    const dy = el.getBoundingClientRect().top - bar - 12;
+    if (scroller) scroller.scrollTo({ top: scroller.scrollTop + dy, behavior: reduce ? "auto" : "smooth" });
+    else el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  };
+
+  const tested = shown.cells.length;
+  const total = shown.plans.size * nShocks;
+  const teaser = shocksReady && !shown.done && !gridSeen && tested > 0;
+
   return (
     <div className="fl-stage">
-      <div className="fl-g3">
-        <Analyst shown={shown} active={active} />
-        <Shoppers shown={shown} />
-        <Simulator shown={shown} />
+      {shown.done && <FoldRow shown={shown} open={!folded} onToggle={() => setPick(folded)} id="ts-panels" />}
+      <div className={`ts-fold${folded ? "" : " open"}`} id="ts-panels">
+        <div className="ts-fold-in">
+          <div className="fl-g3 run">
+            <Analyst shown={shown} active={active} />
+            <Shoppers shown={shown} />
+            <Simulator shown={shown} />
+          </div>
+        </div>
       </div>
       {shocksReady && (
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 14 }} ref={gridRef}>
           <Grid shown={shown} scroller={scroller} />
         </div>
       )}
+      <div className={`ts-teaser${teaser ? " on" : ""}`} aria-hidden={!teaser}>
+        <button type="button" tabIndex={teaser ? 0 : -1} onClick={jump}>
+          <span>
+            Every plan in every future <span aria-hidden>↓</span>
+          </span>
+          <span className="n">{total > 0 ? `${tested} of ${total} tested` : `${tested} tested`}</span>
+        </button>
+      </div>
     </div>
   );
 }
