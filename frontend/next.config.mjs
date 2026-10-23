@@ -64,6 +64,7 @@ function syncReplayFixtures() {
           as_of: c.as_of,
           has_replay: files.includes(`backtest_${c.id}.jsonl`),
           verdict: recordedVerdict(repoReplaysDir, c.id),
+          hindsight: c.hindsight || null,
         }))
         .sort((a, b) => (a.as_of + a.id < b.as_of + b.id ? -1 : 1));
       fs.writeFileSync(path.join(publicReplaysDir, "backtests.json"), JSON.stringify(cases, null, 2));

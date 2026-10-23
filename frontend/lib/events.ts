@@ -140,6 +140,8 @@ export interface BacktestSummary {
   has_replay: boolean;
   /** The recorded outcome: what the app picked, what it claimed, and what the real path paid. Null if not recorded. */
   verdict?: BacktestVerdict | null;
+  /** (v2.4) One line, written after the fact, on what went differently. Shown next to a missed verdict. */
+  hindsight?: string | null;
 }
 export interface BacktestVerdict {
   pick: string;

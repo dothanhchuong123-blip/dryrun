@@ -669,7 +669,7 @@ export function Flow() {
                               {v.beat_do_nothing ? "Right" : "Missed"}
                             </span>
                             {!v.beat_do_nothing && (
-                              <span className="bt-miss">Best bet on the news known that day. The real path went another way, and that happens.</span>
+                              <span className="bt-miss">Best bet on the news known that day. {b.hindsight ?? "The real path went another way, and that happens."}</span>
                             )}
                           </>
                         ) : (

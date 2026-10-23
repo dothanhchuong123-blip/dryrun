@@ -118,15 +118,16 @@ def recorded_verdict(case_id: str, replays: Path | None = None) -> dict | None:
 
 
 def list_cases(directory: Path | None = None, replays: Path | None = None) -> list[dict]:
-    """`GET /api/backtests`: `[{id, title, subtitle, as_of, has_replay, verdict}]`, oldest as-of date first.
-    `verdict` is the recorded outcome (see `recorded_verdict`) or None."""
+    """`GET /api/backtests`: `[{id, title, subtitle, as_of, has_replay, verdict, hindsight}]`, oldest as-of date first.
+    `verdict` is the recorded outcome (see `recorded_verdict`) or None; `hindsight` is the case's one-line "what went
+    differently" (written after the fact, shown next to the verdict) or None."""
     out = []
     for path in sorted((directory or CASES_DIR).glob("bt_*.json")):
         case = json.loads(path.read_text(encoding="utf-8"))
         out.append({
             "id": case["id"], "title": case["title"], "subtitle": case.get("subtitle", ""), "as_of": case["as_of"],
             "has_replay": replay.backtest_path(case["id"], replays).exists(),
-            "verdict": recorded_verdict(case["id"], replays),
+            "verdict": recorded_verdict(case["id"], replays), "hindsight": case.get("hindsight") or None,
         })
     return sorted(out, key=lambda c: (c["as_of"], c["id"]))
 
