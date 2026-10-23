@@ -10,6 +10,7 @@ import { suggest } from "../../lib/suggest";
 import { usePacer, useTimeline } from "../../lib/timeline";
 import { ReplayDrawer } from "../replay/ReplayDrawer";
 import { CustomerPreview } from "../faces/CustomerPreview";
+import { HowItWorks } from "./HowItWorks";
 import { PixelCrowd, PixelLogo } from "../faces/PixelFace";
 import { ThemeToggle } from "./parts";
 import { StageAnswer } from "./StageAnswer";
@@ -48,13 +49,6 @@ const yearSpan = (isos: string[]) => {
 };
 /** "2024-01-15" -> "15 January 2024" */
 const longDate = (iso: string) => `${Number(iso.slice(8, 10))} ${LONG_MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""} ${iso.slice(0, 4)}`;
-
-const HOW = [
-  { t: "Describe your business", d: "One line is enough, or paste a link. We guess the rest and mark it." },
-  { t: "We search the news", d: "Tavily finds this week's news that actually hits your costs and customers." },
-  { t: "An AI analyst proposes plans", d: "Nemotron suggests moves; a simulator stress-tests each across possible futures." },
-  { t: "You get a decision memo", d: "The plan that holds up best, with the numbers and sources behind it." },
-];
 
 /** Critically damped spring scroll: glides to a target, gives way the moment the user scrolls. */
 function useSpringScroll(scroller: React.RefObject<HTMLDivElement>) {
@@ -686,15 +680,14 @@ export function Flow() {
           {!up && <CustomerPreview />}
 
           {!up && (
-            <ol className="fl-how" aria-label="How it works">
-              {HOW.map((h, i) => (
-                <li key={h.t}>
-                  <span className="n">{i + 1}</span>
-                  <b>{h.t}</b>
-                  <small>{h.d}</small>
-                </li>
-              ))}
-            </ol>
+            <HowItWorks
+              offline={offline}
+              onTry={s.examples.some((e) => e.id === "coffee_austin" && !(offline && !e.has_replay)) ? () => pickExample("coffee_austin") : null}
+              onTop={() => {
+                glide(0);
+                boxRef.current?.focus({ preventScroll: true });
+              }}
+            />
           )}
 
 
