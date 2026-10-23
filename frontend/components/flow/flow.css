@@ -49,13 +49,14 @@
 .fl-logo svg { flex: none; }
 .fl-biz { font-size: 13px; color: var(--fl-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .fl-biz b { font-weight: 600; color: var(--fl-ink-2); }
-.fl-mode { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; padding: 3px 7px; border-radius: 5px; background: var(--fl-sunk); border: 1px solid var(--fl-line); color: var(--fl-ink-3); margin-left: 6px; }
+.fl-mode { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; padding: 3px 7px; border-radius: 5px; background: var(--fl-sunk); border: 1px solid var(--fl-line); color: var(--fl-ink-3); margin-left: 6px; white-space: nowrap; }
 .fl-mode.live { color: #4b7500; background: #f0f7e3; border-color: #d7ebb5; }
 :root[data-theme="dark"] .fl-mode.live { color: #b6e06a; background: #1f2a10; border-color: #33461a; }
 .fl-sp { flex: 1; }
 .fl-auto { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fl-ink-2); border: 0; background: none; cursor: pointer; padding: 6px 4px; white-space: nowrap; }
 .fl-sw { position: relative; width: 30px; height: 18px; border-radius: 9px; background: var(--fl-line-2); transition: background 0.25s; flex: none; }
 .fl-sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); transition: transform 0.3s var(--spring); }
+.fl-auto .l .short { display: none; }
 .fl-auto[aria-checked="true"] .fl-sw { background: var(--fl-accent); }
 .fl-auto[aria-checked="true"] .fl-sw::after { transform: translateX(12px); }
 .fl-ib { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--fl-line-2); background: var(--fl-card); border-radius: 9px; cursor: pointer; color: var(--fl-ink); flex: none; transition: background 0.2s; }
@@ -381,7 +382,10 @@
 @media (max-width: 640px) {
   .fl-main { padding: 0 16px 140px; }
   .fl-top { padding: 0 12px; gap: 8px; }
-  .fl-auto .l { display: none; }
+  .fl-auto .l .long { display: none; }
+  .fl-auto .l .short { display: inline; }
+  .fl-mode { margin-left: 0; }
+  .fl-mode-x { display: none; }
   .fl-g3 { grid-template-columns: minmax(0, 1fr); }
   .fl-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
   .fl-step { padding: 8px; justify-content: center; }

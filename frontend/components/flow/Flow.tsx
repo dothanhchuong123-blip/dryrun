@@ -393,7 +393,7 @@ export function Flow() {
 
   const calls = s.telemetry ? s.telemetry.tiers.ultra.calls + s.telemetry.tiers.super.calls + s.telemetry.tiers.fast.calls : 0;
   const modeLabel = offline
-    ? "OFFLINE DEMO"
+    ? "Recorded run · free"
     : s.analysis.mode === "live"
       ? "LIVE"
       : s.analysis.backtestId
@@ -421,8 +421,8 @@ export function Flow() {
           </span>
         )}
         {modeLabel && (
-          <span className={`fl-mode${s.analysis.mode === "live" && !offline ? " live" : ""}`} title={s.analysis.note ?? undefined}>
-            {modeLabel}
+          <span className={`fl-mode${s.analysis.mode === "live" && !offline ? " live" : ""}`} title={offline ? "Replays a real recorded run, no credit spent." : (s.analysis.note ?? undefined)}>
+            {offline ? <>Recorded run<span className="fl-mode-x"> · free</span></> : modeLabel}
           </span>
         )}
         <span className="fl-sp" />
@@ -433,7 +433,7 @@ export function Flow() {
         )}
         <button type="button" role="switch" aria-checked={autoEff} aria-label="Auto-continue" className="fl-auto" onClick={() => setAuto(!autoEff)}>
           <span className="fl-sw" aria-hidden />
-          <span className="l">Auto-continue</span>
+          <span className="l"><span className="long">Auto-continue</span><span className="short">Auto</span></span>
         </button>
         <ThemeToggle />
       </header>
