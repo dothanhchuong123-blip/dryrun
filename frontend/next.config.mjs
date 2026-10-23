@@ -5,6 +5,29 @@ import path from "node:path";
  * Copy any ../fixtures/replays/*.jsonl files into ./public/replays/ at build/dev startup
  * so static export and the browser mock/replay client can serve recorded JSONL runs directly.
  */
+/** What a recording said and what the real path did, read from its `memo` and `backtest` events (mirrors backend/sim/backtest.py). */
+function recordedVerdict(dir, id) {
+  try {
+    let memo = null;
+    let result = null;
+    for (const line of fs.readFileSync(path.join(dir, `backtest_${id}.jsonl`), "utf8").split("\n")) {
+      if (line.includes('"event": "memo"')) memo = JSON.parse(line).data;
+      else if (line.includes('"event": "backtest"')) result = JSON.parse(line).data;
+    }
+    if (!memo || !result) return null;
+    return {
+      pick: result.pick,
+      said_usd: memo.numbers.mean_delta_usd,
+      real_usd: result.pick_delta_usd,
+      rank: result.pick_rank,
+      n_plans: result.n_plans,
+      beat_do_nothing: result.beat_do_nothing,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function syncReplayFixtures() {
   try {
     const repoReplaysDir = path.resolve(process.cwd(), "..", "fixtures", "replays");
@@ -40,6 +63,7 @@ function syncReplayFixtures() {
           subtitle: c.subtitle ?? "",
           as_of: c.as_of,
           has_replay: files.includes(`backtest_${c.id}.jsonl`),
+          verdict: recordedVerdict(repoReplaysDir, c.id),
         }))
         .sort((a, b) => (a.as_of + a.id < b.as_of + b.id ? -1 : 1));
       fs.writeFileSync(path.join(publicReplaysDir, "backtests.json"), JSON.stringify(cases, null, 2));

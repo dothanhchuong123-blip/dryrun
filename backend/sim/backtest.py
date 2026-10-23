@@ -95,14 +95,38 @@ def load_case(case_id: str, directory: Path | None = None) -> dict:
     return case
 
 
+def recorded_verdict(case_id: str, replays: Path | None = None) -> dict | None:
+    """What the recording said and what the real path did, read from its `memo` and `backtest` events (no recompute):
+    `{pick, said_usd, real_usd, rank, n_plans, beat_do_nothing}`. None when there is no (complete) recording."""
+    path = replay.backtest_path(case_id, replays)
+    if not path.exists():
+        return None
+    memo = result = None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if '"event": "memo"' in line or '"event": "backtest"' in line:
+            rec = json.loads(line)
+            if rec["event"] == "memo":
+                memo = rec["data"]
+            else:
+                result = rec["data"]
+    if not memo or not result:
+        return None
+    return {
+        "pick": result["pick"], "said_usd": memo["numbers"]["mean_delta_usd"], "real_usd": result["pick_delta_usd"],
+        "rank": result["pick_rank"], "n_plans": result["n_plans"], "beat_do_nothing": result["beat_do_nothing"],
+    }
+
+
 def list_cases(directory: Path | None = None, replays: Path | None = None) -> list[dict]:
-    """`GET /api/backtests`: `[{id, title, subtitle, as_of, has_replay}]`, oldest as-of date first."""
+    """`GET /api/backtests`: `[{id, title, subtitle, as_of, has_replay, verdict}]`, oldest as-of date first.
+    `verdict` is the recorded outcome (see `recorded_verdict`) or None."""
     out = []
     for path in sorted((directory or CASES_DIR).glob("bt_*.json")):
         case = json.loads(path.read_text(encoding="utf-8"))
         out.append({
             "id": case["id"], "title": case["title"], "subtitle": case.get("subtitle", ""), "as_of": case["as_of"],
             "has_replay": replay.backtest_path(case["id"], replays).exists(),
+            "verdict": recorded_verdict(case["id"], replays),
         })
     return sorted(out, key=lambda c: (c["as_of"], c["id"]))
 

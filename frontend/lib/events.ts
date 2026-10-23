@@ -138,6 +138,16 @@ export interface BacktestSummary {
   subtitle: string;
   as_of: string;
   has_replay: boolean;
+  /** The recorded outcome: what the app picked, what it claimed, and what the real path paid. Null if not recorded. */
+  verdict?: BacktestVerdict | null;
+}
+export interface BacktestVerdict {
+  pick: string;
+  said_usd: number;
+  real_usd: number;
+  rank: number;
+  n_plans: number;
+  beat_do_nothing: boolean;
 }
 export type BacktestsResponse = BacktestSummary[];
 

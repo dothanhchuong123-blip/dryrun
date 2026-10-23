@@ -98,11 +98,17 @@ def test_case_files_are_complete_and_do_not_spoil(case_id):
 def test_list_cases_shape(tmp_path):
     out = bt.list_cases(replays=tmp_path)
     assert {c["id"] for c in out} == set(CASE_IDS)
-    assert all(set(c) == {"id", "title", "subtitle", "as_of", "has_replay"} for c in out)
+    assert all(set(c) == {"id", "title", "subtitle", "as_of", "has_replay", "verdict"} for c in out)
     (tmp_path / "backtest_bt_cocoa_2024.jsonl").write_text("{}\n")
     assert {c["id"]: c["has_replay"] for c in bt.list_cases(replays=tmp_path)}["bt_cocoa_2024"] is True
     with pytest.raises(KeyError):
         bt.load_case("../secrets")
+
+
+def test_recorded_verdict_reads_the_recording():
+    v = bt.recorded_verdict("bt_tariff_2025")
+    assert v and v["beat_do_nothing"] is False and v["real_usd"] < 0 < v["said_usd"] and v["rank"] <= v["n_plans"]
+    assert bt.recorded_verdict("bt_nope") is None
 
 
 # ---------------------------------------------------------------- as-of news filter
