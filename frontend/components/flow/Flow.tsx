@@ -641,7 +641,7 @@ export function Flow() {
           {!up && s.backtests.length > 0 && (
             <div className="bt-ledger" id="real-cases">
               <h2>We tested it on the past</h2>
-              <p>We replay a past date with only the news from before it, then score the advice against what really happened.</p>
+              <p>We replay a past date with only the news from before it, then score the advice against what really happened. We show the misses too.</p>
               <ul>
                 {s.backtests.map((b) => {
                   const v = b.verdict;
@@ -666,8 +666,11 @@ export function Flow() {
                               <em>ranked {v.rank} of {v.n_plans}</em>
                             </span>
                             <span className={`bt-mark ${v.beat_do_nothing ? "gain" : "loss"}`} aria-label={v.beat_do_nothing ? "Beat doing nothing" : "Lost to doing nothing"}>
-                              {v.beat_do_nothing ? "✓" : "✗"}
+                              {v.beat_do_nothing ? "Right" : "Missed"}
                             </span>
+                            {!v.beat_do_nothing && (
+                              <span className="bt-miss">Best bet on the news known that day. The real path went another way, and that happens.</span>
+                            )}
                           </>
                         ) : (
                           <span className="bt-cell bt-open">Replay this date →</span>
@@ -677,7 +680,7 @@ export function Flow() {
                   );
                 })}
               </ul>
-              <small>Click a row to replay it. Checked means it beat doing nothing on the real path.</small>
+              <small>Click a row to replay it. “Right” means the advice beat doing nothing on the real path. No advice is right every time.</small>
             </div>
           )}
           {!up && s.examples.length > 0 && (

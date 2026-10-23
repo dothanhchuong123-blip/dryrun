@@ -311,7 +311,7 @@ body .fl-tip .fl-sl i.b, body .fl-tip .fl-sk i.b { background: repeating-linear-
 .fl .bt-ledger > small { display: block; margin-top: 8px; font: 11.5px var(--mono); color: var(--fl-ink-3); }
 .fl .bt-ledger ul { list-style: none; margin: 0; padding: 0; border-top: 2px dashed var(--fl-line-2); }
 .fl .bt-ledger li { border-bottom: 2px dashed var(--fl-line-2); }
-.fl .bt-row { display: grid; grid-template-columns: auto minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 1.1fr) 32px; align-items: center; gap: 6px 16px; width: 100%; padding: 12px 6px; text-align: left; font: inherit; color: var(--fl-ink); background: transparent; border: 0; cursor: pointer; }
+.fl .bt-row { display: grid; grid-template-columns: auto minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 1.1fr) auto; align-items: center; gap: 6px 16px; width: 100%; padding: 12px 6px; text-align: left; font: inherit; color: var(--fl-ink); background: transparent; border: 0; cursor: pointer; }
 .fl .bt-row:hover { background: var(--fl-sunk); }
 .fl .bt-what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .fl .bt-what b { font-size: 14.5px; font-weight: 600; }
@@ -320,13 +320,14 @@ body .fl-tip .fl-sl i.b, body .fl-tip .fl-sk i.b { background: repeating-linear-
 .fl .bt-cell small { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fl-ink-3); }
 .fl .bt-cell em { font-style: normal; font-size: 11.5px; color: var(--fl-ink-3); }
 .fl .bt-cell .gain { color: var(--fl-gain); font-weight: 700; }
-.fl .bt-cell .loss { color: var(--fl-loss); font-weight: 700; }
+.fl .bt-cell .loss { color: var(--fl-amber-ink); font-weight: 500; }
 .fl .bt-open { grid-column: 3 / -1; color: var(--fl-accent-ink); font-weight: 600; }
-.fl .bt-mark { display: grid; place-items: center; width: 28px; height: 28px; font: 700 17px/1 var(--mono); color: var(--fl-on-solid); }
-.fl .bt-mark.gain { background: var(--fl-gain-bar); }
-.fl .bt-mark.loss { background: var(--fl-loss-bar); }
+.fl .bt-mark { justify-self: end; padding: 1px 7px; font: 600 11px var(--mono); letter-spacing: 0.04em; white-space: nowrap; border: 1px dashed currentColor; }
+.fl .bt-mark.gain { color: var(--fl-gain); }
+.fl .bt-mark.loss { color: var(--fl-amber-ink); }
+.fl .bt-miss { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.45; color: var(--fl-ink-3); }
 @media (max-width: 720px) {
-  .fl .bt-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px; }
+  .fl .bt-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
   .fl .bt-row .bt-chip { grid-column: 1 / 3; }
   .fl .bt-what { grid-column: 1 / -1; }
   .fl .bt-open { grid-column: 1 / -1; }
