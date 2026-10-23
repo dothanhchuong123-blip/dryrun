@@ -140,7 +140,7 @@ function useEasedHeight() {
   return { outer, inner };
 }
 
-const BT_PREVIEW = 3;
+const BT_PREVIEW = 4;
 
 export function Flow() {
   const s = useMarketStore();
