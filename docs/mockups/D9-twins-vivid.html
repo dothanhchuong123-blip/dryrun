@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D9 Vivid Twins</title>
+<!-- D9: answer-page twin worlds, made vivid. Ideas 1-3: the switchers glow, coins fill a cash jar, the oil news drives a truck into the scene.
+     Static mockup: a scripted 24-week run, no backend. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1c1a17; --card: #24211d; --ink: #f2eee6; --ink-2: #c9c2b5; --ink-3: #8f887b; --line: #3a362f;
+    --hard: #0b0a09; --field: #2f3bb0; --field-ink: #141c70; --you: #6f7cff; --rival: #d9822b; --none: #6b665c;
+    --gain: #5fd08a; --loss: #ff7a6b; --gold: #ffd23f; --flash: #ffe066;
+    --mono: "JetBrains Mono", ui-monospace, monospace; --serif: "Instrument Serif", Georgia, serif; --sans: Inter, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 16px 48px; }
+  .over { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--ink-3); }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4vw, 44px); margin: 6px 0 4px; }
+  .lede { color: var(--ink-2); max-width: 760px; margin: 0 0 22px; line-height: 1.5; }
+
+  .head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .head h2 { font-family: var(--serif); font-weight: 400; font-size: 30px; margin: 0; }
+  .tags { display: flex; gap: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; }
+  .tags span { padding: 4px 9px; border: 2px solid var(--hard); background: var(--card); }
+  .tags .gap b { color: var(--gain); }
+  .tags .gap.neg b { color: var(--loss); }
+
+  /* the news ticker that both worlds share */
+  .news { display: flex; align-items: center; gap: 10px; border: 2px solid var(--hard); background: #3a1512; color: #ffd6cf; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; padding: 6px 10px; margin-bottom: 14px; overflow: hidden; }
+  .news .lbl { background: var(--loss); color: #200; padding: 2px 6px; font-weight: 700; flex: none; }
+  .news .clip { overflow: hidden; flex: 1; min-width: 0; }
+  .news .roll { display: inline-block; white-space: nowrap; animation: roll 18s linear infinite; }
+  @keyframes roll { from { transform: translateX(40%); } to { transform: translateX(-100%); } }
+
+  .twins { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 760px) { .twins { grid-template-columns: 1fr; } }
+  .tag { display: inline-block; padding: 3px 8px; background: var(--none); color: #fff; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; }
+  .plan .tag { background: var(--you); }
+  .box { position: relative; border: 2px solid var(--hard); background: var(--field); overflow: hidden; }
+  canvas { display: block; width: 100%; image-rendering: pixelated; }
+  .ov { position: absolute; pointer-events: none; transform: translate(-50%, -100%); }
+  .board { background: #111; color: #fff; border: 2px solid var(--hard); outline: 1px solid #555; padding: 2px 8px 3px; text-align: center; line-height: 1.1; white-space: nowrap; }
+  .board small { display: block; font-family: var(--mono); font-size: 8.5px; letter-spacing: .1em; color: #bbb; }
+  .board b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .jarlbl { transform: translate(-50%, 0); font-family: var(--mono); font-weight: 700; font-size: 12px; color: var(--gold); text-shadow: 1px 1px 0 var(--hard); white-space: nowrap; }
+  .jarlbl small { display: block; font-weight: 400; font-size: 8.5px; letter-spacing: .1em; color: #fff; opacity: .8; text-align: center; }
+  .gauge { transform: none; left: 6px; top: 6px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); border: 1px solid #000; padding: 3px 6px; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: #fff; }
+  .gauge .bars { display: flex; gap: 1px; }
+  .gauge .bars i { width: 4px; height: 8px; background: rgba(255,255,255,.2); }
+  .gauge .bars i.on { background: var(--loss); }
+  .plan .gauge .bars i.on { background: var(--gain); }
+  .gauge em { font-style: normal; color: var(--loss); font-weight: 700; }
+  .plan .gauge em { color: var(--gain); }
+  .trucktag { font-family: var(--mono); font-weight: 700; font-size: 10px; letter-spacing: .06em; padding: 1px 5px; border: 1px solid var(--hard); white-space: nowrap; transition: opacity .2s; }
+  .trucktag.bad { background: var(--loss); color: #200; }
+  .trucktag.ok { background: var(--gain); color: #032; }
+
+  .count { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 8px; font-size: 15px; color: var(--ink-2); }
+  .count i { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--hard); margin-right: 6px; vertical-align: -1px; }
+  .count b { color: var(--ink); }
+  .count .won { color: var(--flash); }
+
+  /* the cash race under both worlds */
+  .race { margin-top: 18px; border: 2px solid var(--hard); background: var(--card); padding: 12px 14px; display: grid; gap: 8px; }
+  .row { display: grid; grid-template-columns: 110px 1fr 80px; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; }
+  .row .bar { height: 14px; background: #2e2a24; position: relative; }
+  .row .bar i { position: absolute; inset: 0 auto 0 0; background: var(--none); transition: width .3s steps(4); }
+  .row.p .bar i { background: var(--gold); }
+  .row b { text-align: right; font-variant-numeric: tabular-nums; }
+  .foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
+  .foot b { color: var(--ink); }
+  button { font: inherit; font-family: var(--sans); font-size: 15px; background: var(--card); color: var(--ink); border: 2px solid var(--hard); box-shadow: 3px 3px 0 var(--hard); padding: 8px 14px; cursor: pointer; }
+  button:active { transform: translate(3px, 3px); box-shadow: none; }
+  .notes { margin-top: 30px; border-top: 1px dashed var(--line); padding-top: 16px; color: var(--ink-2); font-size: 14px; line-height: 1.6; }
+  .notes b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="over">D9 · MOCKUP · ANSWER PAGE · IDEAS 1–3</div>
+  <h1>Vivid twin worlds</h1>
+  <p class="lede">The same Leeds chippy run, made readable at a glance. <b>1</b> The few shoppers the plan wins glow yellow and leave a trail. <b>2</b> Every sale drops coins into a cash jar, and both jars use one scale. <b>3</b> The oil news drives a fuel truck into each world: it costs more in "Do nothing" and the price is locked with the plan.</p>
+
+  <div class="head">
+    <h2>One run, two futures</h2>
+    <div class="tags"><span id="wk">WEEK 1 / 24</span><span class="gap" id="gapTag">GAP <b>$0</b></span></div>
+  </div>
+  <div class="news"><span class="lbl">TODAY'S NEWS</span><span class="clip"><span class="roll">OIL +22% · Frying oil and diesel up across West Yorkshire · Suppliers warn of surcharges on every delivery · OIL +22%</span></span></div>
+
+  <div class="twins">
+    <figure class="none" style="margin:0"><figcaption class="tag">DO NOTHING</figcaption><div class="box" id="boxA"></div>
+      <div class="count"><span><i style="background:#fff"></i>You <b data-s="0">16%</b></span><span><i style="background:var(--rival)"></i>Rival <b data-s="1">44%</b></span><span><i style="background:var(--none)"></i>Not buying <b data-s="2">40%</b></span></div>
+    </figure>
+    <figure class="plan" style="margin:0"><figcaption class="tag">WITH THE PLAN · LOCK SUPPLY + PRICE +4%</figcaption><div class="box" id="boxB"></div>
+      <div class="count"><span><i style="background:#fff"></i>You <b data-s="0">16%</b></span><span><i style="background:var(--rival)"></i>Rival <b data-s="1">44%</b></span><span><i style="background:var(--none)"></i>Not buying <b data-s="2">40%</b></span><span class="won"><i style="background:var(--flash)"></i>Won by the plan <b class="won" data-won>0</b></span></div>
+    </figure>
+  </div>
+
+  <div class="race">
+    <div class="over">CASH SO FAR · THIS RUN</div>
+    <div class="row"><span>Do nothing</span><div class="bar"><i id="barA" style="width:0"></i></div><b id="cashA">$0</b></div>
+    <div class="row p"><span>With the plan</span><div class="bar"><i id="barB" style="width:0"></i></div><b id="cashB">$0</b></div>
+  </div>
+
+  <div class="foot"><span>Oil +22% (today's news). One sample run · the average of 1,000 runs is <b>+$22.8k</b></span><span><button id="again">↻ Replay</button> <button>Watch full run ▸</button></span></div>
+
+  <div class="notes">
+    <b>What's new vs today:</b> the rest of the crowd is dimmed so the switchers stand out. In "Do nothing" the same shoppers have a hollow yellow ring, so you can see who you'd lose. Coins fly from the door to the jar every week. Both jars and the race bars use the same scale, so the gap is something you can see. The truck comes every 8 weeks, and its tag tells the news story. Everything here is drawn from the tick fields we already have (<code>shares</code>, <code>cum_profit</code>, <code>in_transit</code>, <code>price</code>), with no new backend data.
+  </div>
+</div>
+
+<script>
+(() => {
+  const W = 240, H = 140, P = 3, WEEKS = 24, WEEK_MS = 900, FRAME = 40, NC = 60;
+  const FIELD = "#2f3bb0", FIELD_INK = "#141c70", RIVAL = "#d9822b", GOLD = "#ffd23f", FLASH = "#ffe066";
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- the scripted run (stands in for the replay stream) ----
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const run = { A: [], B: [] };
+  let cA = 0, cB = 0;
+  for (let w = 0; w < WEEKS; w++) {
+    const t = Math.min(1, w / 10);
+    cA += 2.0 - 0.03 * w;
+    cB += w < 3 ? 0.5 : 2.9; // locking supply costs up front, then pays
+    run.A.push({ shares: [0.16, 0.44, 0.40], cum: cA, price: [13.0, 13.26 + 0.01 * w], truck: w % 8 === 1 });
+    run.B.push({ shares: [lerp(0.16, 0.205, t), lerp(0.44, 0.43, t), lerp(0.40, 0.365, t)], cum: cB, price: [13.52, 13.79], truck: w % 8 === 1 });
+  }
+  const CASH_MAX = Math.max(cA, cB) * 1.05;
+  const money = (k) => `${k < 0 ? "−" : ""}$${Math.abs(k).toFixed(1)}k`;
+
+  // ---- the same 60 people in both worlds (stratified rank, as in TwinScene) ----
+  function rng(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const rnd = rng(20261020);
+  const perm = Array.from({ length: NC }, (_, i) => i);
+  for (let i = NC - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
+  const PEOPLE = perm.map((p) => { const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()); return { rank: (p + 0.5) / NC, u: Math.cos(a) * r, v: Math.sin(a) * r }; });
+  const groupOf = (rank, s) => (rank < s[0] ? 0 : rank < s[0] + s[1] ? 1 : 2);
+  const SHOP_X = [62, 180], SHOP_TOP = 36, ROAD = 126;
+  const spot = (g, p) => g === 0 ? [62 + p.u * 30, 92 + p.v * 14] : g === 1 ? [180 + p.u * 34, 92 + p.v * 16] : [121 + p.u * 22, 100 + p.v * 20];
+
+  // tiny pixel glyphs for the "+1" pops
+  const GLYPH = { "+": ["000", "010", "111", "010", "000"], "1": ["010", "110", "010", "010", "111"] };
+
+  function makeWorld(boxId, key) {
+    const box = document.getElementById(boxId);
+    const cv = document.createElement("canvas");
+    cv.width = W * P; cv.height = H * P;
+    box.appendChild(cv);
+    const ctx = cv.getContext("2d");
+    ctx.scale(P, P);
+    const ov = (cls, x, y, html) => { const d = document.createElement("div"); d.className = "ov " + cls; d.style.left = (x / W) * 100 + "%"; d.style.top = (y / H) * 100 + "%"; d.innerHTML = html; box.appendChild(d); return d; };
+    const boards = [ov("board", SHOP_X[0], SHOP_TOP - 4, "<small>LEEDS FISH &amp; CHIP</small><b>$13.00</b>"), ov("board", SHOP_X[1], SHOP_TOP - 4, "<small>CHIPPY DOWN THE ROAD</small><b>$13.26</b>")];
+    const jarLbl = ov("jarlbl", 20, 72, "<small>CASH</small>$0.0k");
+    const gauge = ov("gauge", 0, 0, `OIL <span class="bars">${"<i></i>".repeat(8)}</span> <em>${key === "A" ? "+22%" : "LOCKED"}</em>`);
+    const truckTag = ov("trucktag " + (key === "A" ? "bad" : "ok"), -50, ROAD - 12, key === "A" ? "FUEL +22%" : "PRICE LOCKED");
+    truckTag.style.opacity = 0;
+
+    const people = PEOPLE.map((p) => { const [x, y] = spot(0, p); return { ...p, g: 0, x, y, tx: x, ty: y, trail: [], sw: false, popped: false }; });
+    const coins = [], pops = [], steam = [];
+    const truck = { x: -60, phase: "off", wait: 0 };
+    let crates = 6, cash = 0, cashShown = 0, frame = 0;
+
+    function setWeek(w, other) {
+      const d = run[key][w], o = run[other][w];
+      people.forEach((p) => {
+        const g = groupOf(p.rank, d.shares), go = groupOf(p.rank, o.shares);
+        const was = p.g;
+        p.g = g;
+        p.sw = g !== go && (key === "B" ? g === 0 : go === 0); // buys from you in the plan world only
+        if (g !== was || w === 0) { const [x, y] = spot(g, p); p.tx = Math.round(x); p.ty = Math.round(y); }
+        if (w === 0) { p.x = p.tx; p.y = p.ty; p.trail = []; p.popped = false; }
+      });
+      boards[0].querySelector("b").textContent = "$" + d.price[0].toFixed(2);
+      boards[1].querySelector("b").textContent = "$" + d.price[1].toFixed(2);
+      // coins: one per ~$400 earned this week, staggered from the door to the jar
+      const earned = w === 0 ? d.cum : d.cum - run[key][w - 1].cum;
+      const n = Math.max(1, Math.round(earned / 0.4));
+      for (let i = 0; i < n; i++) coins.push({ t: -i * 0.12, v: earned / n });
+      if (d.truck && truck.phase === "off") { truck.x = W + 30; truck.phase = "in"; }
+      crates = Math.max(1, crates - 1);
+      const bars = gauge.querySelectorAll("i");
+      const lit = key === "A" ? Math.min(8, 3 + Math.floor(w / 3)) : 3;
+      bars.forEach((b, i) => b.classList.toggle("on", i < lit));
+      if (w === 0) { cash = 0; cashShown = 0; coins.length = 0; crates = 6; }
+    }
+
+    const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
+
+    function drawShop(cx, color, chimney) {
+      const x = cx - 18, top = SHOP_TOP;
+      px(x, top + 8, 36, 18, "#fff");
+      for (let i = 0; i < 6; i++) px(x - 2 + i * 6.66, top + 2, 7, 6, i % 2 ? "#fff" : color);
+      px(x + 4, top + 12, 12, 8, color);
+      px(x + 22, top + 14, 8, 12, color);
+      if (chimney) px(x + 30, top - 4, 4, 6, "#9aa0c8");
+    }
+
+    function draw() {
+      px(0, 0, W, H, FIELD);
+      ctx.fillStyle = "rgba(255,255,255,.08)";
+      for (let i = 0; i < 70; i++) ctx.fillRect((i * 53 + 7) % W, (i * 29 + 11) % (ROAD - 4), 1, 1);
+      // road
+      px(0, ROAD, W, H - ROAD, "#1a1f5e");
+      for (let x = (frame * 0) % 12; x < W; x += 12) px(x, ROAD + 7, 6, 1, "rgba(255,255,255,.35)");
+      drawShop(SHOP_X[0], FIELD_INK, true);
+      drawShop(SHOP_X[1], RIVAL, false);
+      // fryer steam
+      if (!reduce && frame % 5 === 0) steam.push({ x: SHOP_X[0] + 14, y: SHOP_TOP - 6, a: 1 });
+      for (let i = steam.length - 1; i >= 0; i--) { const s = steam[i]; s.y -= 0.6; s.x += Math.sin((s.y + frame) / 4) * 0.3; s.a -= 0.04; if (s.a <= 0) { steam.splice(i, 1); continue; } px(s.x, s.y, 2, 2, `rgba(255,255,255,${s.a * 0.5})`); }
+      // stock crates beside the shop
+      for (let k = 0; k < Math.min(crates, 8); k++) px(SHOP_X[0] + 22 + (k % 4) * 4, SHOP_TOP + 22 - Math.floor(k / 4) * 4, 3, 3, "#e69a4e");
+      // cash jar (shared scale across worlds)
+      const jx = 12, jy = 34, jw = 16, jh = 34;
+      const lvl = Math.round((cashShown / CASH_MAX) * (jh - 3));
+      px(jx, jy + jh - 1 - lvl, jw, lvl, GOLD);
+      for (let r = 0; r < lvl; r += 3) px(jx + ((r / 3) % 2 ? 2 : 6), jy + jh - 2 - r, 6, 1, "#b8860b");
+      ctx.fillStyle = "rgba(255,255,255,.85)";
+      ctx.fillRect(jx - 1, jy, 1, jh); ctx.fillRect(jx + jw, jy, 1, jh); ctx.fillRect(jx - 1, jy + jh, jw + 2, 1);
+      ctx.fillRect(jx - 2, jy - 1, 3, 1); ctx.fillRect(jx + jw - 1, jy - 1, 3, 1);
+      px(jx + 2, jy + 3, 1, jh - 8, "rgba(255,255,255,.35)");
+      // people: dim the crowd, light up the switchers
+      for (const p of people) {
+        const x = Math.round(p.x), y = Math.round(p.y);
+        const moving = x !== p.tx || y !== p.ty;
+        if (p.sw && key === "B") {
+          p.trail.forEach((t, i) => px(t[0] + 1, t[1] + 1, 1, 1, `rgba(255,224,102,${(i + 1) / (p.trail.length + 2) * 0.7})`));
+          px(x - 1, y - 1, 5, 6, "rgba(255,224,102,.28)");
+        }
+        let c = p.g === 2 ? "rgba(255,255,255,.22)" : p.g === 1 ? "rgba(245,162,93,.6)" : "rgba(255,255,255,.7)";
+        if (p.sw && key === "B") c = FLASH;
+        px(x + 1, y, 1, 1, c); px(x, y + 1, 3, 2, c);
+        const step = moving ? Math.floor(frame / 2) % 2 : 0;
+        px(x + (step ? 0 : 2), y + 3, 1, 1, c); px(x + 1, y + 3, 1, 1, c);
+        if (p.sw && key === "A") { // the one you'd lose: hollow ring
+          ctx.fillStyle = FLASH;
+          ctx.fillRect(x - 2, y - 2, 7, 1); ctx.fillRect(x - 2, y + 5, 7, 1); ctx.fillRect(x - 2, y - 2, 1, 8); ctx.fillRect(x + 4, y - 2, 1, 8);
+        }
+      }
+      // truck
+      if (truck.phase !== "off") {
+        const tx = Math.round(truck.x), ty = ROAD + 1;
+        px(tx, ty, 22, 9, "#e8e8e8");
+        px(tx - 7, ty + 2, 7, 7, key === "A" ? "#ff7a6b" : "#5fd08a");
+        px(tx - 6, ty + 3, 4, 3, "#9fd3ff");
+        px(tx + 2, ty + 2, 18, 1, "#bbb");
+        px(tx - 4, ty + 9, 4, 3, "#111"); px(tx + 14, ty + 9, 4, 3, "#111");
+        if (key === "A" && frame % 6 < 3) px(tx + 23, ty + 6, 3, 2, "rgba(40,40,40,.8)");
+      }
+      // coins in flight: door -> jar, a little arc
+      for (const c of coins) {
+        if (c.t < 0 || c.t > 1) continue;
+        const sx = SHOP_X[0] - 4, sy = SHOP_TOP + 14, ex = 20, ey = 34;
+        const x = lerp(sx, ex, c.t), y = lerp(sy, ey, c.t) - Math.sin(c.t * Math.PI) * 18;
+        px(x, y, 3, 3, GOLD); px(x, y, 1, 1, "#fff8c8");
+      }
+      // "+1" pops over your shop
+      for (const p of pops) {
+        const a = 1 - p.t; if (a <= 0) continue;
+        const ox = SHOP_X[0] - 4, oy = SHOP_TOP - 14 - p.t * 14;
+        ctx.fillStyle = `rgba(255,224,102,${a})`;
+        ["+", "1"].forEach((ch, k) => GLYPH[ch].forEach((row, r) => [...row].forEach((b, cc) => { if (b === "1") ctx.fillRect(ox + k * 4 + cc, Math.round(oy) + r, 1, 1); })));
+      }
+    }
+
+    function step() {
+      frame++;
+      for (const p of people) {
+        const dx = p.tx - p.x, dy = p.ty - p.y;
+        if (dx === 0 && dy === 0) { if (p.trail.length) p.trail.shift(); continue; }
+        if (p.sw) { p.trail.push([Math.round(p.x), Math.round(p.y)]); if (p.trail.length > 10) p.trail.shift(); }
+        p.x += Math.abs(dx) <= 1.5 ? dx : Math.sign(dx) * 1.5;
+        p.y += Math.abs(dy) <= 1.5 ? dy : Math.sign(dy) * 1.5;
+        if (p.x === p.tx && p.y === p.ty && p.sw && p.g === 0 && key === "B" && !p.popped) { p.popped = true; pops.push({ t: 0 }); }
+      }
+      for (const c of coins) { const was = c.t; c.t += 0.05; if (was < 1 && c.t >= 1) cash += c.v; }
+      for (let i = coins.length - 1; i >= 0; i--) if (coins[i].t > 1.05) coins.splice(i, 1);
+      for (let i = pops.length - 1; i >= 0; i--) { pops[i].t += 0.025; if (pops[i].t > 1) pops.splice(i, 1); }
+      cashShown += (cash - cashShown) * 0.25;
+      if (truck.phase === "in") { truck.x -= 2; if (truck.x <= SHOP_X[0] + 6) { truck.phase = "wait"; truck.wait = 20; } }
+      else if (truck.phase === "wait") { if (--truck.wait === 0) { crates = 8; truck.phase = "out"; } }
+      else if (truck.phase === "out") { truck.x -= 2; if (truck.x < -40) truck.phase = "off"; }
+      truckTag.style.left = ((truck.x + 4) / W) * 100 + "%";
+      truckTag.style.opacity = truck.phase === "off" ? 0 : 1;
+      jarLbl.innerHTML = `<small>CASH</small>${money(cashShown)}`;
+      draw();
+      return { cash: cashShown, won: people.filter((p) => p.sw && p.g === 0).length };
+    }
+    return { setWeek, step, box };
+  }
+
+  const A = makeWorld("boxA", "A"), B = makeWorld("boxB", "B");
+  let week = 0, last = 0, wkT = 0, raf;
+  const $ = (id) => document.getElementById(id);
+  function showWeek(w) {
+    A.setWeek(w, "B"); B.setWeek(w, "A");
+    $("wk").textContent = `WEEK ${w + 1} / ${WEEKS}`;
+    [["boxA", run.A[w]], ["boxB", run.B[w]]].forEach(([id, d]) => {
+      const fig = $(id).parentElement;
+      fig.querySelectorAll("[data-s]").forEach((b) => (b.textContent = Math.round(d.shares[+b.dataset.s] * 100) + "%"));
+    });
+  }
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    if (now - last < FRAME) return;
+    last = now;
+    wkT += FRAME;
+    if (wkT >= WEEK_MS && week < WEEKS - 1) { wkT = 0; week++; showWeek(week); }
+    const a = A.step(), b = B.step();
+    const gap = b.cash - a.cash;
+    $("gapTag").className = "gap" + (gap < 0 ? " neg" : "");
+    $("gapTag").innerHTML = `GAP <b>${gap >= 0 ? "+" : ""}${money(gap)}</b>`;
+    $("cashA").textContent = money(a.cash); $("cashB").textContent = money(b.cash);
+    $("barA").style.width = (a.cash / CASH_MAX) * 100 + "%"; $("barB").style.width = (b.cash / CASH_MAX) * 100 + "%";
+    document.querySelector("[data-won]").textContent = b.won;
+  }
+  function start() { cancelAnimationFrame(raf); week = 0; wkT = 0; showWeek(0); raf = requestAnimationFrame(frame); }
+  $("again").onclick = start;
+  start();
+})();
+</script>
+</body>
+</html>

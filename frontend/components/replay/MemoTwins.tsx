@@ -1,13 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { TickEventData } from "../../lib/events";
+import { leanOf, moodOf, shopperOf } from "../../lib/faces";
 import { reducedMotion } from "../../lib/follow";
 import { formatDelta } from "../../lib/format";
 import { cellKey, useMarketStore } from "../../lib/store";
 import { api, connectReplayStream } from "../../lib/stream";
 import { TwinScene } from "./TwinScene";
 import "./replay.css";
+
+const HOLD_MS = 1400; // extra pause on a week with a big moment
+const VOICE_WEEKS = 4; // a new shopper speaks every 4 weeks, for 3 of them
+const soldOut = (t: TickEventData) => t.unmet[0] > 0.5 || t.cover_weeks[0] < 0.05;
 
 const money1 = (x: number) => `${x < 0 ? "−" : ""}$${(Math.abs(x) / 1000).toFixed(1)}k`;
 
@@ -23,6 +28,8 @@ export function MemoTwins({ planName, shockId, onFull }: { planName: string; sho
   const shockLabel = useMarketStore((s) => s.shocks.find((x) => x.id === shockId)?.label ?? null);
   const cell = useMarketStore((s) => s.cells[cellKey(planName, shockId)]);
   const profile = useMarketStore((s) => s.profile);
+  const crowd = useMarketStore((s) => s.crowdByPlan[planName]);
+  const headline = useMarketStore((s) => (s.news.find((n) => n.kind === "supply" && n.applied) ?? s.news.find((n) => n.kind === "supply"))?.title ?? null);
 
   const root = useRef<HTMLElement>(null);
   const [rows, setRows] = useState<{ u1: TickEventData[]; u2: TickEventData[] }>({ u1: [], u2: [] });
@@ -97,20 +104,6 @@ export function MemoTwins({ planName, shockId, onFull }: { planName: string; sho
     if (still && done && last >= 0) setWeek(last);
   }, [still, done, last]);
 
-  // the clock: one week per beat while on screen; stops on the end card
-  const firstTick = rows.u1.length > 0;
-  useEffect(() => {
-    if (still || !firstTick || !onScreen || atEnd) {
-      setPlaying(false);
-      return;
-    }
-    setPlaying(true);
-    const t = setInterval(() => {
-      setWeek((w) => (w + 1 < live.current.n ? w + 1 : w));
-    }, weekMs);
-    return () => clearInterval(t);
-  }, [still, firstTick, onScreen, atEnd, weekMs]);
-
   const play = useCallback(() => {
     setWeek(0);
     setPlaying(true);
@@ -138,8 +131,68 @@ export function MemoTwins({ planName, shockId, onFull }: { planName: string; sho
   }
   const neverPays = done && dips && gaps[gaps.length - 1] < 0;
   const early = !!(u1 && u2) && gap < 0 && (payback === null || week < payback);
+  // one cash scale for both jars and the race: the biggest cumulative profit seen so far in either world
+  let cashMax = 1;
+  for (let i = 0; i < rows.u1.length; i++) cashMax = Math.max(cashMax, rows.u1[i].cum_profit[0], rows.u2[i].cum_profit[0]);
+  cashMax *= 1.05;
+  const bar = (x: number) => `${Math.max(0, Math.min(1, x / cashMax)) * 100}%`;
   const you = profile?.business_name ?? "You";
   const rival = profile?.rival_name ?? "Rival";
+
+  // big moments (from the whole recorded run): the clock holds on these weeks and a banner names them
+  const moments = useMemo(() => {
+    const m = new Map<number, string[]>();
+    const add = (w: number, text: string) => m.set(w, [...(m.get(w) ?? []), text]);
+    const { u1: a, u2: b } = rows;
+    const first = (test: (i: number) => boolean) => {
+      for (let i = 1; i < a.length; i++) if (test(i)) return i;
+      return -1;
+    };
+    const price = first((i) => Math.abs(a[i].price[0] / a[i - 1].price[0] - 1) > 0.005);
+    if (price > 0) add(price, `Price ${a[price].price[0] > a[price - 1].price[0] ? "up" : "down"} to $${a[price].price[0].toFixed(2)}`);
+    const lands = first((i) => a[i].in_transit[0] < a[i - 1].in_transit[0] - 0.5);
+    if (lands > 0) add(lands, "Stock lands");
+    const outB = first((i) => soldOut(b[i]) && !soldOut(b[i - 1]));
+    if (outB > 0) add(outB, "Do nothing sells out");
+    const outA = first((i) => soldOut(a[i]) && !soldOut(a[i - 1]));
+    if (outA > 0) add(outA, "The plan sells out");
+    return m;
+  }, [rows]);
+  const moment = [...(moments.get(week) ?? []), ...(payback !== null && week === payback ? ["Paid back"] : [])];
+
+  // the clock: one week per beat while on screen, holding on big moments; stops on the end card
+  const firstTick = rows.u1.length > 0;
+  const holdNow = moment.length > 0;
+  useEffect(() => {
+    if (still || !firstTick || !onScreen || atEnd) {
+      setPlaying(false);
+      return;
+    }
+    setPlaying(true);
+    const t = setTimeout(() => {
+      setWeek((w) => (w + 1 < live.current.n ? w + 1 : w));
+    }, weekMs + (holdNow ? HOLD_MS : 0));
+    return () => clearTimeout(t);
+  }, [still, firstTick, onScreen, atEnd, weekMs, week, rows.u1.length, holdNow]);
+
+
+  // the plan's shoppers speak in turn, the most decided first; Nemotron's "Firm A/B" become the real names
+  const voices = useMemo(
+    () =>
+      [...(crowd ?? [])]
+        .filter((c) => c.bubble?.trim())
+        .sort((x, y) => Math.abs(y.mu[0]) - Math.abs(x.mu[0]))
+        .slice(0, 5)
+        .map((c) => ({
+          shopper: shopperOf(c),
+          mood: moodOf(c),
+          lean: leanOf(c),
+          text: c.bubble.replace(/\bfirm a\b/gi, you).replace(/\bfirm b\b/gi, rival),
+        })),
+    [crowd, you, rival],
+  );
+  const beat = Math.floor((week - 1) / VOICE_WEEKS);
+  const voice = !atEnd && week >= 1 && (week - 1) % VOICE_WEEKS < VOICE_WEEKS - 1 && voices.length ? voices[beat % voices.length] : null;
 
   if (failed) return null;
   return (
@@ -178,10 +231,40 @@ export function MemoTwins({ planName, shockId, onFull }: { planName: string; sho
           </div>
         </div>
       )}
-      <div className="rp-twins mt-twins">
-        <TwinScene tick={u2} title="DO NOTHING" kind="none" you={you} rival={rival} />
-        <TwinScene tick={u1} title="WITH THE PLAN" kind="plan" you={you} rival={rival} />
+      {shockLabel && (
+        <div className="mt-news">
+          <span className="lbl">THE NEWS</span>
+          <span className="clip">
+            <span className="roll">{headline ? `${shockLabel} · ${headline} · ${shockLabel}` : shockLabel}</span>
+          </span>
+        </div>
+      )}
+      <div className="mt-stage">
+        <div className="rp-twins mt-twins">
+          <TwinScene tick={u2} twin={u1} title="DO NOTHING" kind="none" you={you} rival={rival} cashMax={cashMax} baseCost={profile?.unit_cost} />
+          <TwinScene tick={u1} twin={u2} title="WITH THE PLAN" kind="plan" you={you} rival={rival} cashMax={cashMax} baseCost={profile?.unit_cost} voice={voice} />
+        </div>
+        {moment.length > 0 && (
+          <div key={week} className="mt-moment" role="status">
+            WEEK {week + 1} · {moment.join(" · ")}
+          </div>
+        )}
       </div>
+      {u1 && u2 && (
+        <div className="mt-race" aria-label="Cash so far in this run">
+          <div className="over">CASH SO FAR · THIS RUN</div>
+          <div className="mt-row">
+            <span>Do nothing</span>
+            <div className="bar"><i style={{ width: bar(u2.cum_profit[0]) }} /></div>
+            <b className={u2.cum_profit[0] < 0 ? "neg" : ""}>{money1(u2.cum_profit[0])}</b>
+          </div>
+          <div className="mt-row p">
+            <span>With the plan</span>
+            <div className="bar"><i style={{ width: bar(u1.cum_profit[0]) }} /></div>
+            <b className={u1.cum_profit[0] < 0 ? "neg" : ""}>{money1(u1.cum_profit[0])}</b>
+          </div>
+        </div>
+      )}
       <div className="mt-foot">
         <div className="mt-note">
           {shockLabel ? <span>{shockLabel}. </span> : null}
