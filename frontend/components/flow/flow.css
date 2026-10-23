@@ -406,3 +406,33 @@
 .bt-hind .fl-eng.long { display: inline; font-size: inherit; margin: 0; }
 .am-big .fl-eng.long { color: inherit; opacity: 0.85; font-size: 12px; }
 .am-big .fl-eng.long b { color: inherit; font: inherit; font-weight: 700; letter-spacing: normal; line-height: inherit; display: inline; }
+
+/* Test plans: three compact panels so the grid starts on the first screen */
+.fl-notes { margin: 8px 0 0; }
+.fl-notes summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--fl-accent-ink); list-style: none; width: fit-content; }
+.fl-notes summary::-webkit-details-marker { display: none; }
+.fl-notes summary::before { content: "▸ "; }
+.fl-notes[open] summary::before { content: "▾ "; }
+.fl-notes summary:hover { text-decoration: underline; }
+.fl-notes .fl-think { margin: 6px 0 0; max-height: 120px; }
+.fl-g3 { gap: 10px; }
+.fl-g3 > .fl-card { padding: 12px 14px; max-height: 236px; overflow-y: auto; overscroll-behavior: contain; }
+.fl-g3 .fl-ch { margin-bottom: 6px; gap: 8px; }
+.fl-g3 .fl-ch h2 { font-size: 14.5px; }
+.fl-g3 .fl-ch .fl-sub { margin-top: 2px; font-size: 12.5px; line-height: 1.4; }
+.fl-g3 .fl-log { gap: 4px; }
+.fl-g3 .fl-log li { font-size: 12.5px; line-height: 1.4; }
+.fl-g3 .fl-plans { margin-top: 8px; padding-top: 8px; gap: 3px; max-height: 84px; overflow-y: auto; }
+.fl-g3 .fl-plans li { font-size: 12.5px; }
+.fl-g3 .px-crowd { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px 4px; margin-top: 6px; }
+.fl-g3 .px-p .disc { max-width: 34px; }
+.fl-g3 .px-p .nm { margin-top: 2px; font-size: 10.5px; }
+.fl-g3 .ts-sum { margin: 0 0 4px; }
+.fl-g3 .px-said { margin-top: 8px; gap: 6px; }
+.fl-g3 .fl-hist { display: none; }
+.fl-g3 .fl-fan svg { height: 96px; }
+.fl-g3 .fl-simn { margin-top: 6px; }
+.fl-g3 .fl-simn b { font-size: 17px; }
+@media (max-width: 640px) {
+  .fl-g3 > .fl-card { max-height: 190px; }
+}

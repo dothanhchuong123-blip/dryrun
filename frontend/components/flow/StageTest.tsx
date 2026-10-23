@@ -70,13 +70,8 @@ function Analyst({ shown, active }: { shown: Shown; active: boolean }) {
         </div>
         <span className="fl-pill acc">{shown.done ? "Done" : `Round ${round + 1} of 3`}</span>
       </div>
-      {raw && (
-        <div className={`fl-think${typing && !shown.done ? " fl-caret" : ""}`} aria-label="The analyst's reasoning">
-          {tail}
-        </div>
-      )}
       <ol className="fl-log" aria-live="polite">
-        {vis.slice(-5).map((st) => (
+        {vis.slice(-3).map((st) => (
           <li key={st.seq} className={`k-${st.kind}`}>
             <span className="tg">{TAG[st.kind] ?? st.kind}</span>
             <span>{st.text}</span>
@@ -93,6 +88,14 @@ function Analyst({ shown, active }: { shown: Shown; active: boolean }) {
           </li>
         )}
       </ol>
+      {raw && (
+        <details className="fl-notes">
+          <summary>Show analyst notes</summary>
+          <div className={`fl-think${typing && !shown.done ? " fl-caret" : ""}`} aria-label="The analyst's raw notes">
+            {tail}
+          </div>
+        </details>
+      )}
       {shown.plans.size > 0 && (
         <ul className="fl-plans">
           {plans
