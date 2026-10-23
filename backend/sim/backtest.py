@@ -41,7 +41,7 @@ N_PATHS = 1000
 SWEEP_PATHS = 300
 SWEEP_TOP = 3
 REALIZED_ID = "realized"
-CASE_ID = re.compile(r"^(bt|ho)_[a-z0-9_]{1,40}$")  # ho_ = held-out cases (never listed in the app)
+CASE_ID = re.compile(r"^(bt|ho)_[a-z0-9_]{1,40}$")  # ho_ = the second set, held out until 2026-10-23, now listed too
 # The hindsight sweep (SPEC §15.12): price change % x start week x end week x extra stock weeks (placed in week 0).
 SWEEP_PRICES = (-5.0, 0.0, 3.0, 5.0, 8.0, 12.0)
 SWEEP_STARTS = (0, 2, 4)
@@ -122,7 +122,7 @@ def list_cases(directory: Path | None = None, replays: Path | None = None) -> li
     `verdict` is the recorded outcome (see `recorded_verdict`) or None; `hindsight` is the case's one-line "what went
     differently" (written after the fact, shown next to the verdict) or None."""
     out = []
-    for path in sorted((directory or CASES_DIR).glob("bt_*.json")):
+    for path in sorted([*(directory or CASES_DIR).glob("bt_*.json"), *(directory or CASES_DIR).glob("ho_*.json")]):
         case = json.loads(path.read_text(encoding="utf-8"))
         out.append({
             "id": case["id"], "title": case["title"], "subtitle": case.get("subtitle", ""), "as_of": case["as_of"],

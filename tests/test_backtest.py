@@ -97,7 +97,7 @@ def test_case_files_are_complete_and_do_not_spoil(case_id):
 
 def test_list_cases_shape(tmp_path):
     out = bt.list_cases(replays=tmp_path)
-    assert {c["id"] for c in out} == set(CASE_IDS)
+    assert {c["id"] for c in out} == set(CASE_IDS + HELD_OUT_IDS)
     assert all(set(c) == {"id", "title", "subtitle", "as_of", "has_replay", "verdict", "hindsight"} for c in out)
     (tmp_path / "backtest_bt_cocoa_2024.jsonl").write_text("{}\n")
     assert {c["id"]: c["has_replay"] for c in bt.list_cases(replays=tmp_path)}["bt_cocoa_2024"] is True
@@ -310,9 +310,11 @@ async def test_api_lists_backtests_and_replays_one(tmp_path, monkeypatch):
     app = make_app(tmp_path)
     async with client(app) as c:
         listed = (await c.get("/api/backtests")).json()
-        assert [x["id"] for x in listed] == ["bt_cocoa_2024", "bt_robusta_2024", "bt_eggs_2025", "bt_tariff_2025"]
+        assert [x["id"] for x in listed if x["id"].startswith("bt_")] == ["bt_cocoa_2024", "bt_robusta_2024", "bt_eggs_2025", "bt_tariff_2025"]
+        assert len(listed) == len(CASE_IDS + HELD_OUT_IDS)
         assert {x["id"]: x["has_replay"] for x in listed} == {
-            "bt_cocoa_2024": True, "bt_robusta_2024": False, "bt_eggs_2025": False, "bt_tariff_2025": False}
+            "bt_cocoa_2024": True, "bt_robusta_2024": False, "bt_eggs_2025": False, "bt_tariff_2025": False,
+            **{h: False for h in HELD_OUT_IDS}}
         assert (await c.post("/api/analyses", json={"backtest_id": "bt_robusta_2024"})).status_code == 409   # no recording
         assert (await c.post("/api/analyses", json={"backtest_id": "nope"})).status_code == 404
         r = await c.post("/api/analyses", json={"backtest_id": "bt_cocoa_2024", "mode": "live"})
@@ -366,14 +368,14 @@ def test_recordings_are_complete_and_consistent(case_id):
     assert [e["event"] for e in cell].count("tick") == 48 and cell[-1]["event"] == "replay_done"
 
 
-def test_all_four_cases_have_recordings():
+def test_every_listed_case_has_a_recording():
     assert all(c["has_replay"] for c in bt.list_cases())
 
 
-def test_held_out_cases_stay_out_of_the_app():
-    listed = {c["id"] for c in bt.list_cases()}
-    assert listed == set(CASE_IDS)
-    assert all(bt.load_case(h)["set"] == "held_out" for h in HELD_OUT_IDS)
+def test_every_case_is_listed_whatever_it_scored():
+    # the held-out set was listed on 2026-10-23 after a re-record at the current sentiment weight, all six whatever
+    # they scored; listing only the winners would be cherry-picking
+    assert {c["id"] for c in bt.list_cases()} == set(CASE_IDS + HELD_OUT_IDS)
 
 
 def test_supplier_caveat_only_when_a_tested_plan_switches():

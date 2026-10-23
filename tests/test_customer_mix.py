@@ -109,7 +109,8 @@ def test_backfilled_recordings_reproduce_their_engine_only_numbers():
     assert added > 0 and not misses
     recorded = [ln["data"] for ln in replay_load(path) if ln["event"] == "grid_cell"]
     redone = [ln["data"] for ln in lines if ln["event"] == "grid_cell"]
-    assert [c["engine_only_delta_usd"] for c in recorded] == [c["engine_only_delta_usd"] for c in redone]
+    # a live recording keeps full precision, the backfill rounds to cents
+    assert [c["engine_only_delta_usd"] for c in recorded] == pytest.approx([c["engine_only_delta_usd"] for c in redone], abs=0.01)
 
 
 def replay_load(path):

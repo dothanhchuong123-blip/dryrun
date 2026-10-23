@@ -52,7 +52,9 @@ const yearSpan = (isos: string[]) => {
 /** "2024-01-15" -> "15 January 2024" */
 const signedK = (n: number) => {
   const k = Math.abs(n) / 1000;
-  return `${n < 0 ? "−" : "+"}$${k >= 10 ? k.toFixed(0) : k.toFixed(1)}k`;
+  const sign = n < 0 ? "−" : "+";
+  if (Math.abs(n) < 950) return `${sign}$${Math.round(Math.abs(n))}`;   // "+$0.0k" hides a small result
+  return `${sign}$${k >= 10 ? k.toFixed(0) : k.toFixed(1)}k`;
 };
 const longDate = (iso: string) => `${Number(iso.slice(8, 10))} ${LONG_MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""} ${iso.slice(0, 4)}`;
 
@@ -641,7 +643,13 @@ export function Flow() {
           {!up && s.backtests.length > 0 && (
             <div className="bt-ledger" id="real-cases">
               <h2>We tested it on the past</h2>
-              <p>We replay a past date with only the news from before it, then score the advice against what really happened. We show the misses too.</p>
+              <p>We replay a past date with only the news from before it, then score the advice against what really happened. We show the misses too.
+                {(() => {
+                  const scored = s.backtests.filter((b) => b.verdict);
+                  const right = scored.filter((b) => b.verdict!.beat_do_nothing).length;
+                  return scored.length > 0 ? <> <strong>Right in {right} of {scored.length}.</strong></> : null;
+                })()}
+              </p>
               <ul>
                 {s.backtests.map((b) => {
                   const v = b.verdict;

@@ -55,7 +55,7 @@ function syncReplayFixtures() {
     if (fs.existsSync(casesDir)) {
       const cases = fs
         .readdirSync(casesDir)
-        .filter((f) => /^bt_.*\.json$/.test(f))
+        .filter((f) => /^(bt|ho)_.*\.json$/.test(f))
         .map((f) => JSON.parse(fs.readFileSync(path.join(casesDir, f), "utf8")))
         .map((c) => ({
           id: c.id,

@@ -100,3 +100,35 @@ Not re-recorded, still at 0.8 (they replay exactly and show "sim alone"):
 - coffee_hcmc, bt_eggs_2025 (not needed: same pick, small shift).
 
 Spend: $0.164 kept + $0.168 rolled back = **$0.33** (telemetry estimate; Nebius billed ~9% above our estimate so far).
+
+## Held-out set re-recorded at 0.05 and listed (2026-10-23, owner's OK)
+
+The owner asked for more real cases in the app. The six `ho_*` cases were the only other recordings, and they were
+still at 0.8, where shopper mood made almost every pick look like a big win. The rule was set before any re-record:
+**re-record all six at 0.05 and list every one of them, whatever it scores.** Listing only the winners would be
+cherry-picking. The app now lists all 10 cases (`list_cases` reads `bt_*` and `ho_*`), with a "Right in N of 10"
+tally. These six are no longer held out: the 0.05 weight was chosen on them, so treat their verdicts as in-sample.
+
+Same rules as above: `--record`, a run kept only if every Ultra and Super call succeeded, shopper dropouts allowed.
+
+| Case | Old pick (0.8): real path | New pick (0.05) | Real path vs Do nothing (sim alone) | Rank | Regret | Verdict |
+|---|---|---|---|---|---|---|
+| ho_arabica_2021 | Stock 1wk then raise 4% wk4: +$13.3k | 3% rise wk4 + 10% marketing | −$0.3k (−$0.4k) | 4/9 | $0.7k | Missed |
+| ho_cocoa_2025 | Stock 2w, raise 4% wk5: +$41.3k | Stock 2w, raise 2% at wk8 | +$1.7k (−$0.8k) | 1/9 | $0 | Right |
+| ho_palm_2022 | Staged: 1wk stock then +2% price: +$12.8k | Price +2% now | −$54 (−$133) | 3/9 | $225 | Missed |
+| ho_rice_2023 | Price +2% from week 3: +$7.6k | Price +3% wk2, marketing +5% now | −$99 (−$19) | 3/8 | $99 | Missed |
+| ho_wheat_2025 | Raise 3% + marketing 20%: +$36.7k | Stock 2w then raise 2% | +$3.1k (+$0.5k) | 1/9 | $0.4k | Right |
+| ho_sunflower_2022 | Raise price 5% now: +$21.0k | **not re-recorded** (3 tries) | +$21.0k at 0.8 (−$0.6k) | 3/9 | $23.9k | Right at 0.8 only |
+
+- At 0.05 the claims shrink from +$7–41k to between −$0.3k and +$3.1k, much closer to the engine alone, as intended.
+- Three of the five re-recorded picks miss, but by $54 to $314: in those cases nothing in the plan list moved the
+  result much. ho_cocoa_2025 is a "Right" that rests on the shoppers: the engine alone has the pick at −$0.8k.
+- ho_sunflower_2022: three attempts, each with one Ultra/Super fallback (Ultra "did not answer twice" in a later round
+  or an invalid answer). It stays at 0.8 and its "Right" is the inflated kind this section is about. Open: retry,
+  record with `--allow-fallback`, or show it with a note.
+- Each miss has a `hindsight` line in its case file (EVENTS v2.4), shown under the row.
+- Stale `cell_backtest_*_realized.jsonl` files from superseded picks were removed (the offline demo took the first
+  match by name, so bt_cocoa_2024 and bt_tariff_2025 could replay the old pick's real path).
+
+Spend: 11 live runs, 5 kept, **$0.71** Token Factory (telemetry
+estimate), 0 Tavily credits (all cached).
