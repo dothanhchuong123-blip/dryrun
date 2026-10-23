@@ -19,9 +19,10 @@
 .hw-p > small { grid-column: 1 / -1; font-size: 12.5px; line-height: 1.45; color: var(--fl-ink-3); }
 .hw-lab { font: 500 9px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--fl-ink-3); }
 
-/* loop end: contents fade, then snap back with transitions off for one beat */
-.hw-scr > * { transition: opacity .35s var(--hw-out); }
-.hw.out .hw-scr > * { opacity: 0 !important; }
+/* loop end: contents fade out and the memo's purple wipes up; the reset happens while everything is hidden, then it all fades back in */
+.hw-scr > * { transition: opacity .45s var(--hw-out); }
+.hw.out .hw-scr > *, .hw-p.rst .hw-scr > * { opacity: 0 !important; }
+.hw.out .hw-memo.on::before { transform: scaleY(0); transition: transform .5s cubic-bezier(.5, 0, .2, 1); }
 .hw-p.rst .hw-scr, .hw-p.rst .hw-scr *, .hw-p.rst .hw-scr::before { transition: none !important; animation: none !important; }
 
 /* 1 · describe: a text box that types, then its keywords light up */
