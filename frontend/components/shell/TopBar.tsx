@@ -40,10 +40,10 @@ function ModeChip() {
   const mode = useMarketStore((s) => s.analysis.mode);
   const note = useMarketStore((s) => s.analysis.note);
   const offline = backend === "mock";
-  const label = offline ? "Offline demo" : mode === "live" ? "Live" : "Example replay";
+  const label = offline ? "Recorded run · free" : mode === "live" ? "Live" : "Example replay";
   const cls = offline ? "offline" : mode === "live" ? "live" : "";
   const title = offline
-    ? "No backend is connected, so a recorded example is playing in your browser."
+    ? "Replays a real recorded run, no credit spent."
     : (note ?? (mode === "live" ? "Running live on Nemotron." : "Replaying a recorded run. Costs nothing."));
   return (
     <span className={`chip mode ${cls}`} title={title}>
