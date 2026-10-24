@@ -496,6 +496,6 @@ class NewsWatch:
                 _published(by_url[article["url"]].get("published_date")), profile, impact, live=True,
                 favicon=str(by_url[article["url"]].get("favicon") or ""),
             )
-            if item["quote"]:
+            if item["quote"] and any(item["shock"].values()):  # a card that moves nothing is not news (live test, 2026-10-24)
                 return {"items": [item], "credits": self.scout.credits_used - before}
         return {"items": [], "credits": self.scout.credits_used - before, "reason": "no usable article"}

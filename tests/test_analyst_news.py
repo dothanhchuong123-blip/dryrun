@@ -716,6 +716,13 @@ async def test_check_is_one_fresh_live_card(tmp_path):
     assert out2["items"][0]["id"] != item["id"]
 
 
+async def test_check_skips_an_article_that_moves_nothing(tmp_path):
+    # the live button once showed an off-topic article with every shock at 0 (public site, 2026-10-24)
+    nw, _, _ = watcher(tmp_path, router=ShockRouter(shock=(0.0, 0, 0.0)))
+    out = await nw.check(PROFILE)
+    assert out["items"] == [] and out["reason"] == "no usable article"
+
+
 async def test_check_offline_and_empty(tmp_path):
     nw, _, _ = watcher(tmp_path / "a", offline=True)
     assert (await nw.check(PROFILE))["items"] == []
