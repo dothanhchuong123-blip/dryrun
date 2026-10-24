@@ -639,8 +639,8 @@ async def test_supply_item_is_grounded_and_scored(tmp_path):
     nw, _, _ = watcher(tmp_path)
     res = await nw.find(PROFILE, fallback_shock=FALLBACK, live=True)
     item = res["items"][0]
-    assert set(item) == {"id", "kind", "title", "url", "source", "published", "quote", "shock", "cost_line", "impact_usd",
-                         "impact_p5_usd", "live", "applied"}
+    assert set(item) == {"id", "kind", "title", "url", "source", "published", "favicon", "quote", "shock",
+                         "cost_line", "impact_usd", "impact_p5_usd", "live", "applied"}
     assert item["quote"] in ARTICLE and item["quote"] == "Robusta futures rose 31% in a month"   # the article's own casing
     assert item["shock"] == {"delta_c_raw": 0.31, "delta_lead_time": 1, "demand_shock": -0.05}
     assert item["cost_line"] == "Beans +31% × 85% of your cost is beans = your cost +26% (+$1.71 a bag)"
@@ -1082,3 +1082,20 @@ def test_final_pick_is_do_nothing_when_best_today_is_whatever_ultra_named():
     a.summary = {"best_today": "Price +3% wk2"}
     assert a._final_pick("Price +3% wk2") == "Price +3% wk2"
     assert a._final_pick(DO_NOTHING) == "Price +3% wk2"       # Ultra can't wait when a plan gains
+
+
+async def test_search_report_counts_what_happened(tmp_path):
+    nw, _client, scout = watcher(tmp_path)
+    res = await nw.find(PROFILE3, fallback_shock=FALLBACK, live=True)
+    rep = res["searched"]
+    assert [r["kind"] for r in rep["searches"]] == ["supply", "supply", "market", "market"]
+    assert all(r["depth"] == "basic" and r["credits"] == 1 for r in rep["searches"])
+    assert rep["credits"] == scout.credits_used and rep["credits_reported"] is False   # the fake gives no `usage`
+    r = rep["results"]
+    # 5 supply results (a sitemap, a ticker and a 4-character snippet among them) + 1 market result, merged by URL
+    assert r["dropped"]["non_article"] == 2 and r["dropped"]["short"] == 1 and r["dropped"]["social"] == 0
+    assert r["returned"] == r["kept"] + sum(r["dropped"].values())
+    assert rep["quotes"]["checked"] >= rep["quotes"]["verified"] >= 1
+    assert rep["extract"]["urls"] == r["read"] or rep["extract"]["read"] == r["read"]
+    # the market query is Vietnamese: Tavily is asked to boost Vietnamese pages, and the key part is recorded
+    assert any(s["language"] == "vi" for s in rep["searches"] if s["kind"] == "market") or not PROFILE3.get("country")

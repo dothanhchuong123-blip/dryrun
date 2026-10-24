@@ -222,6 +222,8 @@ export interface NewsItem {
   url: string;
   source: string;
   published: string;
+  /** (v2.6) Tavily's favicon URL for the outlet; "" or absent on older recordings */
+  favicon?: string;
   /** supply: verbatim quote; market: ≤ 200-char snippet */
   quote: string;
   shock: { delta_c_raw: number; delta_lead_time: number; demand_shock: number } | null;
@@ -231,9 +233,44 @@ export interface NewsItem {
   live: boolean;
   applied: boolean;
 }
+/** (v2.6) What was sent to Tavily and what became of it; every number is counted, none estimated. */
+export interface SearchRow {
+  kind: "supply" | "market";
+  query: string;
+  topic: string;
+  country: string;
+  language?: string;
+  exact_match?: boolean;
+  time_range: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  depth: string;
+  results: number;
+  credits: number;
+  credits_reported: boolean;
+  failed?: boolean;
+}
+export interface SearchReport {
+  searches: SearchRow[];
+  extract: { urls: number; query: string; depth: string; credits: number; read: number } | null;
+  credits: number;
+  /** true when Tavily's own `usage` figure was recorded; false when it is the list price (1 per basic search) */
+  credits_reported: boolean;
+  results: {
+    returned: number;
+    kept: number;
+    read: number;
+    used: number;
+    dropped: { non_article: number; social: number; short: number; outside_window: number };
+  };
+  /** null on recordings made before the verbatim check was counted */
+  quotes: { checked: number; verified: number } | null;
+  backfilled?: boolean;
+}
 export interface NewsEventData {
   items: NewsItem[];
   used_for_grid: string | null;
+  searched?: SearchReport | null;
 }
 
 export interface UnmodelledRisk {
@@ -338,6 +375,10 @@ export interface MemoSource {
   title: string;
   url: string;
   quote: string;
+  /** (v2.6) outlet, ISO date and Tavily favicon; absent on older recordings (the page joins them from `news` by URL) */
+  source?: string;
+  published?: string;
+  favicon?: string;
 }
 export interface MemoEventData {
   plan_name: string;

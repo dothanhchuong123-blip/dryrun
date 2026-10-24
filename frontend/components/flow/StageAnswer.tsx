@@ -15,6 +15,7 @@ import { MemoTwins } from "../replay/MemoTwins";
 import { BacktestReveal } from "./BacktestReveal";
 import { FallbackNotice } from "./FallbackNotice";
 import { EngineOnly, sign } from "./parts";
+import { SearchPanel, SourceMeta, enrichSource } from "./TavilySources";
 
 /** Optional review fields (EVENTS v2.1) that lib/events.ts doesn't carry yet. */
 type MemoView = MemoEventData & {
@@ -42,6 +43,8 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
   const cells = useMarketStore((s) => s.cells);
   const telemetry = useMarketStore((s) => s.telemetry);
   const profile = useMarketStore((s) => s.profile);
+  const news = useMarketStore((s) => s.news);
+  const searched = useMarketStore((s) => s.searched);
   const downloadMemo = useMarketStore((s) => s.downloadMemo);
   const openReplay = useMarketStore((s) => s.openReplay);
   const [note, setNote] = useState<string | null>(null);
@@ -85,7 +88,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
   const risks = [...sentences(memo.watch_out)];
   const recheck = sentences(memo.recheck_when);
   const notIn = [...memo.not_modelled.fixed, ...memo.not_modelled.found.map((f) => f.text)];
-  const sources = memo.sources.filter((s) => s.title);
+  const sources = memo.sources.filter((s) => s.title).map((s) => enrichSource(s, news));
   const steady = n.steady_rival_delta_usd;
 
   // Comparison: the recommended plan and up to two others, across the futures we tested.
@@ -117,7 +120,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
     if (memo.actions?.length) L.push("", "WHAT TO DO", ...memo.actions.map((a, i) => `${i + 1}. [${weekLabel(a.week)}] ${a.text}`));
     if (risks.length || recheck.length) L.push("", "RISKS AND WHAT WOULD CHANGE THE ANSWER", ...[...risks, ...recheck].map((r) => `- ${r}`));
     if (notIn.length) L.push("", "NOT MODELLED", ...notIn.map((t) => `- ${t}`));
-    if (sources.length) L.push("", "SOURCES", ...sources.map((s) => `- ${s.title} ${s.url}`));
+    if (sources.length) L.push("", "SOURCES", ...sources.map((s) => `- ${s.title} (Tavily · ${[s.source, s.published].filter(Boolean).join(" · ")}) ${s.url}`));
     return L.join("\n");
   };
   const copy = async () => {
@@ -335,12 +338,15 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
                   ) : (
                     s.title
                   )}
+                  <SourceMeta s={s} />
                   {s.quote && <q>{s.quote}</q>}
                 </li>
               ))}
             </ul>
           </section>
         )}
+
+        {searched && searched.searches.length > 0 && <SearchPanel report={searched} />}
 
         {notIn.length > 0 && (
           <details className="am-fold">

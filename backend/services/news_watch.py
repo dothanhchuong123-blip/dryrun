@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import re
 from datetime import UTC, date, datetime, timedelta
 from email.utils import parsedate_to_datetime
@@ -23,7 +24,7 @@ from backend.agents.prompts import ASSUMPTION_SOURCE, shock_parser_messages
 from backend.agents.schemas import ShockVector
 from backend.engine import planner
 from backend.services import asof
-from backend.services.tavily_scout import verify_evidence
+from backend.services.tavily_scout import CREDITS_SEARCH, verify_evidence
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +53,12 @@ IMPACT_PATHS = 500
 HORIZON = 24
 MAX_QUOTE = 300
 MAX_SNIPPET = 200
+# Local-language market searches (Tavily `language`, a ranking boost only). Keys are profile countries, lower case.
+COUNTRY_LANGUAGE = {
+    "vietnam": "vi", "germany": "de", "austria": "de", "france": "fr", "spain": "es", "mexico": "es", "italy": "it",
+    "portugal": "pt", "brazil": "pt", "japan": "ja", "indonesia": "id", "thailand": "th", "netherlands": "nl",
+    "poland": "pl", "turkey": "tr",
+}
 ASOF_WINDOW_DAYS = 90     # a backtest reads the 90 days of news before its as-of date (B1)
 
 
@@ -101,6 +108,18 @@ def contradicts(delta: float, quotes: list[str]) -> bool:
     """True when a parsed change has the opposite sign to what its quotes say (e.g. +5% from "prices retreated")."""
     d = direction(" ".join(quotes))
     return (delta > 0 and d < 0) or (delta < 0 and d > 0)
+
+
+def drop_reason(r: dict) -> str | None:
+    """Why a search result is dropped before any extract: "non_article", "social" or "short"; None if it is usable."""
+    url = r.get("url")
+    if not url or NON_ARTICLE.search(url):
+        return "non_article"
+    if is_social(url):
+        return "social"
+    if len(str(r.get("content", "")).strip()) <= MIN_SNIPPET:
+        return "short"
+    return None
 
 
 def _usable(r: dict) -> bool:
@@ -160,35 +179,65 @@ class NewsWatch:
         self.scout = scout
         self.router = router
         self._live_n = 0
+        self.use_language = True     # False reads searches recorded before `language` was sent (scripts/backfill_search_log.py)
+        self.quotes_checked = 0      # quotes Super returned, and how many were found verbatim in the article
+        self.quotes_verified = 0
+        self._extract: dict | None = None
+        self._log: list[dict] = []   # one row per Tavily search of the current find(), for the "How we searched" panel
 
     # --- search ------------------------------------------------------------------------------
     async def _search(
         self, query: str, *, time_range: str, topic: str, country: str, live: bool, fresh: bool = False,
-        as_of: date | None = None,
+        as_of: date | None = None, kind: str = "supply",
     ) -> list[dict]:
         dates: dict[str, Any] = {}
         if as_of is not None:  # a backtest: the 90 days up to as_of, no time_range
             dates = {"start_date": (as_of - timedelta(days=ASOF_WINDOW_DAYS)).isoformat(), "end_date": as_of.isoformat()}
             time_range = None  # type: ignore[assignment]
+        extra: dict[str, Any] = {}
+        language = COUNTRY_LANGUAGE.get(country.strip().lower(), "") if (topic == "general" and self.use_language) else ""
+        if language and not query.isascii():  # a query in the local language: boost local-language pages (no hard filter)
+            extra["language"] = language
+        if '"' in query:  # a quoted name (a rival) must appear on the page
+            extra["exact_match"] = True
+        row: dict[str, Any] = {
+            "kind": kind, "query": query, "topic": topic, "country": country if topic == "general" else "",
+            "language": extra.get("language", ""), "exact_match": bool(extra.get("exact_match")),
+            "time_range": time_range, "start_date": dates.get("start_date"), "end_date": dates.get("end_date"),
+            "depth": "basic", "results": 0, "credits": 0, "credits_reported": False,
+        }
         try:
             resp = await self.scout.search(
                 query, "basic", time_range, use_cache=not fresh, topic=topic, country=country, cache_only=not live,
-                **dates,
+                **dates, **extra,
             )
         except Exception as e:  # noqa: BLE001  Tavily down, offline cache miss, timeout: the analysis goes on
             log.info("news search failed for %r: %s", query, e)
+            row["failed"] = True
+            self._log.append(row)
             return []
-        return [r for r in resp.get("results", []) if isinstance(r, dict)]
+        usage = (resp.get("usage") or {}).get("credits") if isinstance(resp, dict) else None
+        row["credits"] = math.ceil(usage) if usage is not None else CREDITS_SEARCH["basic"]
+        row["credits_reported"] = usage is not None
+        out = [r for r in resp.get("results", []) if isinstance(r, dict)]
+        row["results"] = len(out)
+        self._log.append(row)
+        return out
 
     async def _articles(self, results: list[dict], query: str, *, live: bool, fresh: bool = False) -> list[dict]:
         if not results:
             return []
         urls = [r["url"] for r in results]
+        self._extract = {"urls": len(urls), "query": query, "depth": "basic", "credits": math.ceil(len(urls) / 5), "read": 0}
         try:
             er = await self.scout.extract(urls, query, use_cache=not fresh, cache_only=not live)
         except Exception as e:  # noqa: BLE001
             log.info("news extract failed: %s", e)
             return []
+        usage = (er.get("usage") or {}).get("credits") if isinstance(er, dict) else None
+        if usage is not None:
+            self._extract["credits"], self._extract["credits_reported"] = math.ceil(usage), True
+        self._extract["read"] = sum(1 for e in er.get("results", []) if e.get("raw_content"))
         titles = {r["url"]: r.get("title", "") for r in results}
         return [
             {"url": e["url"], "title": titles.get(e["url"], ""), "content": e.get("raw_content") or ""}
@@ -207,7 +256,10 @@ class NewsWatch:
         )
         if res.parsed is None:
             return None
-        return verify_evidence(res.parsed, [article])
+        kept = verify_evidence(res.parsed, [article])
+        self.quotes_checked += len(res.parsed.evidence)
+        self.quotes_verified += len(kept.evidence) if kept is not None else 0
+        return kept
 
     # --- items -------------------------------------------------------------------------------
     @staticmethod
@@ -217,14 +269,14 @@ class NewsWatch:
 
     def _supply_item(
         self, item_id: str, article: dict, shock: ShockVector, published: str, profile: dict, impact: _Impact,
-        *, live: bool,
+        *, live: bool, favicon: str = "",
     ) -> dict:
         knobs = self._knobs(shock)
         quote = next((s for ev in shock.evidence if (s := exact_span(ev.quote, article["content"]))), None)
         mean, p5 = impact(knobs)
         return {
             "id": item_id, "kind": "supply", "title": article["title"], "url": article["url"],
-            "source": _source(article["url"]), "published": published, "quote": (quote or "")[:MAX_QUOTE],
+            "source": _source(article["url"]), "published": published, "favicon": favicon, "quote": (quote or "")[:MAX_QUOTE],
             "shock": knobs, "cost_line": wording.cost_line(profile, _case(knobs)),
             "impact_usd": round(mean, 2), "impact_p5_usd": round(p5, 2), "live": live, "applied": False,
         }
@@ -236,7 +288,7 @@ class NewsWatch:
         mean, p5 = impact(knobs)
         return {
             "id": "n1", "kind": "supply", "title": "Example assumption (no live article found)", "url": "",
-            "source": ASSUMPTION_SOURCE, "published": "", "quote": str(quote)[:MAX_QUOTE], "shock": knobs,
+            "source": ASSUMPTION_SOURCE, "published": "", "favicon": "", "quote": str(quote)[:MAX_QUOTE], "shock": knobs,
             "cost_line": wording.cost_line(profile, _case(knobs)), "impact_usd": round(mean, 2),
             "impact_p5_usd": round(p5, 2), "live": False, "applied": True,
         }
@@ -258,6 +310,7 @@ class NewsWatch:
         """
         fresh = fresh and live
         before = self.scout.credits_used
+        self._log, self._extract, self.quotes_checked, self.quotes_verified = [], None, 0, 0
         impact = _Impact(planner.calibrate(profile))
         n_supply = min(len(profile.get("search_terms", [])), MAX_SUPPLY_SEARCHES)
         n_market = min(len(profile.get("market_terms", [])), MAX_MARKET_SEARCHES)
@@ -270,12 +323,13 @@ class NewsWatch:
         supply_q = list(profile.get("search_terms", []))[:n_supply]
         market_q = list(profile.get("market_terms", []))[:n_market]
         supply_batches, market_batches = await asyncio.gather(
-            asyncio.gather(*(self._search(q, time_range="week", topic="news", country="", live=live, fresh=fresh, as_of=as_of)
-                             for q in supply_q)),
+            asyncio.gather(*(self._search(q, time_range="week", topic="news", country="", live=live, fresh=fresh, as_of=as_of,
+                                          kind="supply") for q in supply_q)),
             asyncio.gather(*(self._search(q, time_range="month", topic="general", country=country, live=live, fresh=fresh,
-                                          as_of=as_of) for q in market_q)),
+                                          as_of=as_of, kind="market") for q in market_q)),
         )
         supply_all, market_all = _merge(list(supply_batches)), _merge(list(market_batches))
+        n_returned = len(supply_all) + len(market_all)
         dropped_asof = 0
         if as_of is not None:
             n_before = len(supply_all) + len(market_all)
@@ -283,6 +337,8 @@ class NewsWatch:
             market_all = [r for r in market_all if asof.usable_result(r, as_of)]
             dropped_asof = n_before - len(supply_all) - len(market_all)
             market_all = [r for r in market_all if not asof.later_dated(str(r.get("content", "")), as_of)]
+        outside_window = n_returned - len(supply_all) - len(market_all)
+        reasons = [drop_reason(r) for r in [*supply_all, *market_all]]
         supply = [r for r in supply_all if _usable(r)][:KEEP_SUPPLY]
         market = [r for r in market_all if _usable(r)][:KEEP_MARKET]
         dropped = (len(supply_all) - len([r for r in supply_all if _usable(r)])) + (
@@ -306,7 +362,8 @@ class NewsWatch:
                 continue
             published = _published(by_url[article["url"]].get("published_date"))
             item = await asyncio.to_thread(
-                self._supply_item, f"n{len(items) + 1}", article, shock, published, profile, impact, live=False
+                self._supply_item, f"n{len(items) + 1}", article, shock, published, profile, impact, live=False,
+                favicon=str(by_url[article["url"]].get("favicon") or ""),
             )
             if not (item["quote"] and any(item["shock"].values())):  # a headline that moves nothing says nothing
                 continue
@@ -327,18 +384,43 @@ class NewsWatch:
         market_items = [
             {
                 "id": f"m{i}", "kind": "market", "title": r.get("title", ""), "url": r["url"], "source": _source(r["url"]),
-                "published": _published(r.get("published_date")), "quote": str(r.get("content", "")).strip()[:MAX_SNIPPET],
+                "published": _published(r.get("published_date")), "favicon": str(r.get("favicon") or ""),
+                "quote": str(r.get("content", "")).strip()[:MAX_SNIPPET],
                 "shock": None, "cost_line": None, "impact_usd": None, "impact_p5_usd": None, "live": False, "applied": False,
             }
             for i, r in enumerate(market, 1)
         ]
+        searched = self._report(
+            n_returned, outside_window, reasons, kept=len([r for r in reasons if r is None]), read=len(articles),
+            used=len([i for i in items if i["kind"] == "supply" and i["source"] != ASSUMPTION_SOURCE]),
+        )
         return {
             "items": [*items, *market_items],
+            "searched": searched,
             "used_for_grid": used["id"],
             "news_shock": dict(used["shock"]),
             "credits": self.scout.credits_used - before,
             "dropped": dropped,
             "dropped_asof": dropped_asof,
+        }
+
+    def _report(self, returned: int, outside_window: int, reasons: list[str | None], *, kept: int, read: int, used: int) -> dict:
+        """The `searched` object of the `news` event (EVENTS v2.6): what was sent to Tavily and what became of it.
+        Every number is counted from the calls this run made (or read from the cache), none is estimated."""
+        searches = [dict(r) for r in self._log]
+        ex = dict(self._extract) if self._extract else None
+        credits = sum(r["credits"] for r in searches) + (ex["credits"] if ex else 0)
+        reported = bool(searches) and all(r["credits_reported"] for r in searches) and (ex is None or ex.get("credits_reported", False))
+        return {
+            "searches": searches, "extract": ex, "credits": credits, "credits_reported": reported,
+            "results": {
+                "returned": returned, "kept": kept, "read": read, "used": used,
+                "dropped": {
+                    "non_article": reasons.count("non_article"), "social": reasons.count("social"),
+                    "short": reasons.count("short"), "outside_window": outside_window,
+                },
+            },
+            "quotes": {"checked": self.quotes_checked, "verified": self.quotes_verified},
         }
 
     async def check(self, profile: dict) -> dict:
@@ -360,6 +442,7 @@ class NewsWatch:
             item = await asyncio.to_thread(
                 self._supply_item, f"live{self._live_n}", article, shock,
                 _published(by_url[article["url"]].get("published_date")), profile, impact, live=True,
+                favicon=str(by_url[article["url"]].get("favicon") or ""),
             )
             if item["quote"]:
                 return {"items": [item], "credits": self.scout.credits_used - before}

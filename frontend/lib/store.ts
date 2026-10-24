@@ -25,6 +25,7 @@ import type {
   MarkerData,
   MemoEventData,
   NewsItem,
+  SearchReport,
   PlanEventData,
   PlanSource,
   PlanSpec,
@@ -151,6 +152,8 @@ const emptyAnalysis = (): AnalysisInfo => ({
 interface RunData {
   analysis: AnalysisInfo;
   news: NewsItem[];
+  /** (v2.6) the Tavily search log of the analysis's own news step */
+  searched: SearchReport | null;
   usedForGrid: string | null;
   shocks: ShockCase[];
   scenarios: ScenariosEventData | null;
@@ -171,6 +174,7 @@ interface RunData {
 const emptyRun = (): RunData => ({
   analysis: emptyAnalysis(),
   news: [],
+  searched: null,
   usedForGrid: null,
   shocks: [],
   scenarios: null,
@@ -699,7 +703,11 @@ export const useMarketStore = create<MarketState>()((set, get) => {
             const items = live
               ? [...s.news, ...ev.data.items.filter((i) => !s.news.some((n) => n.id === i.id))]
               : ev.data.items;
-            return { news: items, usedForGrid: live ? s.usedForGrid : ev.data.used_for_grid };
+            return {
+              news: items,
+              searched: live ? s.searched : (ev.data.searched ?? null),
+              usedForGrid: live ? s.usedForGrid : ev.data.used_for_grid,
+            };
           });
           break;
         case "scenarios":

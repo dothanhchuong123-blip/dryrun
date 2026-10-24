@@ -853,7 +853,10 @@ class Analyst:
             draft = self._template_memo(pick, numbers["over_cash"])
         news_case = self.shocks[0]
         sources = [
-            {"title": i.get("title", ""), "url": i["url"], "quote": i.get("quote", "")}
+            {
+                "title": i.get("title", ""), "url": i["url"], "quote": i.get("quote", ""), "source": i.get("source", ""),
+                "published": i.get("published", ""), "favicon": i.get("favicon", ""),
+            }
             for i in [*self.supply_items, *self.market_items] if i.get("url")
         ]
         memo = {

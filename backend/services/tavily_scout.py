@@ -160,7 +160,8 @@ class TavilyScout:
         if self.offline or cache_only:
             raise OfflineCacheMiss(f"offline mode: no cached {kind} for {req}")
         resp = await asyncio.wait_for(fetch(), TAVILY_TIMEOUT)
-        self.credits_used += credits
+        reported = (resp.get("usage") or {}).get("credits") if isinstance(resp, dict) else None
+        self.credits_used += credits if reported is None else math.ceil(reported)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(resp))
         return resp
@@ -171,11 +172,19 @@ class TavilyScout:
         include_domains: list[str] | None = None, *, use_cache: bool = True,
         topic: str = "news", country: str = "", cache_only: bool = False,
         start_date: str | None = None, end_date: str | None = None,
+        include_domains_mode: str | None = None, language: str | None = None, filter_by_language: bool = False,
+        exact_match: bool = False,
     ) -> dict:
         """`country` boosts local results and is only sent with `topic="general"` (Tavily ignores it for news).
         `time_range=None` leaves the field out (page lookups, not news).
         `start_date` / `end_date` (YYYY-MM-DD) are a backtest's window (B1): pass `time_range=None` with them. They
         are part of the cache key, so a dated search never reads an undated one.
+        `include_domains_mode="prefer"` keeps an allowlist as a boost instead of a wall (needs `include_domains`).
+        `language` (ISO 639-1) boosts results in that language, `filter_by_language` drops the others (needs `language`);
+        `exact_match` only returns pages that contain the quoted phrases of the query. Like `country`, each of these
+        joins the cache key only when it is sent, so older cached searches keep their keys.
+        Every fresh call also asks for `include_favicon` and `include_usage` (the real credits). They are not part of
+        the key: they only add fields to the response, so older cached responses simply lack them.
         `cache_only` raises OfflineCacheMiss instead of spending a credit when the cache has no answer."""
         req: dict[str, Any] = {"query": query, "depth": depth, "time_range": time_range, "include_domains": include_domains or []}
         if start_date or end_date:  # keep the cache keys of undated searches unchanged
@@ -184,6 +193,14 @@ class TavilyScout:
             req["topic"] = topic
         if topic == "general" and country:
             req["country"] = country
+        if include_domains_mode and include_domains:
+            req["include_domains_mode"] = include_domains_mode
+        if language:
+            req["language"] = language
+            if filter_by_language:
+                req["filter_by_language"] = True
+        if exact_match:
+            req["exact_match"] = True
 
         async def fetch():
             kw: dict[str, Any] = {"query": query, "search_depth": depth, "topic": topic, "max_results": 5}
@@ -197,6 +214,15 @@ class TavilyScout:
                 kw["start_date"] = start_date
             if end_date:
                 kw["end_date"] = end_date
+            if include_domains_mode and include_domains:
+                kw["include_domains_mode"] = include_domains_mode
+            if language:
+                kw["language"] = language
+                if filter_by_language:
+                    kw["filter_by_language"] = True
+            if exact_match:
+                kw["exact_match"] = True
+            kw["include_favicon"], kw["include_usage"] = True, True
             return await self.client.search(**kw)
 
         return await self._cached("search", req, CREDITS_SEARCH[depth], fetch, use_cache, cache_only)
@@ -205,7 +231,9 @@ class TavilyScout:
         req = {"urls": urls, "query": query}
 
         async def fetch():
-            return await self.client.extract(urls=urls, query=query or None, extract_depth="basic", format="text")
+            return await self.client.extract(
+                urls=urls, query=query or None, extract_depth="basic", format="text", include_usage=True
+            )
 
         return await self._cached("extract", req, math.ceil(len(urls) / 5), fetch, use_cache, cache_only)
 
@@ -246,7 +274,9 @@ class TavilyScout:
     async def _pipeline(
         self, query: str, depth: str, domains: list[str] | None, hint: str, n_urls: int, *, use_cache: bool
     ) -> tuple[ShockVector | None, list[dict]]:
-        sr = await self.search(query, depth, include_domains=domains, use_cache=use_cache)
+        sr = await self.search(
+            query, depth, include_domains=domains, include_domains_mode="prefer" if domains else None, use_cache=use_cache
+        )
         results = [r for r in sr.get("results", []) if r.get("url")][:n_urls]
         if not results:
             return None, []

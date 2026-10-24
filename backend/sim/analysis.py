@@ -439,7 +439,7 @@ class Analysis:
             self.profile, fallback_shock=self.fallback_shock, live=live_news, fresh=self.fresh_news,
             pin_assumption=self.assumption_news, as_of=self.as_of,
         )
-        await send("news", {"items": news["items"], "used_for_grid": news["used_for_grid"]})
+        await send("news", {"items": news["items"], "used_for_grid": news["used_for_grid"], "searched": news.get("searched")})
         if self.router is None:
             raise RuntimeError("no router configured")
         analyst = Analyst(
@@ -683,6 +683,7 @@ class Analysis:
             out += ["### Sources", ""]
             for s in m["sources"]:
                 quote = f" — “{s['quote']}”" if s.get("quote") else ""
-                out.append(f"- [{s.get('title') or s['url']}]({s['url']}){quote}")
+                meta = " · ".join(x for x in (s.get("source"), s.get("published")) if x)
+                out.append(f"- [{s.get('title') or s['url']}]({s['url']})" + (f" ({meta}, via Tavily)" if meta else "") + quote)
             out.append("")
         return "\n".join(out)
