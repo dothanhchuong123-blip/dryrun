@@ -675,7 +675,7 @@ where `ramp(t)` goes 0 → 1 from `onset_week` over `ramp_weeks`. With the alter
   - Lightning fails → neutral sentiment (μ = 0, σ = 0.1).
   - Every fallback is logged and shown as a small "fallback" chip.
 - **Cost of one LIVE analysis:**
-  - Ultra ≈ 5–6 calls ≈ $0.07, Super ≈ 3 calls ≈ $0.004, Lightning ≈ 12 calls ≈ $0.003. **Total ≈ $0.08**, plus ≈ 4–5 Tavily credits (§15.7).
+  - Ultra ≈ 5–6 calls ≈ $0.07, Super ≈ 3 calls ≈ $0.004, Lightning ≈ 12 calls ≈ $0.003. **Total ≈ $0.08**, plus ≈ 4–5 Tavily credits (§15.7), and 2 more for each search Ultra asks for (at most 2).
   - The $10 judging reserve ≈ 125 analyses.
   - `PUBLIC_LIVE_DAILY_CAP_USD` still applies.
 - **Nano:** the fallback for Lightning, and the speed comparison in the benchmark. No invented role.

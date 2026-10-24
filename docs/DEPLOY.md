@@ -80,3 +80,18 @@ Hours from Oct 20 to Dec 15 ≈ 1,350 h (use 1,500 h for margin). Fill in the re
 | Endpoint, cheapest CPU preset | _TBD from price list_ | 1,500 | _TBD_ |
 | Job, 4 vcpu, ~minutes per run | _TBD_ | ~0.1 × runs | _TBD_ |
 | Object Storage | negligible | | |
+
+## 7. Tavily credit cap review (2026-10-24, proposals only, nothing deployed)
+
+Checked against the public site (`POST /api/analyses/{id}/news-check` on dryrun-1hny.onrender.com: 200 in 11 s, 2 credits, the card arrived on the SSE stream).
+
+- **30 a day is about right for the month, not for the judging window on its own.** The free plan is 1,000 credits a month shared with our own research. 30 × 31 = 930, which leaves 70 for us; Dec 1–15 alone could use 450. A button check costs 2 credits, so the cap is 15 checks a day, and the rate limit already stops one visitor at 1 a minute.
+- **The counter is in memory.** `credits` lives in the process, so every restart or redeploy resets it to 0 (the same ephemeral-disk problem as the dollar cap in §5). On Render free, any sleep (15 min idle without the UptimeRobot ping) or push to `ui/guided-flow` resets today's count. A restart loop could spend more than 30.
+- **Custom LIVE analyses were not counted** (they cost 4 to 5 credits for the news step, up to 4 more if Ultra searches). As of this branch the news step and Ultra's searches report their credits into the same daily counter and Ultra's searches stop when it is full; the news step itself still starts regardless.
+
+Proposals, in order of value:
+1. **Before a custom LIVE analysis starts, check `credits_used_today() + 9 <= cap`; if not, run its news step from the cache only** (the analysis still finishes, with the labelled assumption). One `if` in `create_analysis`.
+2. **Stop at a monthly figure, not just a daily one.** Read Tavily's own usage for the key (their `usage` endpoint, not verified by us) at startup and every hour, and refuse live calls above 850 of 1,000. This survives restarts and covers our own research use.
+3. **Persist the daily counter** next to the telemetry files (it will still reset on a redeploy, but not on a plain restart), or put it in the same place as the dollar cap whichever way §5 is resolved.
+4. **Lower `TAVILY_DAILY_CREDIT_CAP` to 20 until Nov 30, back to 30 for Dec 1–15** (it is an env var, no deploy needed). Judges are likelier to click the button than to run a custom business.
+5. Keep `LIVE_ENABLED=false` as the real switch; it should also stop Tavily calls (today it only stops paid Nemotron calls).

@@ -12,11 +12,11 @@ This file mirrors the real Devpost form (copied from the site on 2026-10-14). T1
 
 | # | Field | Status | Answer / source |
 |---|---|---|---|
-| 1 | **Project name*** | 👤 | Working name: **Market Digital Twin**. You can rename it any time. |
+| 1 | **Project name*** | ✅ | **Dry Run** (picked 2026-10-20; was "Market Twin"). |
 | 2 | **Elevator pitch*** | ✏️ | See below. Devpost limits taglines to about 200 characters. |
 
-Elevator pitch draft (175 characters):
-> AI CEOs on NVIDIA Nemotron compete in a live market shaped by real news from Tavily, and 10,000 Monte Carlo runs on Nebius test whether they really beat a rule-based baseline.
+Elevator pitch draft (175 characters, v3):
+> Describe your business. Tavily finds the news that hits it, Nemotron proposes plans, and a simulator tests every plan in several futures. You get a decision memo with sources.
 
 ## II. Project details (public page)
 
@@ -45,13 +45,13 @@ The form has **no separate testing field**, so put a two-line "How to try it" at
 - **Frontend:** `next.js`, `react`, `typescript`, `tailwindcss`, `zustand`, `html5-canvas`
 - **Methods:** `monte-carlo`, `game-theory`
 
-**Gallery shot list.** Image 1 is the thumbnail, so make it the most striking.
-1. Hero: the arena plus the terminal mid-run
-2. Ultra's reasoning streaming, next to the decision it produced
-3. The Tavily Grounding Proof Card: a quote and the parameter change it caused
-4. The Nash matrix and the stats table (CI95, Cohen's d, p)
-5. The telemetry HUD: tier shares and cost vs all-Ultra
-6. The architecture diagram
+**Gallery shot list (v3).** Image 1 is the thumbnail, so make it the most striking.
+1. Hero: the landing page with the pixel shop, the rival and the 200 pixel customers
+2. "Every plan in every future": the plans × futures grid, with the news column and the recommended plan marked
+3. The answer page: the decision memo with its Tavily source lines (outlet, date, link) and the open "How we searched" panel
+4. The analyst log: "Nemotron asked Tavily: …", the new "Searched" column and Ultra's reasoning next to the plan it produced
+5. The backtest reveal: what the memo said, then what really happened, with the miss shown
+6. The architecture diagram: Tavily and Token Factory in, the NumPy engine in the middle, the Serverless Job and Endpoint on Nebius
 
 ## III. Additional info (judges only)
 
@@ -75,7 +75,7 @@ The form has **no separate testing field**, so put a two-line "How to try it" at
 | 15 | **Experience vs your previous cloud/local setup, 1–10*** | 👤 | Your number. Compare against whatever you've used before. |
 | 16 | **Improvements that would have helped*** | ⏳ T13 | The top items from `docs/FEEDBACK_LOG.md`, each with its evidence. |
 | 17 | What you hope to see next from the Nemotron team | ✏️ 👤 | Draft below |
-| 18 | Did you use Tavily? | ✅ | **Yes.** To qualify, the app must make a **functional runtime call**. It does so in LIVE mode, in Deep-Scout, and through the **"Check live news"** button, which also works in REPLAY (SPEC §6). |
+| 18 | Did you use Tavily? | ✅ | **Yes**, at runtime in every analysis, and a judge can trigger it live. Search (news, and local-market with `country`), Extract, and Map for pasted shop links; **Nemotron Ultra can also ask Tavily a question mid-analysis** and the answer becomes a new future that every plan is tested in. The **"Check live news"** button works in REPLAY too. See "How we use Tavily" below. |
 | 19 | Builders & Brews IRL city | 👤 | Pick a city only if you attend one of those events. Otherwise leave it blank. |
 | 20 | **AI tools used*** | ✏️ | Draft below. Keep it updated as you go. |
 | 21 | **Level of learning*** | 👤 | Your words. Jot notes at the bottom of this file while building. |
@@ -122,6 +122,41 @@ The form has **no separate testing field**, so put a two-line "How to try it" at
 - Gemini 4 Argon in the Gemini app: reviews and video critique
 - NVIDIA Nemotron via Token Factory: in the product
 - Tavily: in the product, and research through MCP
+
+## How we use Tavily (for the Best Use of Tavily prize and Q18)
+
+**What it does for the product.** Tavily is how an owner's plan meets today's world. We turn what a user says about their business into search queries, read the articles that come back, and turn each article's own words into numbers the simulator can use (how much the main input costs more, how much later it arrives, how demand moves). Every number the engine uses carries a quote that was found word for word on the page, and the memo links the article. Nothing Tavily returns reaches the engine without that check.
+
+**Where it is called (all at runtime, in `backend/services/`):**
+
+| Step | Tavily call | Parameters we send |
+|---|---|---|
+| Supply news for the business | `search` | `search_depth: basic`, `topic: news`, `time_range: week`, `max_results: 5`, `include_favicon`, `include_usage` |
+| Local market (rivals, new chains, demand) | `search` | `topic: general`, `country` from the profile, `time_range: month`, `language` when the query is not English, `exact_match` when a rival name is quoted (retried without it if it finds nothing) |
+| Read the top 3 articles | `extract` | `extract_depth: basic`, `format: text`, `query` (reranks to the part about our topic), `include_usage` |
+| A backtest (a past date) | `search` | `start_date` / `end_date` instead of `time_range`: the window is what keeps each case blind to later news |
+| "Check live news" button | `search` + `extract`, cache bypassed | the same as above, one article |
+| **Nemotron's own question** (new 2026-10-24) | `search` + `extract` | `basic`, at most 1 a round and 2 an analysis, cached, counted against the daily cap |
+| A pasted shop link | `extract`, then `map` + `extract` if the page is thin | `map`: `max_depth 1`, `limit 10`, `select_paths` for menu/price/shop pages; at most 3 credits a link |
+
+We have not used Crawl or Research. Every response is cached under `fixtures/tavily_cache/` (47 search and 25 extract responses so far), so the recorded demo replays with no Tavily call at all.
+
+**What the answer page shows.** Each source line reads "Tavily · outlet · date · open article" with the outlet's favicon, and a "How we searched" panel lists every query with its parameters, the credits it cost, how many results came back, how many were dropped and why, and how many were read.
+
+**Numbers from our own logs** (re-counted offline from the cache on 2026-10-24, over the 4 example analyses and 10 backtest cases; `scripts/backfill_search_log.py`):
+
+| Measure | Value |
+|---|---|
+| Tavily credits per analysis (Search + Extract) | **3.6 on average** (50 credits over 14 recorded analyses; 3 to 5 each); up to 4 more if Nemotron asks 2 questions |
+| Results returned / kept | 144 / 117 |
+| Results dropped before any article was read | **27 of 144 (18.8%)**: 12 social posts, 15 dated outside a backtest's window; 0 index or sitemap pages and 0 too-short snippets in these recordings |
+| Articles read in full (Extract) | 37 |
+| Articles that gave a usable, verified number | **24 of 37 (65%)** (the rest said nothing about costs, contradicted their own quote or were already old news) |
+| Quote check (found word for word on the page) | counted from the first LIVE runs since 2026-10-24 (`news.searched.quotes`): ___ of ___ <!-- fill from the next live run, do not guess --> |
+| Public "Check live news" button, on the live site | answered in 11 s, 2 credits (found an off-topic article; now skipped when it moves nothing) |
+| Real credits (`include_usage`) | search 1, 1-URL extract 1, a 9-page map 0 |
+
+Budget: the free plan (1,000 credits a month) is shared by the public demo and our own research. The public button and the shop-link reader share a daily cap of 30 credits (`TAVILY_DAILY_CREDIT_CAP`).
 
 ## Gaps the form exposed (already added to the plan)
 
