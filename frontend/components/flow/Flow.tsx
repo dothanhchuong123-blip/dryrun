@@ -220,8 +220,13 @@ export function Flow() {
   const pickExample = (id: string) => {
     const ex = s.examples.find((e) => e.id === id);
     if (!ex) return;
-    s.pickExample(id);
-    void useMarketStore.getState().parseProfile(ex.text);
+    if (ex.has_replay) {
+      // the recording brings its own business: play it at once, no model has to read the text
+      void s.watchRecorded(id);
+    } else {
+      s.pickExample(id);
+      void useMarketStore.getState().parseProfile(ex.text);
+    }
     go(0);
   };
   const pickBacktest = (id: string) => {
@@ -329,8 +334,12 @@ export function Flow() {
       btn: "Search the web",
       ready: ok,
       act: () => {
-        // a real case is already running: it started when its card was picked
-        if (!s.analysis.backtestId) void s.startAnalysis();
+        // a real case or a recorded example is already running: it started when its card was picked
+        // (editing a field clears exampleId, so an edited example still starts a fresh run)
+        const playing =
+          !!s.analysis.backtestId ||
+          (!!s.exampleId && s.analysis.exampleId === s.exampleId && s.analysis.status !== "idle" && s.analysis.status !== "error");
+        if (!playing) void s.startAnalysis();
         go(1);
       },
       autoOk: exReplay,

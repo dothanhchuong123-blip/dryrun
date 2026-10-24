@@ -218,8 +218,9 @@ export interface MarketState extends RunData {
   /** (B1) Plays a real case: the run starts at once, because the case brings its own business. */
   pickBacktest(id: string): Promise<void>;
   startAnalysis(): Promise<void>;
-  /** F6: after a live run stopped because the models are down, plays a recorded example instead (no model call). */
-  watchRecorded(): Promise<boolean>;
+  /** Plays a recorded example (no model call): the one picked (`id`), or after F6 stopped a live run, the run's
+   * example or the first one with a recording. */
+  watchRecorded(id?: string): Promise<boolean>;
   /** Adds a user plan row (engine only, free). Resolves to an error message, or null when accepted. */
   addPlan(spec: PlanSpec): Promise<string | null>;
   newsCheck(): Promise<string | null>;
@@ -382,7 +383,7 @@ export const useMarketStore = create<MarketState>()((set, get) => {
         }
         const reason = e instanceof ApiError ? (e.body as { reason?: unknown } | null)?.reason : null;
         const msg =
-          typeof reason === "string" && e instanceof ApiError && [0, 422, 429].includes(e.status)
+          typeof reason === "string" && e instanceof ApiError && [0, 422, 429, 502].includes(e.status)
             ? reason
             : e instanceof ApiError && e.status === 429
               ? "You've read a few businesses already. Try again in a while, or pick an example."
@@ -484,9 +485,11 @@ export const useMarketStore = create<MarketState>()((set, get) => {
       }
     },
 
-    async watchRecorded() {
+    async watchRecorded(id) {
       const s = get();
-      const ex = s.examples.find((e) => e.has_replay && e.id === s.analysis.exampleId) ?? s.examples.find((e) => e.has_replay);
+      const ex = id
+        ? s.examples.find((e) => e.has_replay && e.id === id)
+        : (s.examples.find((e) => e.has_replay && e.id === s.analysis.exampleId) ?? s.examples.find((e) => e.has_replay));
       if (!ex) return false;
       closeAnalysisStream?.();
       closeAnalysisStream = null;

@@ -83,9 +83,12 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** True when the failure means "no backend there" (network error, 404/5xx) rather than a real answer. */
+/** True when the failure means "no backend there" (network error, 404/5xx) rather than a real answer. A 5xx that
+ * carries our server's `reason` is a real answer (e.g. the model could not read the text): stay on the server. */
 function isOffline(e: unknown): boolean {
-  return !(e instanceof ApiError) || e.status >= 500 || e.status === 404;
+  if (!(e instanceof ApiError)) return true;
+  const said = typeof (e.body as { reason?: unknown } | null)?.reason === "string";
+  return e.status === 404 || (e.status >= 500 && !said);
 }
 
 let probed: Promise<void> | null = null;
