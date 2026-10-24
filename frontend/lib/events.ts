@@ -105,7 +105,7 @@ export interface LinkSource {
   kind?: "link";
   url: string;
   title: string;
-  method: "extract" | "search";
+  method: "extract" | "map" | "search";
   credits: number;
 }
 /** A file dropped in the box (EVENTS.md /api/profile/parse-file). */

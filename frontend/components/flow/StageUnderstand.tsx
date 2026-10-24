@@ -252,7 +252,11 @@ export function StageUnderstand() {
           )}
           {source && source.kind !== "file" && (
             <a className="fl-pill tav fl-src" href={source.url} target="_blank" rel="noopener noreferrer" title={source.title || source.url}>
-              {source.method === "search" ? `Found with Tavily Search · ${domain}` : `Read from ${domain} with Tavily Extract`}
+              {source.method === "search"
+                ? `Found with Tavily Search · ${domain}`
+                : source.method === "map"
+                  ? `Read from ${domain} with Tavily Map + Extract`
+                  : `Read from ${domain} with Tavily Extract`}
             </a>
           )}
           {nGuessed > 0 && (

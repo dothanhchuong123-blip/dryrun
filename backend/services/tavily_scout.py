@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 import math
 import re
 from dataclasses import dataclass, field
@@ -20,6 +21,7 @@ from backend.agents.prompts import scout_query_messages, shock_parser_messages
 from backend.agents.schemas import Evidence, ScoutQuery, ShockVector
 from backend.config import ROOT, get_settings
 
+log = logging.getLogger(__name__)
 CREDITS_SEARCH = {"basic": 1, "advanced": 2}
 MAX_QUOTE = 300
 TAVILY_TIMEOUT = 40.0  # seconds per Tavily call; a hang must not stall the sim
@@ -92,11 +94,43 @@ PAGE_MIN_CHARS = 200  # shorter than this and the page is probably a login wall 
 PAGE_MAX_CHARS = 3000
 
 
+PAGE_THIN_CHARS = 800      # a page this short with no price on it is a shell or a home page, not a menu
+MAX_PAGE_CREDITS = 3       # per pasted link: Extract 1 + Map 1 + Extract of the menu pages 1 (or a Search 1)
+MAP_LIMIT = 10             # Map costs 1 credit per 10 pages mapped (2 with `instructions`, so we use path filters)
+MAX_MENU_PAGES = 2
+# Where a shop keeps what it sells, as regexes over the URL path (Tavily Map `select_paths`; English, Vietnamese, German, French)
+MENU_PATHS = [r"/(menu|thuc-don|price|prices|pricing|bang-gia|products?|san-pham|shop|store|collections?|catalog|order|carte|preise|speisekarte|angebot)\b.*"]
+_MENU_WORDS = (("menu", 3), ("thuc-don", 3), ("speisekarte", 3), ("carte", 3), ("price", 3), ("bang-gia", 3), ("preise", 3),
+               ("product", 2), ("san-pham", 2), ("shop", 2), ("store", 1), ("collection", 2), ("catalog", 2), ("order", 1), ("angebot", 2))
+_PRICE = re.compile(r"(?i)[$€£₫]\s?\d|\d[\d.,]*\s?(?:k\b|đ|₫|vnd|usd|eur|€|\$|£)")
+
+
+def is_thin(text: str) -> bool:
+    """Too little to read a business from: under 200 characters, or under 800 with no price on it."""
+    return len(text) < PAGE_MIN_CHARS or (len(text) < PAGE_THIN_CHARS and not _PRICE.search(text))
+
+
+def menu_pages(urls: list[str], base: str) -> list[str]:
+    """The pages of the same site most likely to hold a menu or price list, best first, at most MAX_MENU_PAGES."""
+    host = (urlparse(base).hostname or "").removeprefix("www.")
+    seen, scored = {base.rstrip("/")}, []
+    for u in urls:
+        p = urlparse(u)
+        if p.scheme not in ("http", "https") or (p.hostname or "").removeprefix("www.") != host or u.rstrip("/") in seen:
+            continue
+        seen.add(u.rstrip("/"))
+        path = unquote(p.path).lower()
+        score = max((w for k, w in _MENU_WORDS if k in path), default=0)
+        if score:
+            scored.append((-score, len(path), u))
+    return [u for _, _, u in sorted(scored)[:MAX_MENU_PAGES]]
+
+
 @dataclass
 class PageRead:
     text: str
     title: str
-    method: str  # "extract" | "search"
+    method: str  # "extract" | "map" (menu pages found with Tavily Map) | "search"
     credits: int
 
 
@@ -237,22 +271,55 @@ class TavilyScout:
 
         return await self._cached("extract", req, math.ceil(len(urls) / 5), fetch, use_cache, cache_only)
 
+    async def map_site(self, url: str, *, use_cache: bool = True, cache_only: bool = False) -> dict:
+        """Tavily Map: the links one click from `url` whose path looks like a menu, price list or shop page (1 credit
+        for up to MAP_LIMIT pages, no `instructions`, which would double it)."""
+        req = {"url": url, "limit": MAP_LIMIT, "max_depth": 1, "select_paths": MENU_PATHS}
+
+        async def fetch():
+            return await self.client.map(
+                url, max_depth=1, max_breadth=30, limit=MAP_LIMIT, select_paths=MENU_PATHS, allow_external=False,
+                include_usage=True, timeout=45,
+            )
+
+        return await self._cached("map", req, 1, fetch, use_cache, cache_only)
+
     async def read_page(self, url: str) -> PageRead | None:
-        """The owner's own page for the profile parser: Extract first, then one basic Search when the page is empty
-        or too short. None when both come back empty. Raises on Tavily errors."""
+        """The owner's own page for the profile parser. Extract first. When the page loads but is thin (a home page
+        or a JS shell), Tavily Map finds its menu or price-list pages and one more Extract reads them (SPEC §15.7,
+        at most MAX_PAGE_CREDITS per link). When the page is empty or still thin, one basic Search if the budget
+        allows. None when everything comes back empty. Raises on Tavily errors."""
         before = self.credits_used
-        text, title = "", ""
+        text, title, loaded = "", "", False
         try:
             er = await self.extract([url])
             row = next((r for r in er.get("results", []) if r.get("raw_content")), None)
             if row:
-                text, title = re.sub(r"\s+", " ", row["raw_content"]).strip(), row.get("title") or ""
+                text, title, loaded = re.sub(r"\s+", " ", row["raw_content"]).strip(), row.get("title") or "", True
         except OfflineCacheMiss:
             raise
         except Exception:  # noqa: BLE001  extract failures (blocked site) fall through to search
             text = ""
-        if len(text) >= PAGE_MIN_CHARS:
+        if not is_thin(text):
             return PageRead(text[:PAGE_MAX_CHARS], title, "extract", self.credits_used - before)
+        method = "extract"
+        if loaded:  # the page is there but says little: look for its menu
+            try:
+                mapped = await self.map_site(url)
+                pages = menu_pages([u for u in mapped.get("results", []) if isinstance(u, str)], url)
+                if pages:
+                    more = await self.extract(pages, "menu, products and prices")
+                    extra = " ".join(re.sub(r"\s+", " ", r["raw_content"]).strip() for r in more.get("results", []) if r.get("raw_content"))
+                    if extra:
+                        text, method = f"{text} {extra}".strip(), "map"
+            except OfflineCacheMiss:
+                raise
+            except Exception as e:  # noqa: BLE001  Map is a bonus: a failure keeps what Extract gave
+                log.info("map of %s failed: %s", url, e)
+        if len(text) >= PAGE_MIN_CHARS and (method == "map" or not is_thin(text)):
+            return PageRead(text[:PAGE_MAX_CHARS], title, method, self.credits_used - before)
+        if self.credits_used - before >= MAX_PAGE_CREDITS:  # no budget left for the Search fallback
+            return PageRead(text[:PAGE_MAX_CHARS], title, method, self.credits_used - before) if text else None
         sr = await self.search(_search_query_for(url), "basic", None, topic="general")
         hits = [r for r in sr.get("results", []) if r.get("content") or r.get("title")][:4]
         snippets = " ".join(f"{r.get('title', '')}: {r.get('content', '')}".strip() for r in hits)
