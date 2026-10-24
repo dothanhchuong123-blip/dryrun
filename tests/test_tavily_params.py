@@ -44,6 +44,27 @@ async def test_domains_mode_needs_a_domain_list_and_filter_needs_a_language(tmp_
     assert d["language"] == "de" and d["filter_by_language"] is True
 
 
+async def test_exact_match_that_finds_nothing_is_retried_once_without_it(tmp_path):
+    from test_analyst_news import ShockRouter
+
+    from backend.services.news_watch import NewsWatch
+    from backend.services.tavily_scout import TavilyScout
+
+    class Strict(FakeClient):
+        async def search(self, **kw):
+            self.searches.append(kw)
+            hit = {"url": "https://vnexpress.net/a", "title": "Highland mở cửa hàng", "content": "Highland mở thêm cửa hàng mới " * 6}
+            return {"results": [] if kw.get("exact_match") else [hit]}
+
+    client = Strict()
+    nw = NewsWatch(TavilyScout(tmp_path, client=client), ShockRouter())
+    got = await nw._search('"Highland Coffee" cửa hàng mới', time_range="month", topic="general", country="vietnam", live=True, kind="market")
+    assert len(got) == 1 and len(client.searches) == 2
+    assert client.searches[0]["exact_match"] is True and "exact_match" not in client.searches[1]
+    row = nw._log[0]
+    assert row["exact_match"] is False and row["exact_match_dropped"] is True and row["credits"] == 2 and row["language"] == "vi"
+
+
 async def test_real_credits_from_usage_replace_the_list_price(tmp_path):
     class Usage(FakeClient):
         async def search(self, **kw):

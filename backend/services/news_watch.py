@@ -208,20 +208,29 @@ class NewsWatch:
             "time_range": time_range, "start_date": dates.get("start_date"), "end_date": dates.get("end_date"),
             "depth": "basic", "results": 0, "credits": 0, "credits_reported": False,
         }
-        try:
-            resp = await self.scout.search(
-                query, "basic", time_range, use_cache=not fresh, topic=topic, country=country, cache_only=not live,
-                **dates, **extra,
-            )
-        except Exception as e:  # noqa: BLE001  Tavily down, offline cache miss, timeout: the analysis goes on
-            log.info("news search failed for %r: %s", query, e)
-            row["failed"] = True
-            self._log.append(row)
-            return []
-        usage = (resp.get("usage") or {}).get("credits") if isinstance(resp, dict) else None
-        row["credits"] = math.ceil(usage) if usage is not None else CREDITS_SEARCH["basic"]
-        row["credits_reported"] = usage is not None
-        out = [r for r in resp.get("results", []) if isinstance(r, dict)]
+        reported = True
+        out: list[dict] = []
+        for _ in range(2):
+            try:
+                resp = await self.scout.search(
+                    query, "basic", time_range, use_cache=not fresh, topic=topic, country=country, cache_only=not live,
+                    **dates, **extra,
+                )
+            except Exception as e:  # noqa: BLE001  Tavily down, offline cache miss, timeout: the analysis goes on
+                log.info("news search failed for %r: %s", query, e)
+                row["failed"] = True
+                self._log.append(row)
+                return []
+            usage = (resp.get("usage") or {}).get("credits") if isinstance(resp, dict) else None
+            row["credits"] += math.ceil(usage) if usage is not None else CREDITS_SEARCH["basic"]
+            reported = reported and usage is not None
+            out = [r for r in resp.get("results", []) if isinstance(r, dict)]
+            if out or "exact_match" not in extra:
+                break
+            # exact_match found nothing (live test 2026-10-24: '"Highland Coffee" new store' gave 0 results): once more without it
+            extra = {k: v for k, v in extra.items() if k != "exact_match"}
+            row["exact_match"], row["exact_match_dropped"] = False, True
+        row["credits_reported"] = reported
         row["results"] = len(out)
         self._log.append(row)
         return out
