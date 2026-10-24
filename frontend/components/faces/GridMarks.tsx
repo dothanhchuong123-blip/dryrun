@@ -41,6 +41,7 @@ export function FutureHead({ shock }: { shock: ShockCase }) {
   return (
     <span className="gm-fh">
       {shock.id === "news" && <span className="gm-news">News</span>}
+      {/^w\d/.test(shock.id) && <span className="gm-news" title="Found by Nemotron's own Tavily search mid-analysis">Searched</span>}
       {futureChips(shock).map((c) => (
         <span key={c.label} className={`gm-chip ${c.tone}`}>
           <span>{c.label}</span>

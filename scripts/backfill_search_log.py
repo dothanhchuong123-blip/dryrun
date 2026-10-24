@@ -58,19 +58,26 @@ def main() -> int:
         raw = path.read_text(encoding="utf-8").splitlines()
         lines = [json.loads(x) for x in raw if x.strip()]
         news = next((line for line in lines if line["event"] == "news"), None)
-        if news is None or news["data"].get("searched"):
+        if news is None:
             continue
-        rep = asyncio.run(report_for(lines))
+        had = bool(news["data"].get("searched"))
+        rep = news["data"]["searched"] if had else asyncio.run(report_for(lines))
         if rep is None:
             print(f"{path.name}: some searches are not in the cache, left alone")
             rc = 1
             continue
         r = rep["results"]
         print(f"{path.name}: {len(rep['searches'])} searches, returned {r['returned']}, kept {r['kept']}, "
-              f"dropped {r['dropped']}, credits {rep['credits']}")
+              f"dropped {r['dropped']}, credits {rep['credits']}{' (already there)' if had else ''}")
         news["data"]["searched"] = rep
         if args.write:
-            replay.write(path, lines)
+            if not had:
+                replay.write(path, lines)
+            mock = ROOT / "frontend" / "mock" / f"{path.stem.removeprefix('analysis_')}.json"
+            if mock.exists():  # the offline demo (no backend) shows the same log
+                data = json.loads(mock.read_text(encoding="utf-8"))
+                data["searched"] = rep
+                mock.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     return rc
 
 

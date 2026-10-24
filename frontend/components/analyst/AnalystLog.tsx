@@ -13,6 +13,7 @@ const TAG: Record<AgentStepKind, string> = {
   shoppers: "Shoppers",
   finish: "Pick",
   fallback: "Fallback",
+  search: "Search",
 };
 const TIER: Record<AgentTier, string> = { ultra: "Ultra", super: "Super", fast: "Lightning", engine: "Engine" };
 const FUTURES_ID = "futures";

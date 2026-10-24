@@ -47,6 +47,8 @@ _DOWN = re.compile(
 )
 MIN_SNIPPET = 80          # a search result whose snippet is this short or shorter is dropped
 MAX_CREDITS = 5           # per analysis: searches (1 each, basic) plus one extract call
+MAX_ULTRA_SEARCHES = 2    # Ultra's own searches mid-analysis (SPEC §15.6): 1 a round, 2 an analysis
+SEARCH_CREDITS = 2        # one basic search plus one extract of the top article
 MAX_SUPPLY_SEARCHES, MAX_MARKET_SEARCHES = 3, 2
 KEEP_SUPPLY, KEEP_MARKET, PARSE_TOP = 5, 3, 3
 IMPACT_PATHS = 500
@@ -422,6 +424,56 @@ class NewsWatch:
             },
             "quotes": {"checked": self.quotes_checked, "verified": self.quotes_verified},
         }
+
+    async def lookup(
+        self, profile: dict, query: str, *, item_id: str, live: bool, as_of: date | None = None,
+    ) -> dict:
+        """One search Ultra asked for (SPEC §15.6): a basic news search, the best usable article, its extract, and
+        Super's parse with the verbatim quote check. Returns `{ok, item, search, extract, credits, reason}`; `item` is
+        a supply item (like `find`'s, `applied` False) when `ok`. Never raises: any failure is `ok: False` with a
+        plain `reason`, and the analysis carries on without the column. `live=False` reads the cache only."""
+        before = self.scout.credits_used
+        self._log, self._extract = [], None
+        out: dict[str, Any] = {"ok": False, "item": None, "search": None, "extract": None, "credits": 0, "reason": ""}
+
+        def done(reason: str) -> dict:
+            out["reason"] = reason
+            out["search"] = self._log[0] if self._log else None
+            out["extract"] = dict(self._extract) if self._extract else None
+            out["credits"] = self.scout.credits_used - before
+            return out
+
+        results = await self._search(query, time_range="month", topic="news", country="", live=live, as_of=as_of)
+        if as_of is not None:
+            results = [r for r in results if asof.usable_result(r, as_of)]
+        results = _merge([[r for r in results if _usable(r)]])[:1]
+        if not results:
+            return done("The search found no usable article.")
+        articles = await self._articles(results, query, live=live)
+        if as_of is not None:
+            articles = [a for a in articles if not asof.later_dated(a["content"], as_of)]
+        if not articles:
+            return done("The top article could not be read.")
+        article = articles[0]
+        try:
+            shock = await self._parse(article, profile, as_of)
+        except Exception as e:  # noqa: BLE001  a router failure must not end the analysis
+            log.info("news lookup parse failed: %s", e)
+            shock = None
+        if shock is None or _wrong_way(shock):
+            return done("The article did not report a change we could check against its own words.")
+        impact = _Impact(planner.calibrate(profile))
+        published = _published(results[0].get("published_date"))
+        item = await asyncio.to_thread(
+            self._supply_item, item_id, article, shock, published, profile, impact, live=False,
+            favicon=str(results[0].get("favicon") or ""),
+        )
+        if not (item["quote"] and any(item["shock"].values())):
+            return done("The article did not report a change that moves your costs.")
+        if asof.stale_quote(item["quote"], as_of or date.today()):
+            return done("The article only dates a move that is already over.")
+        out["ok"], out["item"] = True, item
+        return done("")
 
     async def check(self, profile: dict) -> dict:
         """"Check live news": one fresh `basic` search, extract and parse. `{items: [0 or 1 card], credits, reason?}`."""

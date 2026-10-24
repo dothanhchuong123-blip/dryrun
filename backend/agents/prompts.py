@@ -238,10 +238,11 @@ How to work:
 - Look at cash: "cash" is the most extra cash a plan ties up. Never pick a plan marked OVER CASH without saying so in why.
 - Output decisions only. Never invent numbers. Every number you mention must come from the results table below.
 - Set action to "finish" when you are happy with your pick or no new idea is worth testing; otherwise "test" with 1-3 new plans. With "finish", plans may be empty.
+- Web search (only when the user message says searches are left): if one fact you do not have would change which plan is best, set action to "search" instead of "test", with plans empty. query (<=80 chars) is a short news search, in the local language if the business is outside the English-speaking world; search_why (<=120 chars) says what gap it fills. Good: a rival's announced price move, a freight or currency shock, a local rule change the news did not cover. Bad: anything you could settle by testing a plan. A program runs the search, reads the top article and, if it reports a real change, adds it to the grid as a new future that every plan is then tested against. Use at most one search; if nothing is gained, carry on without it. With "test" or "finish", query and search_why are "".
 - thought: <=250 chars, plain words for the business owner. pick: the name of the plan you prefer so far (exactly as named; use "Do nothing" if nothing beats it). why: <=300 chars.
 
 Keep your reasoning SHORT: at most about 8 steps, then answer.
-Reply with JSON only, matching the schema: thought, action ("test"|"finish"), plans (0-3 plan objects with every field), pick, why."""
+Reply with JSON only, matching the schema: thought, action ("test"|"finish"|"search"), plans (0-3 plan objects with every field), pick, why, query, search_why."""
 
 
 # The news item that is the example's own assumption (no live article was found) has this `source`. Ultra must not
@@ -312,8 +313,11 @@ def analyst_messages(
     futures_block: str = "",
     owner_idea: str | None = None,
     as_of: date | None = None,
+    searches_left: int = 0,
+    searched: list[str] | None = None,
 ) -> list[dict]:
-    """`owner_idea` is the row name of the owner's own gut-call plan, if they gave one."""
+    """`owner_idea` is the row name of the owner's own gut-call plan, if they gave one. `searches_left` is how many
+    web searches Ultra may still ask for (0 = none); `searched` lists the queries it already asked."""
     parts = [
         f"Round {round} of {max_rounds}.",
         "Business (money in USD, profit = gross profit over 24 weeks):\n" + _profile_block(profile),
@@ -329,6 +333,11 @@ def analyst_messages(
             f"\"{owner_idea}\" is the owner's own idea, tested like the others. Treat it fairly: if your pick beats it, "
             "say why in plain words in why; if it is the best plan, pick it and say so."
         )
+    if searches_left > 0:
+        done = f" Already searched: {'; '.join(searched or [])}." if searched else ""
+        parts.append(f"Web searches left: {searches_left} (one per round at most).{done}")
+    else:
+        parts.append("Web searches left: 0 (do not use action \"search\").")
     parts.append("Decide now.")
     return [_system(_ANALYST_SYSTEM, as_of), {"role": "user", "content": "\n\n".join(parts)}]
 

@@ -273,6 +273,22 @@ export interface NewsEventData {
   searched?: SearchReport | null;
 }
 
+/** (v2.6) Nemotron asked Tavily a question mid-analysis. `added`: the article became the grid column `case`
+ * (`replaced_id` is the weaker future it displaced when the grid was full). `skipped`: no column, `reason` says why. */
+export interface AnalystSearchData {
+  round: number;
+  query: string;
+  why: string;
+  status: "added" | "skipped";
+  reason: string;
+  item: NewsItem | null;
+  case: ShockCase | null;
+  replaced_id: string | null;
+  credits: number;
+  search: SearchRow | null;
+  extract: { urls: number; query: string; depth: string; credits: number; read: number } | null;
+}
+
 export interface UnmodelledRisk {
   text: string;
   source_id: string | null;
@@ -331,7 +347,7 @@ export interface GridSummaryData {
   verified: boolean;
 }
 
-export type AgentStepKind = "think" | "test" | "result" | "shoppers" | "finish" | "fallback";
+export type AgentStepKind = "think" | "test" | "result" | "shoppers" | "finish" | "fallback" | "search";
 export type AgentTier = ModelTier | "engine";
 export interface AgentStepData {
   round: number;
@@ -543,6 +559,7 @@ export interface BacktestEventData {
 export interface AnalysisEventMap {
   analysis: AnalysisEventData;
   news: NewsEventData;
+  analyst_search: AnalystSearchData;
   scenarios: ScenariosEventData;
   shocks: ShocksEventData;
   plan: PlanEventData;
@@ -569,6 +586,7 @@ export interface ReplayEventMap {
 export const ANALYSIS_EVENT_NAMES = [
   "analysis",
   "news",
+  "analyst_search",
   "scenarios",
   "shocks",
   "plan",

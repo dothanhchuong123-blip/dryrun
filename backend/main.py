@@ -257,6 +257,13 @@ def create_app(
             credits["day"], credits["used"] = day, 0
         return credits["used"]
 
+    def tavily_room(n: int) -> bool:
+        """n more credits still fit under TAVILY_DAILY_CREDIT_CAP (Ultra's own searches ask before they spend)."""
+        return credits_used_today() + n <= s.tavily_daily_credit_cap
+
+    def spend_credits(n: int) -> None:
+        credits["used"] = credits_used_today() + max(0, n)
+
     def sweep() -> None:
         now = clock()
         for registry in (analyses, replays):
@@ -438,7 +445,7 @@ def create_app(
         stream = Stream()
         a = Analysis(
             profile=profile, example=example, mode=mode, router=get_router(), scout=make_scout(),
-            gut_plan=gut, speed=replay_speed,
+            gut_plan=gut, speed=replay_speed, credit_gate=tavily_room, on_credits=spend_credits,
         )
         entry = AnalysisEntry(a, stream, clock(), live=mode == "live")
         analyses[a.analysis_id] = entry

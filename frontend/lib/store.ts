@@ -24,6 +24,7 @@ import type {
   GridSummaryData,
   MarkerData,
   MemoEventData,
+  AnalystSearchData,
   NewsItem,
   SearchReport,
   PlanEventData,
@@ -154,6 +155,8 @@ interface RunData {
   news: NewsItem[];
   /** (v2.6) the Tavily search log of the analysis's own news step */
   searched: SearchReport | null;
+  /** (v2.6) what Nemotron asked Tavily mid-analysis, in order */
+  analystSearches: AnalystSearchData[];
   usedForGrid: string | null;
   shocks: ShockCase[];
   scenarios: ScenariosEventData | null;
@@ -175,6 +178,7 @@ const emptyRun = (): RunData => ({
   analysis: emptyAnalysis(),
   news: [],
   searched: null,
+  analystSearches: [],
   usedForGrid: null,
   shocks: [],
   scenarios: null,
@@ -709,6 +713,12 @@ export const useMarketStore = create<MarketState>()((set, get) => {
               usedForGrid: live ? s.usedForGrid : ev.data.used_for_grid,
             };
           });
+          break;
+        case "analyst_search":
+          set((s) => ({
+            analystSearches: [...s.analystSearches, ev.data],
+            news: ev.data.item && !s.news.some((n) => n.id === ev.data.item!.id) ? [...s.news, ev.data.item] : s.news,
+          }));
           break;
         case "scenarios":
           set({ scenarios: ev.data });

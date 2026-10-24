@@ -14,7 +14,7 @@ import json
 import logging
 import re
 import sys
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import replace
 from datetime import date
 from typing import Any
@@ -62,6 +62,8 @@ GUT_PREFIX = "Your gut call: "
 # Ultra may not invent a cheaper supplier (SPEC §15.4, approved 2026-10-15). The profile has no field naming a known
 # cheaper one yet, so every Ultra supplier switch costs at least today's price. Owner-entered plans are exempt.
 ALT_COST_FLOOR_PCT = 0.0
+MAX_SEARCHES = 2                   # Ultra's own web searches per analysis, at most one a round (SPEC §15.6)
+MAX_COLUMNS = 6                    # the grid never has more futures than this (SPEC §15.5)
 CROWD_RETRY_TIMEOUT = 10.0         # s; a shopper half that failed at the fast tier's 5 s gets one more try this long
 
 
@@ -361,8 +363,11 @@ class Analyst:
         seed: int = 0,
         gut_plan: PlanSpec | Mapping[str, Any] | None = None,
         as_of: date | None = None,
+        search: Callable[[str, str], Awaitable[dict]] | None = None,
     ) -> None:
-        """`as_of` (a backtest, B1) puts "Today's date is ..." at the top of every Ultra, Super and shopper prompt.
+        """`search(query, item_id)` runs one web search for Ultra (`NewsWatch.lookup`, behind the credit caps) and
+        returns `{ok, item, search, extract, credits, reason}`; None means Ultra may not search.
+        `as_of` (a backtest, B1) puts "Today's date is ..." at the top of every Ultra, Super and shopper prompt.
         `news` is `NewsWatch.find`'s result (or just its items). `shocks` is the grid's columns so far: leave it
         empty (or pass only the `news` column) and `scenarios()` builds the rest with Ultra; pass 2 or more and
         they are used as given (the caller has already emitted them). `gut_plan` is the owner's own idea: it is
@@ -399,6 +404,9 @@ class Analyst:
         self.ultra_pick: str | None = None
         self._stale = False            # plans were tested after Ultra last picked, so it has not seen their results
         self.search_fallback = False   # Ultra failed in a round: the fixed search ran, so the memo is a template
+        self._search = search
+        self.searched: list[str] = []      # Ultra's queries so far
+        self.search_credits = 0
         self.gut: PlanSpec | None = None
         self.gut_is_do_nothing = False
         if gut_plan is not None:
@@ -670,6 +678,7 @@ class Analyst:
             self._crowd_notes(), rnd, self.max_rounds, [DO_NOTHING, *(s.name for s in self.specs)],
             futures_block=wording.futures_block(self._shock_dicts()),
             owner_idea=self.gut.name if self.gut is not None else None, as_of=self.as_of,
+            searches_left=self._searches_left(), searched=self.searched,
         )
         step, latency = await self._ultra(msgs, AnalystStep, role="analyst", rnd=rnd, thinking=True)
         if step is None:
@@ -682,6 +691,8 @@ class Analyst:
         step = step.model_copy(update={"thought": tidy(step.thought, 300), "why": tidy(step.why, 300)})
         self.last_why = step.why
         await self._step(rnd, "think", step.thought, None, "ultra", latency)
+        if step.action == "search":
+            return await self._search_round(rnd, step)
         new, notes = self._accept_plans(step) if step.action == "test" else ([], [])
         for note in notes:
             await self._fallback(rnd, note, counts=False)
@@ -698,6 +709,96 @@ class Analyst:
             await self._announce_crowd(rnd, spec, crowd)
             await self._evaluate(spec, rnd)
         await self._emit_summary()
+        return len(self.specs) < self.max_plans
+
+    # --- Ultra's web search (SPEC §15.6) -----------------------------------------------------
+    def _searches_left(self) -> int:
+        return max(0, MAX_SEARCHES - len(self.searched)) if self._search is not None else 0
+
+    def _column_to_replace(self) -> str | None:
+        """When the grid is full, the id of the weakest of Ultra's own futures: an unlikely one, else a possible one
+        with no news behind it. Never the news column, never a likely or sourced one."""
+        rank = {"unlikely": 0, "possible": 1, "likely": 2}
+        cands = [
+            c for c in self.shocks
+            if c.id != NEWS_ID and c.origin != "news" and (c.likelihood == "unlikely" or (c.likelihood == "possible" and not c.source_ids))
+        ]
+        if not cands:
+            return None
+        return min(cands, key=lambda c: (rank[c.likelihood], bool(c.source_ids))).id
+
+    async def _skip_search(self, rnd: int, query: str, why: str, reason: str, res: Mapping[str, Any] | None = None) -> bool:
+        """The search gave nothing the grid can use: say so, add no column, and carry on with the plans."""
+        res = res or {}
+        await self._emit("analyst_search", {
+            "round": rnd, "query": query, "why": why, "status": "skipped", "reason": reason, "item": None, "case": None,
+            "replaced_id": None, "credits": int(res.get("credits", 0)), "search": res.get("search"), "extract": res.get("extract"),
+        })
+        await self._fallback(rnd, f"Search skipped: {reason}", counts=False)
+        return len(self.specs) < self.max_plans
+
+    async def _search_round(self, rnd: int, step: AnalystStep) -> bool:
+        """Ultra asked Tavily a question. Super parses the top article into a future (verified quote), the engine tests
+        every plan in it, and the next round sees the new column. Any failure: no column, the run carries on."""
+        query, why = " ".join(step.query.split())[:80], tidy(step.search_why, 120)
+        if self._search is None or not query:
+            return await self._skip_search(rnd, query, why, "no search was possible")
+        if len(self.searched) >= MAX_SEARCHES:
+            return await self._skip_search(rnd, query, why, "the search limit for one analysis is used up")
+        replaced = None
+        if len(self.shocks) >= MAX_COLUMNS:
+            replaced = self._column_to_replace()
+            if replaced is None:
+                return await self._skip_search(rnd, query, why, "the grid is full of futures backed by news")
+        self.searched.append(query)
+        n = len(self.searched)
+        await self._step(rnd, "search", f"Nemotron asked Tavily: “{query}”" + (f" ({why})" if why else ""), None, "ultra")
+        try:
+            res = await self._search(query, f"x{n}")
+        except Exception as e:  # noqa: BLE001  Tavily, the cache or Super failing never ends the analysis
+            log.info("analyst search failed: %s", e)
+            res = {"ok": False, "reason": "the search failed", "credits": 0}
+        self.search_credits += int(res.get("credits", 0))
+        item = res.get("item")
+        if not res.get("ok") or item is None:
+            return await self._skip_search(rnd, query, why, str(res.get("reason") or "nothing usable came back"), res)
+        base = {**{k: item["shock"][k] for k in ("delta_c_raw", "delta_lead_time", "demand_shock")}}
+        case = planner.default_shock_cases(base, self.profile)[1]
+        case = replace(
+            case, id=f"w{n}", origin="news", likelihood="possible", why=why or "Found by Nemotron's own search",
+            label=case.label.replace(" (today's news)", " (searched)"), source_ids=[item["id"]],
+        ).clamp()
+        others = [c for c in self.shocks if c.id != replaced]
+        twin = next((c for c in others if _close(c, case)), None)
+        if twin is not None:
+            return await self._skip_search(rnd, query, why, f"it matches a future already tested (“{twin.label}”)", res)
+        if replaced is not None:
+            gone = next(c for c in self.shocks if c.id == replaced)
+            await self._step(rnd, "search", f"The grid is full, so this evidence replaces the guess “{gone.label}”.", None, "engine")
+            self.cells = [c for c in self.cells if c["shock_id"] != replaced]
+        self.shocks = [*others, case]
+        self.news_items.insert(min(1, len(self.news_items)), item)
+        await self._emit("analyst_search", {
+            "round": rnd, "query": query, "why": why, "status": "added", "reason": "", "item": item,
+            "case": self._case_event(case), "replaced_id": replaced, "credits": int(res.get("credits", 0)),
+            "search": res.get("search"), "extract": res.get("extract"),
+        })
+        await self._emit("shocks", {"cases": [self._case_event(c) for c in self.shocks]})
+        await self._step(rnd, "search", f"Parsed the top article: {item['cost_line']}.", None, "super")
+        crowds = {s.name: self._sent[s.name] for s in self.specs if s.name in self._sent}
+        for spec in self.specs:
+            out = await asyncio.to_thread(
+                planner.evaluate_grid, self.cal, [spec], [case], {spec.name: crowds[spec.name]} if spec.name in crowds else None,
+                HORIZON, self.n_paths, self.seed,
+            )
+            self.baseline.update(out["baseline_profit_usd"])
+            for c in out["cells"]:
+                cell = {**c, "source": "local"}
+                self.cells.append(cell)
+                await self._emit("grid_cell", cell)
+        self._stale = True
+        await self._emit_summary()
+        await self._step(rnd, "result", f"Tested every plan in “{case.label}”.", None, "engine")
         return len(self.specs) < self.max_plans
 
     async def _deterministic_search(self, rnd: int) -> None:

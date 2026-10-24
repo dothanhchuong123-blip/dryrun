@@ -23,6 +23,7 @@ import type {
   MarkerData,
   MemoEventData,
   NewsItem,
+  SearchReport,
   ParseProfileResponse,
   PlanSpec,
   ReplayEvent,
@@ -79,6 +80,8 @@ interface MockData {
   examples: (ExamplesResponse[number] & { profile: BusinessProfile })[];
   profile: BusinessProfile;
   news: NewsItem[];
+  /** the Tavily search log of the matching recording (scripts/backfill_search_log.py) */
+  searched?: SearchReport;
   shocks: ShockCase[];
   plans: PlanRow[];
   crowd: { plan_name: string; archetypes: CrowdArchetype[] }[];
@@ -308,7 +311,7 @@ export function buildAnalysisScript(): Timed[] {
   tele(0.3);
 
   // news
-  at(0.7, { event: "news", data: { items: D.news, used_for_grid: "n1" } });
+  at(0.7, { event: "news", data: { items: D.news, used_for_grid: "n1", searched: D.searched } });
   calls.super += 1;
   tele();
 

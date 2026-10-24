@@ -232,10 +232,20 @@ class PlanSpecModel(BaseModel):
 
 class AnalystStep(BaseModel):
     thought: str = Field(max_length=300, description="Short plain-words note shown to the user")
-    action: Literal["test", "finish"]
+    action: Literal["test", "finish", "search"]
     plans: list[PlanSpecModel] = Field(max_length=3, description="0-3 new plans to test")
     pick: str = Field(max_length=40, description="Name of the plan you currently prefer")
     why: str = Field(max_length=300)
+    # (EVENTS v2.6) a web search asked mid-analysis. Both default to "" so older replies and recordings validate; the
+    # strict schema still lists them as required (the router makes every property required) without the default.
+    query: str = Field(
+        default="", max_length=80, description='With action "search": the news search to run, else ""',
+        json_schema_extra=lambda schema: schema.pop("default", None),
+    )
+    search_why: str = Field(
+        default="", max_length=120, description='With action "search": what gap in the news this fills, else ""',
+        json_schema_extra=lambda schema: schema.pop("default", None),
+    )
 
 
 class MemoDraft(BaseModel):

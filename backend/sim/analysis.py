@@ -36,7 +36,7 @@ from backend.engine import planner
 from backend.engine.planner import DO_NOTHING, PlanSpec, ShockCase
 from backend.engine.types import N_ARCHETYPES, CrowdSentiment
 from backend.services import replay
-from backend.services.news_watch import NewsWatch
+from backend.services.news_watch import MAX_ULTRA_SEARCHES, SEARCH_CREDITS, NewsWatch
 from backend.services.router import DEFAULT_MAX_TOKENS, DEFAULT_TIMEOUT, ModelsUnavailable, RunHealth
 from backend.services.telemetry import CallRecord, TelemetryStore
 from backend.sim import backtest as bt
@@ -197,8 +197,12 @@ class Analysis:
         analysis_id: str | None = None,
         clock: Callable[[], float] = time.monotonic,
         backtest: str | Mapping[str, Any] | None = None,
+        credit_gate: Callable[[int], bool] | None = None,
+        on_credits: Callable[[int], Any] | None = None,
     ) -> None:
-        """`example` is an example id or its loaded JSON; `profile` defaults to the example's. `mode` is "live" or
+        """`credit_gate(n)` says whether n more Tavily credits fit today's TAVILY_DAILY_CREDIT_CAP (Ultra's own searches
+        ask it first); `on_credits(n)` is told what each live Tavily step spent, so the daily count includes the analysis.
+        `example` is an example id or its loaded JSON; `profile` defaults to the example's. `mode` is "live" or
         "replay". In REPLAY, `recording` (default: the example's `analysis_<id>.jsonl`) is played if it exists;
         otherwise the analysis is computed with cached news only. `fresh_news` (LIVE) re-runs the Tavily searches
         instead of reading the cache, and overwrites the cache with the new results. `assumption_news` puts the example's
@@ -241,6 +245,8 @@ class Analysis:
         self.recording = recording
         self._clock = clock
         self._news_watch = NewsWatch(scout, self.router) if scout is not None else None
+        self._credit_gate, self._on_credits = credit_gate, on_credits
+        self.search_credits = 0       # Tavily credits Ultra's own searches spent in this run
 
         # state, filled by every event (computed or replayed)
         self._cal: planner.Calibration | None = None
@@ -304,6 +310,9 @@ class Analysis:
                 self.news = {"items": list(data.get("items", [])), "used_for_grid": data.get("used_for_grid")}
             else:
                 self.live_news.extend(data.get("items", []))
+        elif event == "analyst_search":
+            if data.get("status") == "added" and data.get("item") and self.news is not None:
+                self.news["items"].insert(min(1, len(self.news["items"])), dict(data["item"]))
         elif event == "reasoning":
             key = (str(data.get("role", "")), int(data.get("round", 0)))
             self._reasoning[key] = self._reasoning.get(key, "") + str(data.get("delta", ""))
@@ -440,18 +449,41 @@ class Analysis:
             pin_assumption=self.assumption_news, as_of=self.as_of,
         )
         await send("news", {"items": news["items"], "used_for_grid": news["used_for_grid"], "searched": news.get("searched")})
+        if live_news and self._on_credits is not None:
+            self._on_credits(int(news.get("credits", 0)))
         if self.router is None:
             raise RuntimeError("no router configured")
         analyst = Analyst(
             self.router, self.cal, self.profile, news, None, send,
             max_rounds=self.max_rounds, n_paths=self.n_paths, seed=self.seed, gut_plan=self.gut_plan,
-            as_of=self.as_of,
+            as_of=self.as_of, search=self._ultra_search(live_news),
         )
         await analyst.run()
         if self.case is not None:
             await self._score_backtest(send, analyst, news)
         await self._emit_telemetry(send)
         await send("done", {"analysis_id": self.analysis_id, "cost_usd": round(self.telemetry_snapshot()["cost_usd"], 6)})
+
+    def _ultra_search(self, live_news: bool) -> Callable[[str, str], Any] | None:
+        """What Ultra's `search` action calls (SPEC §15.6): `NewsWatch.lookup` behind the credit caps. In REPLAY
+        (cache only) it never spends; a cache miss is a skipped search."""
+        if self._news_watch is None:
+            return None
+        watch = self._news_watch
+
+        async def go(query: str, item_id: str) -> dict:
+            if live_news:
+                if self.search_credits + SEARCH_CREDITS > MAX_ULTRA_SEARCHES * SEARCH_CREDITS:
+                    return {"ok": False, "reason": "this analysis's search credits are used up", "credits": 0}
+                if self._credit_gate is not None and not self._credit_gate(SEARCH_CREDITS):
+                    return {"ok": False, "reason": "today's live search budget is used up", "credits": 0}
+            res = await watch.lookup(self.profile, query, item_id=item_id, live=live_news, as_of=self.as_of)
+            self.search_credits += int(res.get("credits", 0))
+            if live_news and self._on_credits is not None:
+                self._on_credits(int(res.get("credits", 0)))
+            return res
+
+        return go
 
     # --- backtest ----------------------------------------------------------------------------
     def llm_texts(self) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:

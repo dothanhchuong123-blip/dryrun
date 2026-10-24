@@ -45,6 +45,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
   const profile = useMarketStore((s) => s.profile);
   const news = useMarketStore((s) => s.news);
   const searched = useMarketStore((s) => s.searched);
+  const asked = useMarketStore((s) => s.analystSearches);
   const downloadMemo = useMarketStore((s) => s.downloadMemo);
   const openReplay = useMarketStore((s) => s.openReplay);
   const [note, setNote] = useState<string | null>(null);
@@ -346,7 +347,7 @@ export function StageAnswer({ onRestart }: { onRestart: () => void }) {
           </section>
         )}
 
-        {searched && searched.searches.length > 0 && <SearchPanel report={searched} />}
+        {((searched && searched.searches.length > 0) || asked.length > 0) && <SearchPanel report={searched} asked={asked} />}
 
         {notIn.length > 0 && (
           <details className="am-fold">

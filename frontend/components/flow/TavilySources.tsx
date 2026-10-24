@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { MemoSource, NewsItem, SearchReport, SearchRow } from "../../lib/events";
+import type { AnalystSearchData, MemoSource, NewsItem, SearchReport, SearchRow } from "../../lib/events";
 
 /** Everything on the answer page that says where the news came from: the source lines and the search log. */
 
@@ -82,7 +82,46 @@ function params(r: SearchRow): string {
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /** Compact "How we searched" panel. Every figure is counted from the recorded Tavily calls. */
-export function SearchPanel({ report }: { report: SearchReport }) {
+export function SearchPanel({ report, asked = [] }: { report: SearchReport | null; asked?: AnalystSearchData[] }) {
+  if (!report) return asked.length ? <AskedList asked={asked} wrap /> : null;
+  return <SearchPanelFull report={report} asked={asked} />;
+}
+
+/** Nemotron's own searches: what it asked, why, and what came of each (EVENTS v2.6). */
+function AskedList({ asked, wrap = false }: { asked: AnalystSearchData[]; wrap?: boolean }) {
+  const credits = asked.reduce((n, a) => n + a.credits, 0);
+  const body = (
+    <>
+      <p className="tv-line">
+        <b>Asked by Nemotron mid-analysis</b>: {plural(asked.length, "search")}, {plural(credits, "credit")}. Each answer is
+        read by Super, its quote checked word for word, and (if it holds) added as a new future every plan is tested in.
+      </p>
+      <ol className="tv-q">
+        {asked.map((a, i) => (
+          <li key={i}>
+            <span className={`tv-tag ${a.status === "added" ? "supply" : "market"}`}>
+              {a.status === "added" ? "Added a future" : "Skipped"}
+            </span>
+            <q>{a.query}</q>
+            <small>
+              {a.why ? `${a.why} · ` : ""}
+              {a.status === "added" && a.item ? `Found: ${a.item.title}` : a.reason} · {plural(a.credits, "credit")}
+            </small>
+          </li>
+        ))}
+      </ol>
+    </>
+  );
+  if (!wrap) return body;
+  return (
+    <details className="am-fold tv-panel">
+      <summary>How we searched (Tavily)</summary>
+      <div className="tv-body">{body}</div>
+    </details>
+  );
+}
+
+function SearchPanelFull({ report, asked }: { report: SearchReport; asked: AnalystSearchData[] }) {
   const { results: r } = report;
   const d = r.dropped;
   const dropped = d.non_article + d.social + d.short + d.outside_window;
@@ -139,8 +178,9 @@ export function SearchPanel({ report }: { report: SearchReport }) {
             word on the page; the rest were thrown away.
           </p>
         )}
+        {asked.length > 0 && <AskedList asked={asked} />}
         <p className="tv-line">
-          <b>Credits</b>: {report.credits}{" "}
+          <b>Credits</b>: {report.credits + asked.reduce((n, a) => n + a.credits, 0)}{" "}
           {report.credits_reported
             ? "(as reported by Tavily)"
             : "(list price: 1 per basic search, 1 per 5 pages read; the older cached responses did not report usage)"}

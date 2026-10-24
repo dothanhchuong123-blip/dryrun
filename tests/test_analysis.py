@@ -81,7 +81,7 @@ SHOCK_KEYS = {"id", "label", "delta_c_raw", "delta_lead_time", "demand_shock", "
 KEYS = {
     "analysis": {"analysis_id", "mode", "example_id", "profile", "horizon_weeks", "n_paths", "as_of", "backtest_id",
                  "sentiment_weight"},
-    "news": {"items", "used_for_grid"},
+    "news": {"items", "used_for_grid", "searched"},
     "scenarios": {"thought", "unmodelled", "fallback_used"},
     "shocks": {"cases"},
     "plan": {"name", "source", "round", "spec"},
@@ -98,7 +98,7 @@ KEYS = {
     "done": {"analysis_id", "cost_usd"},
     "error": {"message", "recoverable"},
 }
-NEWS_ITEM_KEYS = {"id", "kind", "title", "url", "source", "published", "quote", "shock", "cost_line", "impact_usd",
+NEWS_ITEM_KEYS = {"id", "kind", "title", "url", "source", "published", "favicon", "quote", "shock", "cost_line", "impact_usd",
                   "impact_p5_usd", "live", "applied"}
 CROWD_KEYS = {"id", "label", "mu", "sigma", "bubble"}
 BRIDGE_KEYS = {"cost_usd", "price_usd", "volume_usd", "marketing_usd", "holding_usd"}

@@ -16,7 +16,7 @@ import { AddPlanPanel } from "../grid/AddPlanPanel";
 import { topBubbles } from "../grid/tips";
 import { DivBar, EngineOnly, maxAbs, sign, tone, useCountUp, useHeld, useTyped } from "./parts";
 
-const TAG: Record<string, string> = { think: "Thinking", test: "Testing", result: "Result", shoppers: "Shoppers", finish: "Decided", fallback: "Fallback" };
+const TAG: Record<string, string> = { think: "Thinking", test: "Testing", result: "Result", shoppers: "Shoppers", finish: "Decided", fallback: "Fallback", search: "Searching" };
 
 /** What the pacer has put on screen so far. */
 export interface Shown {

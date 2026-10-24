@@ -226,6 +226,7 @@
 .fl-log .k-result .tg { background: var(--fl-gain-soft); color: var(--fl-gain); }
 .fl-log .k-shoppers .tg { background: #f0f7e3; color: #4b7500; }
 :root[data-theme="dark"] .fl-log .k-shoppers .tg { background: #1f2a10; color: #b6e06a; }
+.fl-log .k-search .tg { background: var(--fl-accent); color: #fff; }
 .fl-log .k-fallback .tg { background: var(--fl-amber-soft); color: var(--fl-amber-ink); }
 .fl-plans { list-style: none; margin: 12px 0 0; padding: 12px 0 0; border-top: 1px solid var(--fl-line); display: flex; flex-direction: column; gap: 6px; }
 .fl-plans li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; animation: fl-blockin 0.45s var(--ease) both; }
