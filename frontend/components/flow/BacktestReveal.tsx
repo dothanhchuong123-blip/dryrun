@@ -266,7 +266,7 @@ export function BacktestReveal() {
           </>
         )}
         <small>
-          We checked everything the AI wrote against words and numbers from after {niceDate(b.as_of)}.
+          Tavily's start_date / end_date window kept the search to the 90 days up to {niceDate(b.as_of)}, so the AI could not read later news. We also checked everything it wrote against words and numbers from after that date.
           {b.dropped_news > 0 ? ` ${b.dropped_news} news ${b.dropped_news === 1 ? "page" : "pages"} dated too late ${b.dropped_news === 1 ? "was" : "were"} dropped before it read them.` : ""}
         </small>
       </div>

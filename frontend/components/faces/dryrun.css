@@ -460,3 +460,4 @@ body .fl-tip .fl-sl i.b, body .fl-tip .fl-sk i.b { background: repeating-linear-
 .am-rev td.c, .am-rev td.c .gm-meter rect, .am-rev .gm-win, .am-rev tr.rec td:first-child { animation-play-state: paused; }
 .am-go td.c, .am-go td.c .gm-meter rect, .am-go .gm-win, .am-go tr.rec td:first-child { animation-play-state: running; }
 @media (prefers-reduced-motion: reduce) { .am-rev *, .am-rev { animation: none !important; } }
+.bt-ledger code { font-family: var(--mono, ui-monospace, Menlo, monospace); font-size: 0.9em; }

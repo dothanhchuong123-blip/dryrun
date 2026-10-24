@@ -656,7 +656,7 @@ export function Flow() {
           {!up && s.backtests.length > 0 && (
             <div className="bt-ledger" id="real-cases">
               <h2>We tested it on the past</h2>
-              <p>We replay a past date with only the news from before it, then score the advice against what really happened. We show the misses too.
+              <p>We replay a past date with only the news from before it, then score the advice against what really happened. Tavily&apos;s <code>start_date</code> and <code>end_date</code> search window is what keeps each case blind: it only searches the 90 days before the date, and we drop any result dated later. We show the misses too.
                 {(() => {
                   const scored = s.backtests.filter((b) => b.verdict);
                   const right = scored.filter((b) => b.verdict!.right ?? b.verdict!.beat_do_nothing).length;
