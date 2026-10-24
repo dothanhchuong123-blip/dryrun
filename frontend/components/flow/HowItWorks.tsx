@@ -11,8 +11,9 @@ import "./howitworks.css";
 
 /**
  * The visual "how it works" strip at the bottom of the landing page (DESIGN §12.6): four small screens made from the
- * same recorded coffee-roaster run the "Coffee roaster in Austin" example card plays (mock/strip_mock.json offline,
- * strip_live.json with the backend; both cut by scripts/make_strip_data.py), played as one loop. Each box moves in its
+ * same recorded runs the example cards play (mock/strip_mock.json offline, strip_live.json with the backend; both are
+ * lists cut by scripts/make_strip_data.py), played as one loop. Each loop plays the next run in the list, so the strip
+ * never repeats the business it just showed. Each box moves in its
  * own way and hands its result to the next: the typed keywords fly into the news search, the search reel locks on the
  * stories that hit your costs and the first one's shock flies into the simulator, the simulator fans out its runs and
  * collapses them to one number, and that number flies into the memo. One clock (requestAnimationFrame) drives it; the
@@ -45,10 +46,11 @@ const FLY = 720;
 /** Where each box's own part of the loop begins: box 1 at the start, the others when the hand-off to them leaves. */
 const W = [0, S.fly1, S.fly2, S.fly3];
 const act = (t: number) => (t < 2500 ? 0 : t < 4950 ? 1 : t < 7800 ? 2 : t < S.out ? 3 : -1);
-const KEYWORDS = ["coffee", "Austin", "Brazil"];
 const ROWS = 4;
 
 interface Strip {
+  id: string;
+  keywords: string[];
   text: string;
   profile: { product_unit: string; price: number; unit_cost: number; rival_name: string; rival_price: number };
   scan: { source: string; title: string; shock: { delta_c_raw: number; delta_lead_time: number; demand_shock: number } | null }[];
@@ -63,8 +65,8 @@ const sc = (id: string, over: Partial<ShockCase>): ShockCase => ({ ...base, ...o
 const cut = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, t.lastIndexOf(" ", n))}…`);
 
 /** The typed line cut into plain runs and keyword runs (the first match of each keyword, in text order). */
-function segment(text: string) {
-  const hits = KEYWORDS.map((k) => ({ k, at: text.indexOf(k) })).filter((h) => h.at >= 0).sort((a, b) => a.at - b.at);
+function segment(text: string, keywords: string[]) {
+  const hits = keywords.map((k) => ({ k, at: text.indexOf(k) })).filter((h) => h.at >= 0).sort((a, b) => a.at - b.at);
   const segs: { s: string; from: number; kw: number }[] = [];
   let i = 0;
   hits.forEach((h, n) => {
@@ -262,9 +264,11 @@ function fly(layer: HTMLElement, from: Element, to: Element, dur: number) {
 const on = (b: boolean) => (b ? " on" : "");
 
 export function HowItWorks({ offline, onTry, onTop }: { offline: boolean; onTry: (() => void) | null; onTop: () => void }) {
-  const d = (offline ? stripMock : stripLive) as Strip;
+  const list = (offline ? stripMock : stripLive) as Strip[];
+  const [which, setWhich] = useState(0);
+  const d = list[which % list.length];
   const text = useMemo(() => cut(d.text, 112), [d]);
-  const { segs, words } = useMemo(() => segment(text), [text]);
+  const { segs, words } = useMemo(() => segment(text, d.keywords), [text, d.keywords]);
   const chips = useMemo(
     () => [
       { k: "Sells", v: d.profile.product_unit.split(" of ")[0] },
@@ -282,8 +286,8 @@ export function HowItWorks({ offline, onTry, onTop }: { offline: boolean; onTry:
   const total = d.sim.futures.length;
   const headWords = useMemo(() => d.headline.split(" "), [d]);
   const sr =
-    `Preview of one run for a coffee roaster in Austin. A one-line description becomes price, cost and rival, and its keywords go to a news search. ` +
-    `Of ${rows.length} stories found, ${hitOrder.length} hit the roaster's costs; the first becomes the shock to test. ` +
+    `Preview of one recorded run (${d.profile.product_unit}, rival ${d.profile.rival_name}). A one-line description becomes price, cost and rival, and its keywords go to a news search. ` +
+    `Of ${rows.length} stories found, ${hitOrder.length} hit the business's costs; the first becomes the shock to test. ` +
     `The simulator runs the plan "${d.sim.plan}" ${runs} times in each of ${total} futures; it beats doing nothing in ${d.sim.wins}. ` +
     `The memo recommends: ${d.headline}, worth ${formatDelta(d.gain)} over six months.`;
 
@@ -333,19 +337,27 @@ export function HowItWorks({ offline, onTry, onTop }: { offline: boolean; onTry:
     [words],
   );
 
+  // the loop reads the hand-offs through a ref, so a new run's keywords never restart (and double) the clock
+  const flightsRef = useRef(flights);
+  flightsRef.current = flights;
+
   useEffect(() => {
     if (still || !visible) return;
+    let alive = true;
     let raf = 0;
     let last = performance.now();
     const frame = (now: number) => {
+      if (!alive) return;
       const dt = Math.min(50, now - last);
       last = now;
       const prev = clock.current;
-      clock.current = prev + dt >= S.loop ? 0 : prev + dt;
+      const wrap = prev + dt >= S.loop;
+      clock.current = wrap ? 0 : prev + dt;
+      if (wrap) setWhich((n) => n + 1);
       const cur = clock.current;
       const host = root.current;
       if (host && layer.current && cur > prev) {
-        for (const f of flights) {
+        for (const f of flightsRef.current) {
           if (prev < f.at && cur >= f.at) {
             const a = host.querySelector(`[data-fly="${f.from}"]`);
             const b = host.querySelector(`[data-fly="${f.to}"]`);
@@ -357,8 +369,11 @@ export function HowItWorks({ offline, onTry, onTop }: { offline: boolean; onTry:
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-  }, [still, visible, flights]);
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+    };
+  }, [still, visible]);
 
   // One column (phone) only shows a box or two at a time, so there each box keeps its finished state and replays only from the
   // moment the data reaches it; side by side, all four share one clock and the whole strip fades out at the end of the loop.

@@ -1,79 +1,172 @@
-{
- "text": "I run a small specialty coffee roastery in Austin, Texas, buying green beans from Brazil and selling 12 oz bags to about 45 local cafés and grocers, around 300 bags a week. A bag sells for $13 wholesale and the beans, roasting and packaging cost me about $7.80. Beans take about 5 weeks to arrive by sea; I keep about 3 weeks of stock and could put about $12,000 into more. My main rival, Capital City Coffee, charges $12.50 a bag.",
- "profile": {
-  "product_unit": "12 oz bag of roasted coffee",
-  "price": 13.0,
-  "unit_cost": 7.8,
-  "rival_name": "Capital City Coffee",
-  "rival_price": 12.5
- },
- "scan": [
-  {
-   "source": "Coffee Market Wire",
-   "title": "New tariff pushes green coffee import costs up as US roasters absorb the hit",
-   "shock": {
-    "delta_c_raw": 0.3,
-    "delta_lead_time": 1,
-    "demand_shock": 0.0
-   }
+[
+ {
+  "id": "coffee_austin",
+  "keywords": [
+   "coffee",
+   "Austin",
+   "Brazil"
+  ],
+  "text": "I run a small specialty coffee roastery in Austin, Texas, buying green beans from Brazil and selling 12 oz bags to about 45 local cafés and grocers, around 300 bags a week. A bag sells for $13 wholesale and the beans, roasting and packaging cost me about $7.80. Beans take about 5 weeks to arrive by sea; I keep about 3 weeks of stock and could put about $12,000 into more. My main rival, Capital City Coffee, charges $12.50 a bag.",
+  "profile": {
+   "product_unit": "12 oz bag of roasted coffee",
+   "price": 13.0,
+   "unit_cost": 7.8,
+   "rival_name": "Capital City Coffee",
+   "rival_price": 12.5
   },
-  {
-   "source": "Specialty Coffee Brief",
-   "title": "Port congestion on the Gulf Coast adds a week to coffee deliveries",
-   "shock": {
-    "delta_c_raw": 0.25,
-    "delta_lead_time": 0,
-    "demand_shock": 0.0
-   }
-  },
-  {
-   "source": "Austin Business Ledger",
-   "title": "Regional coffee chain plans 25 new Texas locations next year",
-   "shock": null
-  },
-  {
-   "source": "Texas Grocer Weekly",
-   "title": "Capital City Coffee says it will hold wholesale prices through the holidays",
-   "shock": null
-  }
- ],
- "sim": {
-  "plan": "Stock 4 wk + raise 3% wk 3",
-  "runs": 1000,
-  "futures": [
+  "scan": [
    {
-    "label": "Beans +30% (today's news)",
-    "mean": 2961,
-    "p5": 2068,
-    "payback": 12
+    "source": "Coffee Market Wire",
+    "title": "New tariff pushes green coffee import costs up as US roasters absorb the hit",
+    "shock": {
+     "delta_c_raw": 0.3,
+     "delta_lead_time": 1,
+     "demand_shock": 0.0
+    }
    },
    {
-    "label": "Beans +45%, shipping +2 wk",
-    "mean": 3492,
-    "p5": 2085,
-    "payback": 12
+    "source": "Specialty Coffee Brief",
+    "title": "Port congestion on the Gulf Coast adds a week to coffee deliveries",
+    "shock": {
+     "delta_c_raw": 0.25,
+     "delta_lead_time": 0,
+     "demand_shock": 0.0
+    }
    },
    {
-    "label": "Beans +30%, Capital City cuts 5%",
-    "mean": 2774,
-    "p5": 1910,
-    "payback": 13
+    "source": "Austin Business Ledger",
+    "title": "Regional coffee chain plans 25 new Texas locations next year",
+    "shock": null
    },
    {
-    "label": "Chain takes 8% of accounts",
-    "mean": 2844,
-    "p5": 2078,
-    "payback": 13
-   },
-   {
-    "label": "Beans ease back −12%",
-    "mean": -1325,
-    "p5": -2580,
-    "payback": 8
+    "source": "Texas Grocer Weekly",
+    "title": "Capital City Coffee says it will hold wholesale prices through the holidays",
+    "shock": null
    }
   ],
-  "wins": 4
+  "sim": {
+   "plan": "Stock 4 wk + raise 3% wk 3",
+   "runs": 1000,
+   "futures": [
+    {
+     "label": "Beans +30% (today's news)",
+     "mean": 2961,
+     "p5": 2068,
+     "payback": 12
+    },
+    {
+     "label": "Beans +45%, shipping +2 wk",
+     "mean": 3492,
+     "p5": 2085,
+     "payback": 12
+    },
+    {
+     "label": "Beans +30%, Capital City cuts 5%",
+     "mean": 2774,
+     "p5": 1910,
+     "payback": 13
+    },
+    {
+     "label": "Chain takes 8% of accounts",
+     "mean": 2844,
+     "p5": 2078,
+     "payback": 13
+    },
+    {
+     "label": "Beans ease back −12%",
+     "mean": -1325,
+     "p5": -2580,
+     "payback": 8
+    }
+   ],
+   "wins": 4
+  },
+  "headline": "Stock up 4 weeks now and raise your price 3% in week 3",
+  "gain": 2960.88
  },
- "headline": "Stock up 4 weeks now and raise your price 3% in week 3",
- "gain": 2960.88
-}
+ {
+  "id": "coffee_hcmc",
+  "keywords": [
+   "robusta",
+   "Ho Chi Minh City",
+   "cafés"
+  ],
+  "text": "I roast robusta in Ho Chi Minh City and sell 1 kg bags to about 60 independent cafés, around 280 bags a week. A bag sells for $11 and the green beans plus packaging cost me about $6.50. Beans from the Central Highlands take about 3 weeks to arrive; I keep about 2 weeks of stock and could put about $8,000 into more. My main rival is Highland Supply, who charge $10.50 a bag.",
+  "profile": {
+   "product_unit": "bag of roasted robusta coffee",
+   "price": 11.0,
+   "unit_cost": 6.5,
+   "rival_name": "Highland Supply",
+   "rival_price": 10.5
+  },
+  "scan": [
+   {
+    "source": "Reuters",
+    "title": "Robusta prices hit a record high as Vietnamese exporters hold back stock",
+    "shock": {
+     "delta_c_raw": 0.31,
+     "delta_lead_time": 1,
+     "demand_shock": 0.0
+    }
+   },
+   {
+    "source": "VnExpress",
+    "title": "Dry spell in the Central Highlands threatens the next harvest",
+    "shock": {
+     "delta_c_raw": 0.25,
+     "delta_lead_time": 0,
+     "demand_shock": 0.0
+    }
+   },
+   {
+    "source": "Tuoi Tre",
+    "title": "New café chain plans 40 outlets in Ho Chi Minh City by next year",
+    "shock": null
+   },
+   {
+    "source": "Saigon Times",
+    "title": "Highland Supply says it will protect its café accounts this quarter",
+    "shock": null
+   }
+  ],
+  "sim": {
+   "plan": "Stock 4 wk + raise 3% wk 3",
+   "runs": 1000,
+   "futures": [
+    {
+     "label": "Beans +31% (today's news)",
+     "mean": 3198,
+     "p5": 2432,
+     "payback": 8
+    },
+    {
+     "label": "Beans +45%, shipping +2 wk",
+     "mean": 2638,
+     "p5": 1279,
+     "payback": 9
+    },
+    {
+     "label": "Beans +31%, Highland cuts 5%",
+     "mean": 3143,
+     "p5": 2421,
+     "payback": 9
+    },
+    {
+     "label": "New chain takes 8% of cafés",
+     "mean": 3107,
+     "p5": 2397,
+     "payback": 8
+    },
+    {
+     "label": "Beans ease back −12%",
+     "mean": -1252,
+     "p5": -2092,
+     "payback": 8
+    }
+   ],
+   "wins": 4
+  },
+  "headline": "Stock up 4 weeks now and raise your price 3% in week 3",
+  "gain": 3198.06
+ }
+]

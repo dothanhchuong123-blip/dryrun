@@ -1,98 +1,184 @@
-{
- "text": "I run a small specialty coffee roastery in Austin, Texas, buying green beans from Brazil and selling 12 oz bags to about 45 local cafés and grocers, around 300 bags a week. A bag sells for $13 wholesale and the beans, roasting and packaging cost me about $7.80. Beans take about 5 weeks to arrive by sea; I keep about 3 weeks of stock and could put about $12,000 into more. My main rival, Capital City Coffee, charges $12.50 a bag.",
- "profile": {
-  "product_unit": "12 oz bag of roasted coffee",
-  "price": 13.0,
-  "unit_cost": 7.8,
-  "rival_name": "Capital City Coffee",
-  "rival_price": 12.5
- },
- "scan": [
-  {
-   "source": "Example assumption",
-   "title": "Example assumption (no live article found)",
-   "shock": {
-    "delta_c_raw": 0.3,
-    "delta_lead_time": 1,
-    "demand_shock": -0.05
-   }
+[
+ {
+  "id": "coffee_austin",
+  "keywords": [
+   "coffee",
+   "Austin",
+   "Brazil"
+  ],
+  "text": "I run a small specialty coffee roastery in Austin, Texas, buying green beans from Brazil and selling 12 oz bags to about 45 local cafés and grocers, around 300 bags a week. A bag sells for $13 wholesale and the beans, roasting and packaging cost me about $7.80. Beans take about 5 weeks to arrive by sea; I keep about 3 weeks of stock and could put about $12,000 into more. My main rival, Capital City Coffee, charges $12.50 a bag.",
+  "profile": {
+   "product_unit": "12 oz bag of roasted coffee",
+   "price": 13.0,
+   "unit_cost": 7.8,
+   "rival_name": "Capital City Coffee",
+   "rival_price": 12.5
   },
-  {
-   "source": "vietnam.vn",
-   "title": "Tight supply has pushed Arabica coffee prices to a one-month high.",
-   "shock": {
-    "delta_c_raw": 0.033,
-    "delta_lead_time": 0,
-    "demand_shock": 0.0
-   }
-  },
-  {
-   "source": "comunicaffe.com",
-   "title": "Arabica coffee futures hit highest level since late August",
-   "shock": {
-    "delta_c_raw": 0.15,
-    "delta_lead_time": 0,
-    "demand_shock": 0.0
-   }
-  },
-  {
-   "source": "vietnam.vn",
-   "title": "Coffee prices today, October 15, 2026: Prices rise in the Central Highlands, while the global market is concerned about supply.",
-   "shock": {
-    "delta_c_raw": 0.018,
-    "delta_lead_time": 0,
-    "demand_shock": 0.0
-   }
-  },
-  {
-   "source": "theinfatuation.com",
-   "title": "Austin’s New Restaurant & Bar Openings - Austin - The Infatuation",
-   "shock": null
-  }
- ],
- "sim": {
-  "plan": "Modest rise 3% + 4wk stock",
-  "runs": 1000,
-  "futures": [
+  "scan": [
    {
-    "label": "Beans +30% (assumed)",
-    "mean": 3117,
-    "p5": 2288,
-    "payback": 12
+    "source": "vietnam.vn",
+    "title": "Tight supply has pushed Arabica coffee prices to a one-month high.",
+    "shock": {
+     "delta_c_raw": 0.033,
+     "delta_lead_time": 0,
+     "demand_shock": 0.0
+    }
    },
    {
-    "label": "Arabica +5%, slight delay",
-    "mean": 391,
-    "p5": -898,
-    "payback": 14
+    "source": "comunicaffe.com",
+    "title": "Arabica coffee futures hit highest level since late August",
+    "shock": {
+     "delta_c_raw": 0.15,
+     "delta_lead_time": 0,
+     "demand_shock": 0.0
+    }
    },
    {
-    "label": "Arabica +40%, demand -10%, delay +4w",
-    "mean": 857,
-    "p5": -1384,
-    "payback": 14
+    "source": "vietnam.vn",
+    "title": "Coffee prices today, October 15, 2026: Prices rise in the Central Highlands, while the global market is concerned about supply.",
+    "shock": {
+     "delta_c_raw": 0.018,
+     "delta_lead_time": 0,
+     "demand_shock": 0.0
+    }
    },
    {
-    "label": "Two new Austin cafes take share",
-    "mean": -197,
-    "p5": -1475,
-    "payback": 8
-   },
-   {
-    "label": "Capital City cuts price 8%",
-    "mean": -219,
-    "p5": -1391,
-    "payback": 8
-   },
-   {
-    "label": "False alarm: beans ease -3%",
-    "mean": -349,
-    "p5": -1784,
-    "payback": 8
+    "source": "theinfatuation.com",
+    "title": "Austin’s New Restaurant & Bar Openings - Austin - The Infatuation",
+    "shock": null
    }
   ],
-  "wins": 3
+  "sim": {
+   "plan": "Modest rise 3% + 4wk stock",
+   "runs": 1000,
+   "futures": [
+    {
+     "label": "Beans +30% (assumed)",
+     "mean": 3117,
+     "p5": 2288,
+     "payback": 12
+    },
+    {
+     "label": "Arabica +5%, slight delay",
+     "mean": 391,
+     "p5": -898,
+     "payback": 14
+    },
+    {
+     "label": "Arabica +40%, demand -10%, delay +4w",
+     "mean": 857,
+     "p5": -1384,
+     "payback": 14
+    },
+    {
+     "label": "Two new Austin cafes take share",
+     "mean": -197,
+     "p5": -1475,
+     "payback": 8
+    },
+    {
+     "label": "Capital City cuts price 8%",
+     "mean": -219,
+     "p5": -1391,
+     "payback": 8
+    },
+    {
+     "label": "False alarm: beans ease -3%",
+     "mean": -349,
+     "p5": -1784,
+     "payback": 8
+    }
+   ],
+   "wins": 3
+  },
+  "headline": "Raise price 3% now and build 4 extra weeks of stock",
+  "gain": 3117.48
  },
- "headline": "Raise price 3% now and build 4 extra weeks of stock",
- "gain": 3117.48
-}
+ {
+  "id": "furniture_eu",
+  "keywords": [
+   "dining sets",
+   "Bình Dương",
+   "Germany"
+  ],
+  "text": "We make solid-wood dining sets in Bình Dương and ship them by sea to furniture retailers in Germany and the Netherlands. A set sells for about €900 and costs us about €560 in wood, hardware and finishing, and we sell around 40 a week. Shipping takes about 5 weeks door to door and we keep about 2 weeks of timber on hand. Our main rival, Baltic Woodworks, sells a similar set for €880.",
+  "profile": {
+   "product_unit": "solid-wood dining set",
+   "price": 972.0,
+   "unit_cost": 605.0,
+   "rival_name": "Baltic Woodworks",
+   "rival_price": 950.0
+  },
+  "scan": [
+   {
+    "source": "fordaq.com",
+    "title": "NHLA: Hardwood Review tracks 151 US hardwood sawmill and yard closures since 2023 | Fordaq News | Fordaq",
+    "shock": {
+     "delta_c_raw": 0.05,
+     "delta_lead_time": 1,
+     "demand_shock": -0.05
+    }
+   },
+   {
+    "source": "handelsblatt.com",
+    "title": "Möbelhandel: Wie Ikea gegen die Zurückhaltung der Kunden ankämpft",
+    "shock": null
+   },
+   {
+    "source": "moebelmarkt.de",
+    "title": "Beiträge - MÖBELMARKT",
+    "shock": null
+   },
+   {
+    "source": "alliance.de",
+    "title": "Möbelbranche im Wandel",
+    "shock": null
+   }
+  ],
+  "sim": {
+   "plan": "Stock 2w + marketing +25%",
+   "runs": 1000,
+   "futures": [
+    {
+     "label": "Timber +12% (assumed)",
+     "mean": 19656,
+     "p5": 14306,
+     "payback": 7
+    },
+    {
+     "label": "Timber +5%, mild delay",
+     "mean": 17004,
+     "p5": 14257,
+     "payback": 7
+    },
+    {
+     "label": "Timber +20%, crisis demand drop",
+     "mean": 13139,
+     "p5": 9788,
+     "payback": 7
+    },
+    {
+     "label": "IKEA/secondhand steals share",
+     "mean": 16414,
+     "p5": 13992,
+     "payback": 7
+    },
+    {
+     "label": "Baltic cuts 8%, timber +10%",
+     "mean": 21769,
+     "p5": 12973,
+     "payback": 7
+    },
+    {
+     "label": "False alarm: timber -3%",
+     "mean": 20890,
+     "p5": 18571,
+     "payback": 7
+    }
+   ],
+   "wins": 6
+  },
+  "headline": "Add 2 weeks stock and boost marketing 25% to grow profit",
+  "gain": 19655.76
+ }
+]
