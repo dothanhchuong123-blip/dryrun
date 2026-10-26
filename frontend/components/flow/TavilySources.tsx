@@ -79,7 +79,7 @@ function params(r: SearchRow): string {
   return bits.join(" · ");
 }
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : /(s|sh|ch|x)$/.test(word) ? "es" : "s"}`;
 
 /** Compact "How we searched" panel. Every figure is counted from the recorded Tavily calls. */
 export function SearchPanel({ report, asked = [] }: { report: SearchReport | null; asked?: AnalystSearchData[] }) {
@@ -137,7 +137,7 @@ function SearchPanelFull({ report, asked }: { report: SearchReport; asked: Analy
       <div className="tv-body">
         <p className="tv-sum">
           {plural(report.searches.length, "search")}
-          {report.extract ? ` and 1 page read` : ""} · {plural(report.credits, "credit")} · {r.returned} results,{" "}
+          {report.extract ? ` and ${plural(report.extract.read, "page")} read` : ""} · {plural(report.credits, "credit")} · {r.returned} results,{" "}
           {r.kept} kept
         </p>
         <ol className="tv-q">

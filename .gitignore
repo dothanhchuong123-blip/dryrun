@@ -31,3 +31,6 @@ dist/
 frontend/out/
 frontend/public/replays/
 *.tsbuildinfo
+
+# internal planning notes, kept local (the repo is public)
+docs/VIDEO_SCRIPT.md
