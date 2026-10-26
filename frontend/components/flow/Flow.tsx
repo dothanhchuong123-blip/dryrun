@@ -359,7 +359,8 @@ export function Flow() {
   } else if (view === 2) {
     const ok = shown.done;
     const nPlans = shown.plans.size;
-    const best = s.summary?.best_today ?? s.memo?.plan_name ?? "";
+    // the memo's pick first: the gain below is the memo's, and best_today can be a riskier plan the memo turned down
+    const best = s.memo?.plan_name ?? s.summary?.best_today ?? "";
     const d = s.memo?.numbers.mean_delta_usd;
     gate = {
       title: ok ? `Tested ${nPlans} plans in ${nShocks} futures` : `Testing plans… ${nPlans ? `${nPlans} so far` : ""}`,

@@ -324,7 +324,8 @@ async def test_crowd_failure_is_neutral_and_run_completes():
     router = FakeRouter(script, default_crowd=False)
     rec = Recorder()
     out = await make_analyst(router, rec).run()
-    assert out["memo"]["fallback_used"] is True
+    # missing shoppers are a note, not a template memo: Ultra still wrote it
+    assert out["memo"]["fallback_used"] is False
     assert any(d["kind"] == "fallback" and "neutral" in d["text"] for d in rec.of("agent_step"))
     assert not any(d["kind"] == "shoppers" and d["tier"] == "fast" for d in rec.of("agent_step"))
     for d in rec.of("crowd"):
@@ -930,6 +931,7 @@ async def test_pinned_assumption_keeps_articles_as_cards(tmp_path):
     sup = [i for i in res["items"] if i["kind"] == "supply"]
     assert [i["id"] for i in sup] == ["n1", "n2", "n3"]
     assert sup[0]["source"] == "Example assumption" and sup[0]["applied"] is True
+    assert "no live article" not in sup[0]["title"]     # articles were found; the title must not say otherwise
     assert all(i["applied"] is False and i["url"] for i in sup[1:]) and sup[1]["shock"]["delta_c_raw"] == 0.31
     assert res["used_for_grid"] == "n1" and res["news_shock"] == FALLBACK_KNOBS
 

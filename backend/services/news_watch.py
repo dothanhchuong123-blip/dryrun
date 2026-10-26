@@ -292,13 +292,16 @@ class NewsWatch:
             "impact_usd": round(mean, 2), "impact_p5_usd": round(p5, 2), "live": live, "applied": False,
         }
 
-    def _fallback_item(self, profile: dict, fallback_shock: dict, impact: _Impact) -> dict:
+    def _fallback_item(self, profile: dict, fallback_shock: dict, impact: _Impact, *, found: bool = False) -> dict:
         knobs = self._knobs(fallback_shock)
         evidence = fallback_shock.get("evidence") or [{}]
         quote = evidence[0].get("quote", "") if isinstance(evidence[0], dict) else getattr(evidence[0], "quote", "")
         mean, p5 = impact(knobs)
         return {
-            "id": "n1", "kind": "supply", "title": "Example assumption (no live article found)", "url": "",
+            "id": "n1", "kind": "supply", "url": "",
+            # pinned for a recording while real articles were found: say so instead of "none found"
+            "title": "Example scenario, set by us (the articles found are below)" if found
+            else "Example assumption (no live article found)",
             "source": ASSUMPTION_SOURCE, "published": "", "favicon": "", "quote": str(quote)[:MAX_QUOTE], "shock": knobs,
             "cost_line": wording.cost_line(profile, _case(knobs)), "impact_usd": round(mean, 2),
             "impact_p5_usd": round(p5, 2), "live": False, "applied": True,
@@ -385,7 +388,7 @@ class NewsWatch:
         if stale:
             log.info("news: dropped %d item(s) whose quote only dates a long-finished move", stale)
         if not items or pin_assumption:
-            items = [await asyncio.to_thread(self._fallback_item, profile, fallback_shock, impact), *items]
+            items = [await asyncio.to_thread(self._fallback_item, profile, fallback_shock, impact, found=bool(items)), *items]
             for i, it in enumerate(items, 1):
                 it["id"] = f"n{i}"
             used = items[0]

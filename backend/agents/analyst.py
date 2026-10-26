@@ -569,7 +569,8 @@ class Analyst:
             await self._step(rnd, "shoppers", "No price or marketing change, so shoppers see nothing new: counted as neutral.", spec.name, "engine")
             return
         if missing:
-            await self._fallback(rnd, f"Some shoppers did not answer for “{spec.name}”; counted as neutral.")
+            # the UI counts missing shoppers itself; this must not flag the memo as a template
+            await self._fallback(rnd, f"Some shoppers did not answer for “{spec.name}”; counted as neutral.", counts=False)
         if moved:
             await self._step(
                 rnd, "shoppers",
