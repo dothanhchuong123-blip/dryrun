@@ -34,3 +34,10 @@ frontend/public/replays/
 
 # internal planning notes, kept local (the repo is public)
 docs/VIDEO_SCRIPT.md
+docs/VIDEO_PROMPT.md
+
+# demo video work, kept local
+video/
+
+# Devpost answers drafted for the form, kept local
+docs/DEVPOST.md
